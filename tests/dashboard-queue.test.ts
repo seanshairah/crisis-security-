@@ -88,3 +88,14 @@ test("a phone that has never connected is a setup task, not an urgent row", () =
   });
   assert.equal(q.length, 0);
 });
+
+test("shift and device rows show who claimed them, and a claimed row sinks below unowned work", () => {
+  const devices = [{ id: "d1", deviceName: "Gate phone", lastSeenAt: new Date(+now - 14 * 60000) }];
+  const open = buildQueue({ now, alerts: [], shifts: [shift("s1", "NOT_CONFIRMED")], devices });
+  assert.equal(open[0].owner?.label, "Unassigned");
+  assert.equal(open[0].claimKey, "shift:s1");
+  const claimed = buildQueue({ now, alerts: [], shifts: [shift("s1", "NOT_CONFIRMED")], devices, claims: { "shift:s1": "Rumbi" } });
+  assert.deepEqual(claimed.map((i) => i.id), ["device:d1", "shift:s1"]);
+  assert.equal(claimed[1].owner?.label, "Handling: Rumbi");
+  assert.equal(claimed[1].owner?.state, "handled");
+});

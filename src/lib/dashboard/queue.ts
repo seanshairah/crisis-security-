@@ -7,6 +7,8 @@ export type QueueTone = "critical" | "warn";
 export type QueueOwner = { state: "handled" | "unassigned"; label: string };
 export type QueueItem = {
   id: string;
+  /** Claimable key for shift and device rows; null for alerts, which are owned through acknowledgement. */
+  claimKey: string | null;
   kind: "alert" | "shift" | "device";
   tone: QueueTone;
   icon:
@@ -93,15 +95,24 @@ const name = (g: { firstName: string; lastName: string }) => `${g.firstName} ${g
 const mins = (from: Date, now: Date) => Math.max(0, Math.round((+now - +from) / 60000));
 const hhmm = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
+/** itemKey ("shift:<id>", "device:<id>") to the name of the operator who has claimed it. */
+export type QueueClaims = Record<string, string>;
+
 export function buildQueue(input: {
   alerts: QueueAlert[];
   shifts: QueueShift[];
   devices: QueueDevice[];
+  claims?: QueueClaims;
   now?: Date;
   limit?: number;
 }): QueueItem[] {
   const now = input.now ?? new Date();
   const items: QueueItem[] = [];
+  const claims = input.claims ?? {};
+  const ownerOf = (key: string): QueueOwner =>
+    claims[key]
+      ? { state: "handled", label: `Handling: ${claims[key]}` }
+      : { state: "unassigned", label: "Unassigned" };
   const alertedShiftGuards = new Set<string>();
 
   for (const a of input.alerts) {
@@ -110,6 +121,7 @@ export function buildQueue(input: {
     const handled = a.status === "ACKNOWLEDGED" || !!a.acknowledgedBy;
     items.push({
       id: `alert:${a.id}`,
+      claimKey: null,
       kind: "alert",
       tone: a.type === "RUNNING_LATE" || a.type === "NEED_ASSISTANCE" ? "warn" : "critical",
       icon: ALERT_ICON[a.type] ?? "report",
@@ -144,6 +156,7 @@ export function buildQueue(input: {
       continue;
     items.push({
       id: `shift:${s.id}`,
+      claimKey: `shift:${s.id}`,
       kind: "shift",
       tone:
         s.status === "LATE" || s.status === "NOT_CONFIRMED" || s.status === "ASSISTANCE"
@@ -159,10 +172,10 @@ export function buildQueue(input: {
               : "report",
       title: `${SHIFT_WORD[s.status]} · ${name(s.guard)}`,
       detail: `${s.location.name} · ${hhmm(s.startAt)}–${hhmm(s.endAt)} · ${s.attendance?.arrivalConfirmedAt ? `arrived ${hhmm(s.attendance.arrivalConfirmedAt)}` : "arrival not confirmed"}`,
-      owner: null,
+      owner: ownerOf(`shift:${s.id}`),
       href: `/shifts/${s.id}`,
       phone: s.guard.phone,
-      rank: SHIFT_RANK[s.status],
+      rank: SHIFT_RANK[s.status] + (claims[`shift:${s.id}`] ? 10 : 0),
       at: +s.startAt,
     });
   }
@@ -171,15 +184,16 @@ export function buildQueue(input: {
     if (!d.lastSeenAt) continue;
     items.push({
       id: `device:${d.id}`,
+      claimKey: `device:${d.id}`,
       kind: "device",
       tone: "warn",
       icon: "cloud_off",
       title: `${d.deviceName} phone offline`,
       detail: `Last heard from ${mins(d.lastSeenAt, now)} min ago${d.queued ? ` · ${d.queued} events saved on the phone` : ""}`,
-      owner: null,
+      owner: ownerOf(`device:${d.id}`),
       href: `/gateways/${d.id}`,
       phone: null,
-      rank: 8,
+      rank: 8 + (claims[`device:${d.id}`] ? 10 : 0),
       at: +d.lastSeenAt,
     });
   }

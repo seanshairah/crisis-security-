@@ -12,6 +12,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { buttonClass } from "@/components/ui/button";
 import { NeedsYouNow } from "@/components/dashboard/needs-you-now";
 import { buildQueue } from "@/lib/dashboard/queue";
+import { currentClaims } from "@/lib/handover/service";
 import { STATUS_META, ON_SITE_STATUSES } from "@/lib/services/shifts";
 import { subDays } from "date-fns";
 import { liveCalls, callInclude } from "@/lib/gateway/calls";
@@ -45,6 +46,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const queue = buildQueue({
     alerts: openAlerts,
     shifts: attention,
+    claims: await currentClaims(),
     devices: gateways.filter((g) => g.activationStatus === "ACTIVE" && effectiveStatus(g, offlineMinutes) === "OFFLINE").map((g) => ({ id: g.id, deviceName: g.deviceName, lastSeenAt: g.lastSeenAt })),
   });
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: process.env.TIMEZONE || "Africa/Harare" }).format(new Date()));
@@ -61,6 +63,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
         <div className="flex flex-wrap gap-2">
           {can.manageLocations(user) && <Link href="/setup" className={buttonClass("primary")}><Icon name="assignment" size={18} filled />Guided setup</Link>}
+          <Link href="/handover" className={buttonClass("secondary")}><Icon name="swap_horiz" size={18} filled />Shift handover</Link>
           <Link href="/patrols" className={buttonClass("secondary")}><Icon name="route" size={18} filled />Patrol command</Link>
         </div>
       </header>

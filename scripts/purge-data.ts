@@ -11,6 +11,7 @@ async function main() {
   if (!process.argv.includes("--yes")) { console.error("Refusing to purge without --yes"); process.exit(2); }
   console.log("Purging operational data…");
   await db.$transaction([
+    db.attentionClaim.deleteMany(), db.handover.deleteMany(), db.handoverNote.deleteMany(),
     db.notification.deleteMany(), db.shiftCheckIn.deleteMany(), db.welfareCheck.deleteMany(), db.incident.deleteMany(),
     db.smsMessage.deleteMany(), db.attendance.deleteMany(), db.shift.deleteMany(), db.shiftRecurrence.deleteMany(),
     db.guard.deleteMany(), db.location.deleteMany(), db.client.deleteMany(), db.pushSubscription.deleteMany(), db.auditLog.deleteMany(),

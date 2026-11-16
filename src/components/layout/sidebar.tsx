@@ -29,6 +29,7 @@ export function Sidebar({ counts, role, user, onClose, simulator = true }: { cou
       { href: "/operations/exceptions", label: "Location exceptions", icon: "report" },
       { href: "/monitoring", label: "Monitoring", icon: "visibility", count: counts.watched },
       { href: "/shifts", label: "Shifts", icon: "calendar_today" },
+      { href: "/handover", label: "Shift handover", icon: "swap_horiz" },
       { href: "/patrols", label: "Patrol command", icon: "location_on" },
       { href: "/attendance", label: "Attendance", icon: "assignment" },
       { href: "/attendance/check-ins", label: "Check-ins", icon: "phone_callback" },

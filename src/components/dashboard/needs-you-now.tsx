@@ -3,6 +3,7 @@ import { Icon } from "@/components/ui/icon";
 import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import type { QueueItem } from "@/lib/dashboard/queue";
+import { claimAction, releaseAction } from "@/actions/handover";
 
 /** The ranked "Needs you now" list: most urgent first, who has it, and one primary action per row. */
 export function NeedsYouNow({
@@ -77,10 +78,20 @@ export function NeedsYouNow({
                 )}
               </div>
               <div className="flex shrink-0 gap-2">
+                {i.claimKey && i.owner?.state === "unassigned" && (
+                  <form action={claimAction.bind(null, i.claimKey)}>
+                    <button className={buttonClass("primary", "sm")}>Take it</button>
+                  </form>
+                )}
+                {i.claimKey && i.owner?.state === "handled" && (
+                  <form action={releaseAction.bind(null, i.claimKey)}>
+                    <button className={buttonClass("secondary", "sm")}>Release</button>
+                  </form>
+                )}
                 <Link
                   href={i.href}
                   className={buttonClass(
-                    i.owner?.state === "handled" || i.kind !== "alert" ? "secondary" : "primary",
+                    i.kind === "alert" && i.owner?.state !== "handled" ? "primary" : "secondary",
                     "sm",
                   )}
                 >

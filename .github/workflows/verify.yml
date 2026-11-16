@@ -51,6 +51,7 @@ jobs:
       - run: npm run test:patrol-integration
       - run: npm run test:setup-integration
       - run: npx tsx scripts/dev/security-hardening-integration.ts
+      - run: npm run test:handover
       - run: npm run build
       - name: Start isolated portal
         run: |

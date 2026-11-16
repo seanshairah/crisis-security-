@@ -49,6 +49,7 @@
     "apk:manifest": "node scripts/dev/apk-manifest.mjs",
     "test:app-release": "node scripts/dev/app-release-e2e.mjs",
     "test:patrol-integration": "tsx scripts/dev/crisis-patrol-integration.ts",
+    "test:handover": "tsx scripts/dev/handover-integration.ts",
     "test:setup-integration": "tsx scripts/dev/crisis-setup-integration.ts",
     "local:dev": "next dev -H 127.0.0.1 -p 3139",
     "local:start": "next start -H 127.0.0.1 -p 3139",
