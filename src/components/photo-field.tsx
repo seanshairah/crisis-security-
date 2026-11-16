@@ -12,7 +12,7 @@ export function PhotoField({ name, current, personName }: { name: string; curren
           <input type="file" name={`${name}File`} accept="image/png,image/jpeg,image/webp,image/svg+xml" className="block w-full text-[13px] text-ink-2 file:mr-3 file:h-8 file:rounded-[8px] file:border file:border-line file:bg-surface file:px-3 file:text-[12.5px] file:font-medium file:text-ink hover:file:bg-surface-2" />
           <Input name={name} defaultValue={current && !current.startsWith("data:") ? current : ""} placeholder="or paste an image link (https://…)" />
           <p className="text-[12px] text-ink-3">Square, under 400 KB. Without a photo the standard illustrated avatar is used.</p>
-          {current && <label className="inline-flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" name={`${name}Remove`} value="1" className="accent-[#4f9f3a]" /> Remove current photo</label>}
+          {current && <label className="inline-flex items-center gap-2 text-[12.5px] text-ink-2"><input type="checkbox" name={`${name}Remove`} value="1" className="accent-[var(--color-accent)]" /> Remove current photo</label>}
         </div>
       </div>
     </div>

@@ -343,7 +343,7 @@ export function SitePicker({ names, initial, mapsKey, height = 340, showSource =
           <p className="mt-2 text-ink-2">{candVerdict?.detail}{candMoved != null ? ` This would move the site centre ${candMoved} m from its current position.` : " The site has no coordinates yet."} The fence radius is {fenceR} m.</p>
           {candVerdict?.level === "poor" && !candidate.mock && <label className="mt-2 flex items-start gap-2 text-ink"><input type="checkbox" checked={acceptPoor} onChange={(e) => setAcceptPoor(e.target.checked)} className="mt-0.5" /><span>I understand the uncertainty (±{Math.round(candidate.accuracyM ?? 0)} m) is too large for a {fenceR} m fence and I will check the pin against the map before saving.</span></label>}
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={confirmCandidate} disabled={confirmBlocked} className="h-10 rounded-[8px] bg-accent px-4 text-[13px] font-semibold text-white hover:bg-accent-strong disabled:opacity-50" data-testid="confirm-candidate">{hasPin ? "Replace site centre with this position" : "Use this position as the site centre"}</button>
+            <button type="button" onClick={confirmCandidate} disabled={confirmBlocked} className="h-10 rounded-[8px] bg-accent-gradient px-4 text-[13px] font-semibold hover:bg-accent-strong disabled:opacity-50" data-testid="confirm-candidate">{hasPin ? "Replace site centre with this position" : "Use this position as the site centre"}</button>
             <button type="button" onClick={cancelCandidate} className={btn}>Discard</button>
             {candidate.source === "BROWSER" && <button type="button" onClick={() => locateMe()} className={btn}>Retry for better accuracy</button>}
           </div>

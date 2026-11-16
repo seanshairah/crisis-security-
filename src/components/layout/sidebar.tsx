@@ -7,13 +7,14 @@ import { useState } from "react";
 import { BrandMark, COMPANY } from "./brand";
 import { cn } from "@/lib/cn";
 import { Count } from "@/components/ui/status";
+import { Avatar } from "@/components/ui/avatar";
 
 type Item = { href: string; label: string; icon: IconName; count?: number; urgent?: boolean };
 type Group = { label: string; icon: IconName; items: Item[] };
 
 export type SidebarCounts = { attention: number; incidents: number; watched: number; alerts?: number };
 
-export function Sidebar({ counts, role, onClose, simulator = true }: { counts: SidebarCounts; role: string; onClose?: () => void; simulator?: boolean }) {
+export function Sidebar({ counts, role, user, onClose, simulator = true }: { counts: SidebarCounts; role: string; user?: { name: string; title: string | null; avatarUrl: string | null }; onClose?: () => void; simulator?: boolean }) {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -58,11 +59,11 @@ export function Sidebar({ counts, role, onClose, simulator = true }: { counts: S
   const isActive = (href: string) => (href === "/sms" || href === "/operations" ? path === href : path === href || path.startsWith(href + "/"));
 
   return (
-    <aside className={cn("sticky top-0 flex h-screen shrink-0 flex-col border-r border-line bg-surface transition-[width] duration-200", collapsed ? "w-[68px]" : "w-[264px] lg:w-[248px]")}>
+    <aside className={cn("sticky top-0 flex h-screen shrink-0 flex-col border-r border-line bg-surface/90 backdrop-blur transition-[width] duration-200", collapsed ? "w-[68px]" : "w-[264px] lg:w-[240px]")}>
       <div className={cn("flex h-16 items-center border-b border-line", collapsed ? "justify-center px-0" : "justify-between px-5")}>
         <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
           <BrandMark size={32} />
-          {!collapsed && <span className="min-w-0"><span className="block text-[14px] font-semibold leading-[1.15] line-clamp-2 tracking-[-0.01em] text-ink">{COMPANY.name}</span><span className="block text-[11px] leading-tight text-ink-3">{COMPANY.portal}</span></span>}
+          {!collapsed && <span className="min-w-0"><span className="block text-[15px] font-semibold leading-[1.15] line-clamp-2 text-ink">{COMPANY.name}</span><span className="block text-[11px] leading-tight text-ink-3">Control centre</span></span>}
         </Link>
         {!collapsed && (
           <>
@@ -78,7 +79,7 @@ export function Sidebar({ counts, role, onClose, simulator = true }: { counts: S
             <input name="q" placeholder="Search guards" className="h-9 w-full rounded-[var(--radius-control)] border border-line bg-surface px-3 text-sm placeholder:text-ink-3 focus:border-accent focus:outline-none" />
           </form>
         )}
-        {!showAll ? <ul className="space-y-1">{essentials.map(it => <li key={it.href}><Link href={it.href} title={it.label} className={cn('flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px]', isActive(it.href) ? 'bg-accent-soft font-medium text-ink' : 'text-ink-2 hover:bg-surface-2', collapsed && 'justify-center px-0')}><Icon name={it.icon} size={18} filled />{!collapsed && <><span className="flex-1">{it.label === 'Overview' ? 'Dashboard' : it.label === 'Locations' ? 'Sites' : it.label}</span>{it.count ? <Count value={it.count} urgent={it.urgent} /> : null}</>}</Link></li>)}</ul> : <>
+        {!showAll ? <ul className="space-y-1">{essentials.map(it => <li key={it.href}><Link href={it.href} title={it.label} className={cn('flex min-h-11 items-center gap-3 rounded-[12px] px-3 text-[14px]', isActive(it.href) ? 'bg-accent-soft font-medium text-ink' : 'text-ink-2 hover:bg-surface-2', collapsed && 'justify-center px-0')}><Icon name={it.icon} size={18} filled />{!collapsed && <><span className="flex-1">{it.label === 'Overview' ? 'Dashboard' : it.label === 'Locations' ? 'Sites' : it.label}</span>{it.count ? <Count value={it.count} urgent={it.urgent} /> : null}</>}</Link></li>)}</ul> : <>
         <Link href="/dashboard" className={cn("mb-1 flex h-11 items-center gap-2.5 rounded-[9px] px-2.5 text-[14px] font-medium sm:h-9", path === "/dashboard" ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink", collapsed && "justify-center px-0")} title="Home">
           <Icon name="home" size={18} className="shrink-0" filled />
           {!collapsed && "Home"}
@@ -122,16 +123,22 @@ export function Sidebar({ counts, role, onClose, simulator = true }: { counts: S
       <div className={cn("p-3", collapsed && "px-2")}>
         {collapsed ? (
           <div className="flex flex-col items-center gap-2">
-            {simulator && <Link href="/simulator" title="SMS simulator" className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-accent text-white"><Icon name="mobile" size={18} filled /></Link>}
+            {simulator && <Link href="/simulator" title="SMS simulator" className="flex h-9 w-9 items-center justify-center rounded-[9px] bg-accent-gradient"><Icon name="mobile" size={18} filled /></Link>}
             <button onClick={() => setCollapsed(false)} className="rounded-md p-1 text-ink-3 hover:bg-surface-2 hover:text-ink" aria-label="Expand sidebar"><Icon name="keyboard_double_arrow_right" size={16} filled /></button>
           </div>
         ) : simulator ? (
-          <div className="rounded-[14px] p-4 text-white" style={{ background: "linear-gradient(160deg, #46544b 0%, #29332e 100%)" }}>
+          <div className="rounded-[16px] border border-line bg-surface-2 p-4 text-ink">
             <p className="flex items-center gap-2 text-[14px] font-semibold leading-tight"><Icon name="mobile" size={16} filled /> Demo mode</p>
-            <p className="mt-1 text-[12px] leading-snug text-white/90">Simulate guard replies without sending real SMS.</p>
-            <Link href="/simulator" className="mt-3 flex h-8 items-center justify-center rounded-[8px] bg-white text-[13px] font-semibold text-accent-strong hover:bg-white/90">Open simulator</Link>
+            <p className="mt-1 text-[12px] leading-snug text-ink-2">Simulate guard replies without sending real SMS.</p>
+            <Link href="/simulator" className="mt-3 flex h-8 items-center justify-center rounded-full bg-accent-gradient text-[13px] font-semibold hover:brightness-110">Open simulator</Link>
           </div>
         ) : null}
+        {user && !collapsed && (
+          <div className="mt-3 flex items-center gap-3 rounded-[16px] bg-surface-2 p-3">
+            <Avatar src={user.avatarUrl} name={user.name} size={36} />
+            <div className="min-w-0 flex-1"><p className="truncate text-[13px] font-semibold text-ink">{user.name}</p><p className="truncate text-[11px] text-ink-3">{user.title ?? role.replace("_", " ").toLowerCase()}</p></div>
+          </div>
+        )}
       </div>
     </aside>
   );

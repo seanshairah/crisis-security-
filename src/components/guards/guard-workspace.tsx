@@ -183,7 +183,7 @@ export function GuardWorkspace({ initial, profile, canRequest, canEditSites, act
                 <Fact label="Emergency contact">{profile.emergencyContact ?? "—"}</Fact>
                 <Fact label="Address" className="col-span-2">{profile.address ?? "—"}</Fact>
               </div>
-              {profile.watchNote && <div className="rounded-[8px] border border-warn/40 bg-warn-soft px-2.5 py-1.5 text-[12.5px] text-[#8a5e05]"><span className="font-semibold">Watched</span> · {profile.watchNote}</div>}
+              {profile.watchNote && <div className="rounded-[8px] border border-warn/40 bg-warn-soft px-2.5 py-1.5 text-[12.5px] text-warn"><span className="font-semibold">Watched</span> · {profile.watchNote}</div>}
               {profile.notes && <p className="text-[12.5px] text-ink-2">{profile.notes}</p>}
             </div>
           </div>
@@ -248,7 +248,7 @@ function ActivityFeed({ guardId, initial, className }: { guardId: string; initia
   }, [query]);
   const loadMore = async () => { if (!nextBefore) return; setLoading(true); try { const r = await fetch(query({ before: nextBefore }), { cache: "no-store" }); const j = await r.json(); setItems((cur) => [...cur, ...j.items]); setNextBefore(j.nextBefore); } finally { setLoading(false); } };
   const toggleCat = (c: ActivityCategory) => setCats((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]));
-  const chip = (active: boolean) => cn("h-6 rounded-full border px-2 text-[11.5px] font-medium", active ? "border-ink bg-ink text-white" : "border-line bg-surface text-ink-2 hover:text-ink");
+  const chip = (active: boolean) => cn("h-6 rounded-full border px-2 text-[11.5px] font-medium", active ? "border-ink bg-ink text-ground" : "border-line bg-surface text-ink-2 hover:text-ink");
 
   return (
     <Panel title="Live operations" subtitle={`${items.length} event${items.length === 1 ? "" : "s"} shown`} className={className} scroll action={<select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="h-7 rounded-[8px] border border-line bg-surface px-1.5 text-[12px]" aria-label="Period"><option value="24h">24 h</option><option value="7d">7 days</option><option value="all">All</option></select>}>
@@ -265,7 +265,7 @@ function ActivityFeed({ guardId, initial, className }: { guardId: string; initia
               <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", { info: "bg-line-strong", success: "bg-ok", warning: "bg-warn", critical: "bg-critical" }[i.severity])} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2"><span className={cn("truncate text-[13px] font-medium", SEV_TONE[i.severity] === "critical" ? "text-critical" : "text-ink")}>{i.href ? <Link href={i.href} className="hover:underline">{i.title}</Link> : i.title}</span><span className="shrink-0 text-[11px] text-ink-3 tnum" title={fmtDT(i.at)} suppressHydrationWarning>{ago(i.at, now)}</span></div>
-                <div className="flex flex-wrap items-center gap-x-2 text-[11.5px] text-ink-3"><span className="uppercase tracking-[0.06em]">{CAT_LABEL[i.category]}</span>{i.late && <span className="rounded-[4px] bg-info-soft px-1 text-[10px] font-semibold uppercase text-[#3a50ad]">synced late</span>}{i.detail && <span className="truncate text-ink-2">{i.detail}</span>}</div>
+                <div className="flex flex-wrap items-center gap-x-2 text-[11.5px] text-ink-3"><span className="uppercase tracking-[0.06em]">{CAT_LABEL[i.category]}</span>{i.late && <span className="rounded-[4px] bg-info-soft px-1 text-[10px] font-semibold uppercase text-info">synced late</span>}{i.detail && <span className="truncate text-ink-2">{i.detail}</span>}</div>
               </div>
             </div>
           </li>

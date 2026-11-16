@@ -4,9 +4,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import type { TrendPoint } from "@/lib/services/dashboard";
 
 const SERIES = [
-  { key: "sent", name: "Messages sent", color: "#4d67d5" },
-  { key: "replies", name: "Replies received", color: "#c98a08" },
-  { key: "confirmations", name: "Confirmations", color: "#29a37e" },
+  { key: "sent", name: "Messages sent", color: "var(--color-info)" },
+  { key: "replies", name: "Replies received", color: "var(--color-warn)" },
+  { key: "confirmations", name: "Confirmations", color: "var(--color-ok)" },
 ] as const;
 
 function Tip({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; value: number; color: string }[]; label?: string }) {
@@ -29,13 +29,13 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
     <div className="h-[260px] w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 600, height: 260 }}>
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-          <CartesianGrid vertical={false} stroke="#e7e6e5" strokeDasharray="3 4" />
-          <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#8f8e8c" }} interval="preserveStartEnd" />
-          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#8f8e8c" }} allowDecimals={false} width={44} />
-          <Tooltip content={<Tip />} cursor={{ stroke: "#161616", strokeWidth: 1 }} />
-          <Legend verticalAlign="top" align="right" height={28} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "#616060" }} />
+          <CartesianGrid vertical={false} stroke="var(--color-line)" strokeDasharray="3 4" />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-ink-3)" }} interval="preserveStartEnd" />
+          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-ink-3)" }} allowDecimals={false} width={44} />
+          <Tooltip content={<Tip />} cursor={{ stroke: "var(--color-ink-3)", strokeWidth: 1 }} />
+          <Legend verticalAlign="top" align="right" height={28} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--color-ink-2)" }} />
           {SERIES.map((s) => (
-            <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} dot={{ r: 3, strokeWidth: 2, stroke: "#fff", fill: s.color }} activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} isAnimationActive={false} />
+            <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color} strokeWidth={2} dot={{ r: 3, strokeWidth: 2, stroke: "var(--color-surface)", fill: s.color }} activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} isAnimationActive={false} />
           ))}
         </LineChart>
       </ResponsiveContainer>

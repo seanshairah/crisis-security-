@@ -9,7 +9,7 @@ export async function EmergencyBanner() {
   return (
     <div className="mb-4 space-y-2">
       {open.map((i) => (
-        <Link key={i.id} href={`/incidents/${i.id}`} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-critical bg-critical px-4 py-3 text-white hover:bg-[#d93a21]">
+        <Link key={i.id} href={`/incidents/${i.id}`} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-critical-solid bg-critical-solid px-4 py-3 text-white hover:brightness-110">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20"><Icon name="e911_emergency" size={18} filled /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[14px] font-semibold uppercase tracking-[0.02em]">Emergency alert received from {i.guard.firstName} {i.guard.lastName} — {i.location.name} — {fmtTime(i.occurredAt)}</p>

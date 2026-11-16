@@ -25,10 +25,10 @@ export function SimulatorInline({ guardId, guardName, pending }: { guardId: stri
     <div>
       <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-3"><Icon name="mobile" size={14} filled /> Demo · reply as {guardName}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {opts.map((o) => <button key={o.label} disabled={busy} onClick={() => send(o.body)} className={cn("h-8 rounded-[8px] border px-3 text-[12.5px] font-medium disabled:opacity-50", o.tone === "critical" ? "border-critical/40 bg-critical-soft text-[#b3301a]" : "border-line bg-surface text-ink hover:bg-surface-2")}>{o.label}</button>)}
+        {opts.map((o) => <button key={o.label} disabled={busy} onClick={() => send(o.body)} className={cn("h-8 rounded-[8px] border px-3 text-[12.5px] font-medium disabled:opacity-50", o.tone === "critical" ? "border-critical/40 bg-critical-soft text-critical" : "border-line bg-surface text-ink hover:bg-surface-2")}>{o.label}</button>)}
         <form onSubmit={(e) => { e.preventDefault(); if (custom.trim()) send(custom); }} className="flex gap-1">
           <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Free text reply" className="h-8 w-48 rounded-[8px] border border-line px-2.5 text-[13px] placeholder:text-ink-3 focus:border-accent focus:outline-none" />
-          <button disabled={busy || !custom.trim()} className="h-8 rounded-[8px] bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-40">Send</button>
+          <button disabled={busy || !custom.trim()} className="h-8 rounded-[8px] bg-ink px-3 text-[12.5px] font-medium text-ground disabled:opacity-40">Send</button>
         </form>
       </div>
       {last && <p className="mt-2 text-[12.5px] text-ink-2">{last}</p>}

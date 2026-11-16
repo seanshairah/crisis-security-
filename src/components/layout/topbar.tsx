@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
 
@@ -31,6 +31,17 @@ export function Topbar({ user, unread, systemStatus, onMenu }: { user: { name: s
   const router = useRouter();
   const [pending, start] = useTransition();
   const [menu, setMenu] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  useEffect(() => {
+    const saved = document.documentElement.getAttribute("data-theme");
+    setTheme(saved === "light" || saved === "dark" ? saved : window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  }, []);
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("crisis-theme", next); } catch { /* private mode: the choice just lasts for this visit */ }
+  };
   const segs = path.split("/").filter(Boolean);
   const section = SECTION[segs[0]] ?? "Crisis";
   const crumbs = segs.map((s, i) => ({ label: label(s), href: "/" + segs.slice(0, i + 1).join("/") }));
@@ -55,12 +66,12 @@ export function Topbar({ user, unread, systemStatus, onMenu }: { user: { name: s
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <form action="/guards" className="relative hidden md:block">
           <Icon name="search" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" filled />
-          <input name="q" placeholder="Search guards" className="h-9 w-56 rounded-[var(--radius-control)] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
+          <input name="q" placeholder="Search guards" className="h-9 w-56 rounded-full border border-line bg-surface-2 pl-9 pr-3 text-sm placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
         </form>
         <button onClick={() => start(() => router.refresh())} className={cn("hidden h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink sm:flex", pending && "animate-spin")} aria-label="Refresh"><Icon name="refresh" size={16} filled /></button>
         <Link href="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink" aria-label="Notifications">
           <Icon name="notifications" size={16} filled />
-          {unread > 0 && <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-semibold text-white tnum">{unread > 99 ? "99+" : unread}</span>}
+          {unread > 0 && <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical-solid px-1 text-[10px] font-semibold text-white tnum">{unread > 99 ? "99+" : unread}</span>}
         </Link>
         <div className="relative">
           <button onClick={() => setMenu((m) => !m)} className="flex items-center rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent" aria-label="Account menu">
@@ -73,6 +84,7 @@ export function Topbar({ user, unread, systemStatus, onMenu }: { user: { name: s
                 <p className="text-[12px] text-ink-2">{user.title}</p>
               </div>
               <div className="my-1 border-t border-line" />
+              <button type="button" onClick={toggleTheme} className="flex h-8 w-full items-center gap-2 rounded-[8px] px-3 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink"><Icon name={theme === "light" ? "dark_mode" : "light_mode"} size={15} filled /> {theme === "light" ? "Dark theme" : "Light theme"}</button>
               <form action="/api/auth/logout" method="post">
                 <button className="flex h-8 w-full items-center gap-2 rounded-[8px] px-3 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink"><Icon name="logout" size={15} filled /> Sign out</button>
               </form>

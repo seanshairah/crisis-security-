@@ -1,23 +1,29 @@
 <resources>
-    <color name="ink">#EDF0EE</color>
-    <color name="ink2">#B6BFBE</color>
-    <color name="ink3">#87938F</color>
-    <color name="surface">#1B2023</color>
-    <color name="surface2">#111416</color>
-    <color name="surface3">#242A2E</color>
-    <color name="line">#333B40</color>
-    <color name="line_strong">#4C585E</color>
-    <color name="accent">#677C70</color>
-    <color name="accent_strong">#586D61</color>
-    <color name="accent_soft">#28362F</color>
-    <color name="critical">#D32F2F</color>
-    <color name="critical_strong">#B71C1C</color>
-    <color name="critical_soft">#3D2729</color>
-    <color name="warn">#F2A516</color>
-    <color name="warn_strong">#B26A00</color>
-    <color name="warn_soft">#3B3123</color>
-    <color name="info">#2F5BB7</color>
-    <color name="info_soft">#273442</color>
-    <color name="ok">#677C70</color>
+    <!-- Light theme (default). The dark theme overrides every colour in values-night/colors.xml. Roles, not hues:
+         accent is the brand orange, ok is green, warn amber, critical red. Green is never the accent. -->
+    <color name="ink">#1C1915</color>
+    <color name="ink2">#6B6358</color>
+    <color name="ink3">#8A8173</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface2">#F6F2EC</color>
+    <color name="surface3">#ECE6DC</color>
+    <color name="line">#E3DCCF</color>
+    <color name="line_strong">#CFC6B6</color>
+    <color name="accent">#C97221</color>
+    <color name="accent_strong">#A85A12</color>
+    <color name="accent_soft">#FBEFE0</color>
+    <color name="on_accent">#1A1008</color>
+    <color name="critical">#C0392B</color>
+    <color name="critical_strong">#9C1F12</color>
+    <color name="critical_soft">#FBE9E5</color>
+    <color name="critical_solid">#C0392B</color>
+    <color name="warn">#D99A1E</color>
+    <color name="warn_strong">#A8720F</color>
+    <color name="warn_soft">#FBF0D8</color>
+    <color name="info">#3A50AD</color>
+    <color name="info_soft">#E8ECF8</color>
+    <color name="ok">#3D8F3A</color>
+    <color name="ok_soft">#E6F1E1</color>
+    <color name="white">#FFFFFF</color>
     <color name="shadow">#1A000000</color>
 </resources>

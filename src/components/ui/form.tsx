@@ -41,7 +41,7 @@ export function Field({ label, hint, children, className, required }: { label: s
 }
 export function FormError({ message }: { message?: string | null }) {
   if (!message) return null;
-  return <p className="rounded-[var(--radius-control)] border border-critical/30 bg-critical-soft px-3 py-2 text-[13px] text-[#b3301a]">{message}</p>;
+  return <p className="rounded-[var(--radius-control)] border border-critical/30 bg-critical-soft px-3 py-2 text-[13px] text-critical">{message}</p>;
 }
 export function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (

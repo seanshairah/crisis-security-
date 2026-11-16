@@ -21,11 +21,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
           <form action={login} className="space-y-4 rounded-[var(--radius-card)] border border-line bg-surface p-5 sm:p-6">
             <div>
-              <h1 className="text-[18px] font-semibold text-ink">Sign in</h1>
+              <h1 className="font-display text-[34px] leading-none text-ink">Sign in</h1>
               <p className="mt-1 text-[13px] text-ink-2">For administrators and supervisors. Guards report by SMS and do not sign in.</p>
             </div>
             <FormError message={error === "1" ? "Email or password is incorrect." : error === "inactive" ? "This account has been deactivated." : error === "throttled" ? "Too many failed sign-ins. Wait 15 minutes and try again." : null} />
-            <Field label="Email"><Input name="email" type="email" required autoComplete="email" defaultValue="admin@crisissecurity.local" /></Field>
+            <Field label="Email"><Input name="email" type="email" required autoComplete="email" /></Field>
             <Field label="Password"><Input name="password" type="password" required autoComplete="current-password" /></Field>
             <Button type="submit" variant="primary" className="w-full">Sign in</Button>
           </form>
@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <img src="/brand/login.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#101010]/85 via-[#101010]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
-          <p className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Who is on post, where, and are they safe.</p>
+          <p className="font-display text-[40px] leading-[1.05]">Who is on post, where, and are they safe.</p>
           <p className="mt-3 max-w-md text-[14px] leading-relaxed text-white/80">{COMPANY.tagline}. Every arrival, welfare check, handover and incident is confirmed by the guard&rsquo;s own phone and recorded here.</p>
         </div>
       </div>

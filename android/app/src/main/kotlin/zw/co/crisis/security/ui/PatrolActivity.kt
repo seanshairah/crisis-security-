@@ -2,7 +2,6 @@ package zw.co.crisis.security.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,6 +17,8 @@ import org.json.JSONObject
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import androidx.core.content.res.ResourcesCompat
+import zw.co.crisis.security.R
 import zw.co.crisis.security.patrol.CheckpointCode
 import zw.co.crisis.security.patrol.CoordinateCheckpoint
 import zw.co.crisis.security.patrol.PatrolMessages
@@ -54,7 +55,7 @@ class PatrolActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this); store = PatrolStore.get(this)
-        val scroll = ScrollView(this).apply { setBackgroundResource(zw.co.crisis.security.R.drawable.bg_field_camo) }
+        val scroll = ScrollView(this).apply { setBackgroundColor(getColor(R.color.surface2)) }
         val padding = (16 * resources.displayMetrics.density).toInt()
         column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(padding,padding,padding,padding) }
         scroll.addView(column); setContentView(scroll)
@@ -68,9 +69,10 @@ class PatrolActivity : AppCompatActivity() {
     private fun localTime(value: String): String = android.text.format.DateFormat.getTimeFormat(this).format(java.util.Date(PatrolStore.time(value)))
     private fun api() = ApiClient(prefs.serverUrl, prefs.deviceToken)
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-    private val ink = Color.rgb(237,240,238)
-    private val muted = Color.rgb(169,180,174)
-    private fun panel(color: Int = Color.rgb(29,35,32)) = GradientDrawable().apply { setColor(color); cornerRadius = dp(18).toFloat(); setStroke(dp(1),Color.rgb(57,67,60)) }
+    // Colours come from the theme resources, so this screen follows the light/dark setting like every other.
+    private val ink get() = getColor(R.color.ink)
+    private val muted get() = getColor(R.color.ink2)
+    private fun panel(color: Int = getColor(R.color.surface)) = GradientDrawable().apply { setColor(color); cornerRadius = dp(24).toFloat(); setStroke(dp(1),getColor(R.color.line)) }
     private fun label(text: String, size: Float = 15f) = TextView(this).apply {
         this.text = text; textSize = size; setTextColor(if(size <= 12f) muted else ink)
         setPadding(dp(4),dp(9),dp(4),dp(9)); if(size >= 19f) setTypeface(typeface,Typeface.BOLD)
@@ -78,8 +80,9 @@ class PatrolActivity : AppCompatActivity() {
     }
     private fun button(text: String, action: () -> Unit) {
         column.addView(com.google.android.material.button.MaterialButton(this).apply {
-            this.text = text; isAllCaps = false; textSize = 16f; minHeight = dp(56); cornerRadius = dp(16)
-            setTextColor(ink); backgroundTintList = android.content.res.ColorStateList.valueOf(if(text.startsWith("Scan") || text.startsWith("Sign in")) Color.rgb(67,86,72) else if(text.startsWith("Emergency")) Color.rgb(123,45,43) else Color.rgb(40,48,43))
+            this.text = text; isAllCaps = false; textSize = 16f; minHeight = dp(56); cornerRadius = dp(28)
+            val primary = text.startsWith("Scan") || text.startsWith("Sign in"); val emergency = text.startsWith("Emergency")
+            setTextColor(getColor(if (primary) R.color.on_accent else if (emergency) R.color.white else R.color.ink)); backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(if (primary) R.color.accent else if (emergency) R.color.critical_solid else R.color.surface3))
             layoutParams = LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(6); bottomMargin=dp(6) }
             isEnabled = !busy; setOnClickListener { if(!busy) action() }
         })
@@ -88,11 +91,11 @@ class PatrolActivity : AppCompatActivity() {
         feedbackMessage = message; feedbackError = error
         column.removeAllViews()
         label("◈  CRISIS SECURITY", 12f)
-        label("Field operations", 28f)
+        label("Field operations", 36f).apply { typeface = ResourcesCompat.getFont(this@PatrolActivity, R.font.display) }
         label("Scan the checkpoint when this phone prompts you.", 12f)
         status = label(message).apply {
             accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE
-            if(error) { background=panel(Color.rgb(68,36,35)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
+            if(error) { background=panel(getColor(R.color.critical_soft)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
         }
         val recent = store.recentRows()
         recent.firstOrNull()?.let { row ->
@@ -101,7 +104,7 @@ class PatrolActivity : AppCompatActivity() {
             val result = PatrolMessages.result(row.state,row.decision,row.localDecision)
             label("LATEST SCAN · ${localTime(row.capturedAt)}",12f)
             label((if(accepted) "✓  " else if(row.state == "QUEUED" && !localFailed) "◷  " else "!  ") + row.checkpointName + "\n" + result, 19f).apply {
-                background = panel(if(accepted) Color.rgb(27,62,43) else if(row.state=="QUEUED" && !localFailed) Color.rgb(64,53,28) else Color.rgb(68,36,35))
+                background = panel(getColor(if(accepted) R.color.ok_soft else if(row.state=="QUEUED" && !localFailed) R.color.warn_soft else R.color.critical_soft))
                 setPadding(dp(16),dp(16),dp(16),dp(16))
             }
         }
@@ -109,8 +112,8 @@ class PatrolActivity : AppCompatActivity() {
         val s = store.config()?.optJSONObject("session")
         if (s == null || System.currentTimeMillis() >= PatrolStore.time(s.getString("expiresAt"))) {
             label("Enter your guard number and PIN to start your shift. You need a connection to sign in.")
-            val guard = EditText(this).apply { hint = "Guard number"; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY); column.addView(this) }
-            val pin = EditText(this).apply { hint = "6–12 digit PIN"; inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY); column.addView(this) }
+            val guard = EditText(this).apply { hint = "Guard number"; setTextColor(ink); setHintTextColor(getColor(R.color.ink3)); column.addView(this) }
+            val pin = EditText(this).apply { hint = "6–12 digit PIN"; inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; setTextColor(ink); setHintTextColor(getColor(R.color.ink3)); column.addView(this) }
             button("Sign in for shift") {
                 val no = guard.text.toString(); val code = pin.text.toString(); pin.text.clear()
                 runAction { val cfg = withContext(Dispatchers.IO) { api().patrolLogin(no, code) }; store.saveConfig(cfg); prefs.guardName = cfg.optJSONObject("session")?.optString("guardName") ?: ""; prefs.lastFixAt = 0L; withContext(Dispatchers.IO) { zw.co.crisis.security.service.SyncEngine(this@PatrolActivity).refreshConfig() }; "Signed in" }
@@ -134,7 +137,7 @@ class PatrolActivity : AppCompatActivity() {
                     }
                 }
             }
-            if (open == 0) label("No checkpoint is due right now. Keep this phone with you — it will notify you when the next checkpoint is due.")
+            if (open == 0) label("Next check: at a random time. We will alert you.")
             button("Sync evidence now") { runAction { withContext(Dispatchers.IO) { PatrolRuntime(this@PatrolActivity).sync(api()) }; "Connected. Scan results updated." } }
             button("End session / hand over") { runAction { withContext(Dispatchers.IO) { api().patrolLogout(s.getString("id")) }; store.clearSession(); prefs.guardName = ""; prefs.lastFixAt = 0L; withContext(Dispatchers.IO) { zw.co.crisis.security.service.SyncEngine(this@PatrolActivity).refreshConfig() }; "Session ended. Next guard can sign in." } }
         }

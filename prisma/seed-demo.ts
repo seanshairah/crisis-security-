@@ -1,4 +1,4 @@
-/* DEMO data for Omega Protection Services: fictional clients, sites, guards and a week of history.
+/* DEMO data for Crisis Security: fictional clients, sites, guards and a week of history.
  * Run: npm run db:seed:demo   (wipes everything first; never run against a live database) */
 process.env.TZ = process.env.TIMEZONE || "Africa/Harare";
 import { config as loadEnv } from "dotenv";
@@ -105,7 +105,7 @@ async function main() {
     const guard = await db.guard.findUniqueOrThrow({ where: { id: guardId } });
     const name = `${guard.firstName} ${guard.lastName}`;
     const vars = { guard_name: name, location: loc.name, start_time: fmt(startAt), end_time: fmt(endAt), supervisor_name: loc.supervisor?.name ?? "your supervisor", company: "Omega Protection Services" };
-    const sig = " - Omega Protection Services";
+    const sig = " - Crisis Security";
     const mid = addMinutes(startAt, hours * 30);
     const ev: { type: CheckInType; at: Date; note?: string; source?: "SMS" | "SYSTEM"; sms?: { dir: "OUTBOUND" | "INBOUND"; body: string; type: SmsType; interpretedAs?: string } }[] = [];
     let status: ShiftStatus = "SCHEDULED";

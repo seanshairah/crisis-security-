@@ -44,7 +44,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
           <Select name="locationId" defaultValue={sp.locationId ?? ""} className="w-full sm:w-48"><option value="">All locations</option>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
           {view === "all" && <Select name="status" defaultValue={sp.status ?? ""} className="w-full sm:w-40"><option value="">Any status</option>{["RINGING", "ANSWERED", "ENDED", "MISSED", "FAILED", "UNKNOWN"].map((s) => <option key={s} value={s}>{s.toLowerCase()}</option>)}</Select>}
           <Select name="direction" defaultValue={sp.direction ?? ""} className="w-full sm:w-36"><option value="">Any direction</option><option value="INCOMING">Incoming</option><option value="OUTGOING">Outgoing</option></Select>
-          <button className="h-9 rounded-[8px] bg-accent px-3.5 text-[13px] font-medium text-white">Filter</button>
+          <button className="h-9 rounded-[8px] bg-accent-gradient px-3.5 text-[13px] font-medium">Filter</button>
         </form>
         <CallList calls={calls} emptyTitle="No calls match" />
       </Card>

@@ -53,7 +53,7 @@ export default async function CallReportPage({ searchParams }: { searchParams: P
           <Select name="gatewayId" defaultValue={sp.gatewayId ?? ""} className="w-full sm:w-44"><option value="">All gateways</option>{gateways.map((g) => <option key={g.id} value={g.id}>{g.deviceName}</option>)}</Select>
           <Select name="status" defaultValue={sp.status ?? ""} className="w-full sm:w-36"><option value="">Any status</option>{["ANSWERED", "ENDED", "MISSED", "FAILED", "UNKNOWN"].map((s) => <option key={s} value={s}>{s.toLowerCase()}</option>)}</Select>
           <Select name="direction" defaultValue={sp.direction ?? ""} className="w-full sm:w-36"><option value="">Any direction</option><option value="INCOMING">Incoming</option><option value="OUTGOING">Outgoing</option></Select>
-          <button className="h-9 rounded-[8px] bg-accent px-3.5 text-[13px] font-medium text-white">Apply</button>
+          <button className="h-9 rounded-[8px] bg-accent-gradient px-3.5 text-[13px] font-medium">Apply</button>
         </form>
         <CallList calls={rows} emptyTitle="No calls in this range" />
       </Card>

@@ -11,7 +11,7 @@ import { formatPhone } from "@/lib/phone";
 
 export function CallerName({ c }: { c: CallWithRelations }) {
   if (c.guard) return <Link href={`/guards/${c.guard.id}`} className="font-medium text-ink hover:underline">{c.guard.firstName} {c.guard.lastName}</Link>;
-  return <span className="font-medium text-[#8a5e05]">Unknown caller</span>;
+  return <span className="font-medium text-warn">Unknown caller</span>;
 }
 
 export function CallStatusBadge({ c }: { c: CallWithRelations }) {

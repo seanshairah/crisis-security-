@@ -5,8 +5,8 @@ export function PageHeader({ title, description, actions, className }: { title: 
   return (
     <div className={cn("mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-5", className)}>
       <div>
-        <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-ink">{title}</h1>
-        {description && <p className="mt-1 text-[13px] text-ink-2">{description}</p>}
+        <h1 className="font-display text-[34px] leading-[1.05] text-ink sm:text-[40px]">{title}</h1>
+        {description && <p className="mt-2 text-[14px] text-ink-2">{description}</p>}
       </div>
       {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -29,9 +29,9 @@ export function Segments({ items, className }: { items: { href: string; label: s
   return (
     // On a phone these wrap. Scrolling them sideways clipped the last tab mid-word with no
     // affordance, which reads as a broken page rather than as "there is more over here".
-    <div className={cn("flex max-w-full flex-wrap items-center gap-0.5 rounded-[10px] border border-line bg-surface-2 p-0.5 sm:flex-nowrap sm:overflow-x-auto sm:scroll-thin sm:inline-flex", className)}>
+    <div className={cn("flex max-w-full flex-wrap items-center gap-0.5 rounded-full border border-line bg-surface-2 p-0.5 sm:flex-nowrap sm:overflow-x-auto sm:scroll-thin sm:inline-flex", className)}>
       {items.map((it) => (
-        <a key={it.href} href={it.href} className={cn("inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-[8px] px-2.5 text-[13px] font-medium transition-colors", it.active ? "bg-surface text-ink shadow-[0_1px_2px_rgb(22_22_22/0.08)] border border-line" : "text-ink-2 hover:text-ink")}>
+        <a key={it.href} href={it.href} className={cn("inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors", it.active ? "bg-surface text-ink shadow-[var(--shadow-rest)] border border-line" : "text-ink-2 hover:text-ink")}>
           {it.tone && <span className={cn("h-1.5 w-1.5 rounded-full", dot[it.tone])} />}
           {it.label}
           {typeof it.count === "number" && <span className="text-[12px] text-ink-3 tnum">{it.count}</span>}

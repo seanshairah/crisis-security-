@@ -53,8 +53,8 @@
     "local:dev": "next dev -H 127.0.0.1 -p 3139",
     "local:start": "next start -H 127.0.0.1 -p 3139",
     "local:usb": "node scripts/dev/usb-test.mjs",
-    "format:security": "prettier --write \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
-    "format:check": "prettier --check \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
+    "format:security": "prettier --write \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\" \"src/lib/auth/**/*.ts\"",
+    "format:check": "prettier --check \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\" \"src/lib/auth/**/*.ts\"",
     "docs:api": "tsx scripts/dev/generate-patrol-api-docs.ts",
     "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check"
   },
@@ -62,6 +62,8 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@fontsource/figtree": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@neondatabase/serverless": "^1.2.0",
     "@prisma/adapter-neon": "^6.19.3",
     "@prisma/client": "^6.19.3",

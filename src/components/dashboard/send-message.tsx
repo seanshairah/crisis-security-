@@ -33,7 +33,7 @@ export function SendMessage({ guards }: { guards: { id: string; name: string; st
           </Select>
           <div className="flex shrink-0 items-center gap-2">
             <span className="text-[11px] text-ink-3 tnum">{body.length}/320</span>
-            <button disabled={!body.trim() || !guardId || pending} onClick={() => start(async () => { const r = await sendManualSms({ guardId, body }); setResult(r.ok ? "Sent." : r.error ?? "Failed."); if (r.ok) setBody(""); })} className={cn("flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent text-white hover:bg-accent-strong disabled:opacity-40")} aria-label="Send"><Icon name="send" size={15} filled /></button>
+            <button disabled={!body.trim() || !guardId || pending} onClick={() => start(async () => { const r = await sendManualSms({ guardId, body }); setResult(r.ok ? "Sent." : r.error ?? "Failed."); if (r.ok) setBody(""); })} className={cn("flex h-8 w-8 items-center justify-center rounded-[8px] bg-accent-gradient hover:bg-accent-strong disabled:opacity-40")} aria-label="Send"><Icon name="send" size={15} filled /></button>
           </div>
         </div>
       </div>

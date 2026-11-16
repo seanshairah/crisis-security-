@@ -144,7 +144,7 @@ function CallPanel({ guardId, guardName, shiftId, incidentId, onClose }: { guard
             </div>
           )}
 
-          {error && <p role="alert" className="rounded-[10px] bg-critical-soft px-3 py-2.5 text-[13px] text-[#b3301a]">{error}</p>}
+          {error && <p role="alert" className="rounded-[10px] bg-critical-soft px-3 py-2.5 text-[13px] text-critical">{error}</p>}
         </div>
       </div>
     </div>

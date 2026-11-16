@@ -212,7 +212,7 @@ function Composer({ target, onClose }: { target: Target; onClose: () => void }) 
             </div>
           )}
 
-          {error && <p role="alert" className="rounded-[10px] bg-critical-soft px-3 py-2.5 text-[13px] text-[#b3301a]">{error}</p>}
+          {error && <p role="alert" className="rounded-[10px] bg-critical-soft px-3 py-2.5 text-[13px] text-critical">{error}</p>}
         </div>
       </div>
     </div>
@@ -288,7 +288,7 @@ function NotificationRow({ n, role, showSite }: { n: NotificationView; role: str
           ) : (
             <p className="whitespace-pre-wrap rounded-[10px] bg-surface-2 px-3 py-2 text-[13px] text-ink">{n.message}</p>
           )}
-          {n.failureReason && <p className="text-[12.5px] text-[#b3301a]">Not delivered: {n.failureReason}</p>}
+          {n.failureReason && <p className="text-[12.5px] text-critical">Not delivered: {n.failureReason}</p>}
           <p className="text-[12px] text-ink-3">
             {n.incident ? <>Incident <a className="text-accent hover:underline" href={`/incidents/${n.incident.id}`}>{n.incident.incidentNo}</a> · </> : null}
             {n.shiftId ? <><a className="text-accent hover:underline" href={`/shifts/${n.shiftId}`}>Shift</a> · </> : null}
@@ -301,7 +301,7 @@ function NotificationRow({ n, role, showSite }: { n: NotificationView; role: str
               <Button variant="primary" size="sm" onClick={() => act("approve")} disabled={busy || text.trim().length < 10}><Icon name="send" size={15} /> {busy ? "Sending…" : "Approve and send"}</Button>
             </div>
           )}
-          {error && <p role="alert" className="text-[12.5px] text-[#b3301a]">{error}</p>}
+          {error && <p role="alert" className="text-[12.5px] text-critical">{error}</p>}
         </div>
       )}
     </li>

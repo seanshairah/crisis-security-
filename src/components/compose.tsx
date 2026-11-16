@@ -74,7 +74,7 @@ export function Compose({ guards, locations, channels, initialGuardId }: Props) 
                 {filtered.map((g) => (
                   <li key={g.id}>
                     <label className={cn("flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-surface-2", selected.has(g.id) && "bg-accent-soft/50")}>
-                      <input type="checkbox" className="accent-[#4f9f3a]" checked={selected.has(g.id)} onChange={(e) => setSelected((s) => { const n = new Set(s); if (e.target.checked) n.add(g.id); else n.delete(g.id); return n; })} />
+                      <input type="checkbox" className="accent-[var(--color-accent)]" checked={selected.has(g.id)} onChange={(e) => setSelected((s) => { const n = new Set(s); if (e.target.checked) n.add(g.id); else n.delete(g.id); return n; })} />
                       <Avatar src={g.photoUrl} name={g.name} size={28} />
                       <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink">{g.name}{g.watched ? <span className="ml-1.5 text-[10px] uppercase tracking-[0.06em] text-warn">watched</span> : null}</span><span className="block truncate text-[12px] text-ink-3">{g.location ? `${g.location} · ${g.status?.toLowerCase().replace("_", " ")}` : channel === "EMAIL" ? g.email ?? "no email" : g.phone}</span></span>
                     </label>
@@ -95,7 +95,7 @@ export function Compose({ guards, locations, channels, initialGuardId }: Props) 
             </div>
           } />
           <CardBody className="space-y-3">
-            {!ch.ready && <p className="rounded-[10px] bg-warn-soft px-3 py-2 text-[13px] text-[#8a5e05]">{ch.note}</p>}
+            {!ch.ready && <p className="rounded-[10px] bg-warn-soft px-3 py-2 text-[13px] text-warn">{ch.note}</p>}
             {channel === "EMAIL" && <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />}
             <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={channel === "EMAIL" ? 10 : 6} maxLength={channel === "SMS" ? 480 : 4000} placeholder={channel === "SMS" ? "Keep it short. Guards reply with the keywords you give them." : "Type your message"} className="w-full resize-y rounded-[10px] border border-line px-3.5 py-3 text-[14px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
             <div className="flex flex-wrap items-center justify-between gap-2">

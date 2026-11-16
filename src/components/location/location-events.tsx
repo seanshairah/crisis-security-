@@ -18,9 +18,9 @@ export const EVENT_LABEL: Record<LocationEvent["eventType"], { label: string; to
 };
 
 export function SyncBadge({ s }: { s: LocationEvent["syncStatus"] }) {
-  if (s === "LIVE") return <span className="rounded-[4px] bg-ok-soft px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#1e7a5e]">live</span>;
+  if (s === "LIVE") return <span className="rounded-[4px] bg-ok-soft px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ok">live</span>;
   if (s === "SYNCED") return <span className="rounded-[4px] bg-surface-2 px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-2">synced</span>;
-  return <span className="rounded-[4px] bg-info-soft px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#3a50ad]">synced late</span>;
+  return <span className="rounded-[4px] bg-info-soft px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-info">synced late</span>;
 }
 
 export function StateBadge({ s }: { s: LocationEvent["locationState"] }) {

@@ -9,7 +9,8 @@ import { clientIp, rateLimit } from "@/lib/gateway/auth";
  */
 export async function POST(req: Request) {
   const ip = clientIp(req);
-  const rl = await rateLimit(`activate:${ip ?? "anon"}`, 10, 60_000);
+  // Unknown source (TRUST_PROXY_HOPS unset): one shared bucket, so keep it roomy. The per-code budget below is the real guard.
+  const rl = ip ? await rateLimit(`activate:${ip}`, 10, 60_000) : await rateLimit("activate:unknown-source", 120, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Too many attempts. Try again shortly." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const code = typeof b.activationCode === "string" ? b.activationCode : typeof b.code === "string" ? b.code : "";

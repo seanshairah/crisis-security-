@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkEnv, simulatorEnabled } from "../src/lib/env-check";
 
-const base = { DATABASE_URL: "postgresql://x", AUTH_SECRET: "a".repeat(40), CRON_SECRET: "s1".repeat(20), AUTOMATION_SECRET: "s2".repeat(20), SMS_PROVIDER: "sendai", SMS_WEBHOOK_SECRET: "whsec_real" };
+const base = { DATABASE_URL: "postgresql://x", AUTH_SECRET: "a".repeat(40), CRON_SECRET: "s1".repeat(20), AUTOMATION_SECRET: "s2".repeat(20), SMS_PROVIDER: "sendai", SMS_WEBHOOK_SECRET: "whsec_real", TRUST_PROXY_HOPS: "1" };
 
 test("production refuses a missing or default AUTH_SECRET; development only warns", () => {
   assert.equal(checkEnv({ ...base, NODE_ENV: "production" }).length, 0);
@@ -25,4 +25,13 @@ test("simulator: on in development, off in production unless SMS is simulated or
   assert.equal(simulatorEnabled({ NODE_ENV: "production", SMS_PROVIDER: "simulated" }), true);
   assert.equal(simulatorEnabled({ NODE_ENV: "production", SMS_PROVIDER: "sendai", SIMULATOR_ENABLED: "true" }), true);
   assert.equal(simulatorEnabled({ NODE_ENV: "development", SIMULATOR_ENABLED: "false" }), false);
+});
+
+test("production warns when client addresses cannot be trusted (TRUST_PROXY_HOPS unset or 0)", () => {
+  for (const hops of [undefined, "0", "abc"]) {
+    const issues = checkEnv({ ...base, NODE_ENV: "production", TRUST_PROXY_HOPS: hops });
+    assert.equal(issues.find((i) => i.key === "TRUST_PROXY_HOPS")?.level, "warn");
+  }
+  assert.equal(checkEnv({ ...base, NODE_ENV: "production", TRUST_PROXY_HOPS: "2" }).length, 0);
+  assert.equal(checkEnv({ ...base, NODE_ENV: "development", TRUST_PROXY_HOPS: undefined }).some((i) => i.key === "TRUST_PROXY_HOPS"), false);
 });

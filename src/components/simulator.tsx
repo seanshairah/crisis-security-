@@ -41,14 +41,14 @@ export function Simulator({ shifts }: { shifts: Shift[] }) {
                 <div className="h-72 space-y-2 overflow-y-auto scroll-thin px-1">
                   {shift.messages.length === 0 && <p className="pt-10 text-center text-[12px] text-ink-3">No messages yet. Run the engine to send the arrival check.</p>}
                   {shift.messages.map((m) => (
-                    <div key={m.id} className={m.direction === "INBOUND" ? "flex justify-end" : "flex"}><div className={cn("max-w-[85%] rounded-[14px] px-3 py-2 text-[12.5px] leading-snug", m.direction === "INBOUND" ? "bg-accent text-white" : "bg-white text-ink shadow-[0_1px_1px_rgb(0_0_0/0.06)]")}>{m.body}<div className={cn("mt-1 text-[10px]", m.direction === "INBOUND" ? "text-white/70" : "text-ink-3")}>{m.at}{m.status === "FAILED" ? " · failed to send" : ""}</div></div></div>
+                    <div key={m.id} className={m.direction === "INBOUND" ? "flex justify-end" : "flex"}><div className={cn("max-w-[85%] rounded-[14px] px-3 py-2 text-[12.5px] leading-snug", m.direction === "INBOUND" ? "bg-accent-gradient" : "bg-white text-ink shadow-[0_1px_1px_rgb(0_0_0/0.06)]")}>{m.body}<div className={cn("mt-1 text-[10px]", m.direction === "INBOUND" ? "text-white/70" : "text-ink-3")}>{m.at}{m.status === "FAILED" ? " · failed to send" : ""}</div></div></div>
                   ))}
                 </div>
                 <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) reply(text); }} className="mt-2 flex gap-1.5">
                   <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a reply" className="h-9 min-w-0 flex-1 rounded-full border border-line bg-white px-3.5 text-[13px] focus:border-accent focus:outline-none" />
-                  <button disabled={busy || !text.trim()} className="h-9 rounded-full bg-accent px-4 text-[13px] font-medium text-white disabled:opacity-40">Send</button>
+                  <button disabled={busy || !text.trim()} className="h-9 rounded-full bg-accent-gradient px-4 text-[13px] font-medium disabled:opacity-40">Send</button>
                 </form>
-                <div className="mt-2 flex flex-wrap gap-1.5">{QUICK.map((q) => <button key={q.label} disabled={busy || !shift} onClick={() => reply(q.body)} className={cn("h-7 rounded-full border px-2.5 text-[12px] font-medium disabled:opacity-50", q.critical ? "border-critical/40 bg-critical-soft text-[#b3301a]" : "border-line bg-white text-ink")}>{q.label}</button>)}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">{QUICK.map((q) => <button key={q.label} disabled={busy || !shift} onClick={() => reply(q.body)} className={cn("h-7 rounded-full border px-2.5 text-[12px] font-medium disabled:opacity-50", q.critical ? "border-critical/40 bg-critical-soft text-critical" : "border-line bg-white text-ink")}>{q.label}</button>)}</div>
               </div>
             )}
           </CardBody>

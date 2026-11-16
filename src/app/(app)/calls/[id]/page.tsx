@@ -35,7 +35,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
     <div>
       <PageHeader title={`${who} · ${fmtDate(c.startedAt)} ${fmtTime(c.startedAt)}`} description={`${c.direction === "INCOMING" ? "Incoming call to" : "Outgoing call from"} ${c.gateway.deviceName}${c.simulated ? " · simulated" : ""}`} actions={
         <ButtonGroup>
-          {c.guard && <a href={`tel:${c.guard.phone}`} className="inline-flex h-9 items-center rounded-[8px] bg-accent px-3.5 text-sm font-medium text-white hover:bg-accent-strong">Call {c.guard.firstName} back</a>}
+          {c.guard && <a href={`tel:${c.guard.phone}`} className="inline-flex h-9 items-center rounded-[8px] bg-accent-gradient px-3.5 text-sm font-medium hover:bg-accent-strong">Call {c.guard.firstName} back</a>}
           {c.status === "MISSED" && !c.note && can.manageIncidents(user) && <ConfirmButton size="md" label="Mark handled" title="Mark this missed call as handled?" body="Record that someone called the guard back or otherwise dealt with it. The alert is cleared." withNote="What was done?" confirmLabel="Mark handled" action={async (note) => { "use server"; await markCallHandled(c.id, note); }} />}
           {c.shift && <LinkButton href={`/shifts/${c.shift.id}`}>Open shift</LinkButton>}
           <LinkButton href={`/gateways/${c.gateway.id}`}>Gateway</LinkButton>
@@ -86,7 +86,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         </div>
         <div className="min-w-0 space-y-4">
           <Card><CardBody className="pt-5">
-            <div className="flex items-center gap-3">{c.guard ? <Avatar src={c.guard.photoUrl} name={c.guard.firstName} size={44} /> : <span className="flex h-11 w-11 items-center justify-center rounded-full bg-warn-soft text-[#8a5e05]">?</span>}<div>{c.guard ? <Link href={`/guards/${c.guard.id}`} className="font-semibold text-ink hover:underline">{who}</Link> : <p className="font-semibold text-ink">{who}</p>}<p className="text-[13px] text-ink-2 tnum">{formatPhone(c.normalizedPhoneNumber)}</p></div></div>
+            <div className="flex items-center gap-3">{c.guard ? <Avatar src={c.guard.photoUrl} name={c.guard.firstName} size={44} /> : <span className="flex h-11 w-11 items-center justify-center rounded-full bg-warn-soft text-warn">?</span>}<div>{c.guard ? <Link href={`/guards/${c.guard.id}`} className="font-semibold text-ink hover:underline">{who}</Link> : <p className="font-semibold text-ink">{who}</p>}<p className="text-[13px] text-ink-2 tnum">{formatPhone(c.normalizedPhoneNumber)}</p></div></div>
             <div className="mt-5 grid grid-cols-2 gap-4">
               <Meta label="Gateway"><Link href={`/gateways/${c.gateway.id}`} className="hover:underline">{c.gateway.deviceName}</Link></Meta>
               <Meta label="Gateway number">{formatPhone(c.gateway.phoneNumber)}</Meta>

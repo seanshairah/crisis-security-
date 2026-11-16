@@ -11,8 +11,8 @@ val screenshots = project.hasProperty("screenshots")
 if (screenshots) apply(plugin = "app.cash.paparazzi")
 
 // Release signing: set ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
-// (environment or android/keystore.properties). Without them the release APK is signed with the debug key so it
-// still installs for testing, and the build prints a warning.
+// (environment or android/keystore.properties). Without them the release build fails: a release APK is never
+// signed with the debug key, because that key ships with the SDK and anyone could replace the app with it.
 val keystoreProps = Properties().apply {
     val f = rootProject.file("keystore.properties")
     if (f.exists()) f.inputStream().use { load(it) }

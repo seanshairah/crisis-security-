@@ -20,6 +20,8 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
   if (prod && env.SMS_PROVIDER && env.SMS_PROVIDER !== "simulated" && (!env.SMS_WEBHOOK_SECRET || DEFAULTS.has(env.SMS_WEBHOOK_SECRET))) issues.push({ key: "SMS_WEBHOOK_SECRET", level: "fatal", message: "SMS_WEBHOOK_SECRET is the example default; inbound SMS webhooks cannot be verified." });
   if (prod && (env.SMS_PROVIDER ?? "simulated") === "simulated") issues.push({ key: "SMS_PROVIDER", level: "warn", message: "SMS_PROVIDER=simulated in production: no real SMS is sent." });
   if (prod && env.NEXT_PUBLIC_APP_URL && !/^https:\/\//.test(env.NEXT_PUBLIC_APP_URL)) issues.push({ key: "NEXT_PUBLIC_APP_URL", level: "warn", message: "NEXT_PUBLIC_APP_URL should be an https:// address; guard phones refuse plain http in release builds." });
+  const hops = Number(env.TRUST_PROXY_HOPS ?? 0);
+  if (prod && !(Number.isInteger(hops) && hops >= 1)) issues.push({ key: "TRUST_PROXY_HOPS", level: "warn", message: "TRUST_PROXY_HOPS is unset or 0, so client addresses are unknown: login and activation throttles fall back to per-account budgets. Set it to the number of reverse-proxy hops in front of the app." });
   if (prod && env.SIMULATOR_ENABLED === "true") issues.push({ key: "SIMULATOR_ENABLED", level: "warn", message: "The simulator is enabled in production; simulated events land in real data." });
   return issues;
 }

@@ -7,5 +7,5 @@ export function standardAvatar(name: string): string {
 }
 
 export function Avatar({ src, name, size = 32, className }: { src?: string | null; name: string; size?: number; className?: string }) {
-  return <img src={src || standardAvatar(name)} alt={name} width={size} height={size} loading="lazy" className={cn("shrink-0 rounded-full bg-[#e9e8e6] object-cover", className)} style={{ width: size, height: size }} />;
+  return <img src={src || standardAvatar(name)} alt={name} width={size} height={size} loading="lazy" className={cn("shrink-0 rounded-full bg-line object-cover", className)} style={{ width: size, height: size }} />;
 }

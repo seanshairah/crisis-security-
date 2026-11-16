@@ -50,7 +50,7 @@ export function CommunicationHistory({ messages, calls, alerts = [] }: { message
             <span className={cn("absolute -left-[9px] flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 bg-surface", ring[e.tone])}><Icon name={e.icon} size={10} filled /></span>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
               <span className="text-[12px] tnum text-ink-3">{fmtTime(e.at)}</span>
-              <span className={cn("rounded-[4px] px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em]", e.kind === "SMS" ? "bg-surface-2 text-ink-2" : "bg-info-soft text-[#3a50ad]")}>{e.kind}</span>
+              <span className={cn("rounded-[4px] px-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em]", e.kind === "SMS" ? "bg-surface-2 text-ink-2" : "bg-info-soft text-info")}>{e.kind}</span>
               {e.href ? <Link href={e.href} className="text-[13px] font-medium text-ink hover:underline">{e.title}</Link> : <span className="text-[13px] font-medium text-ink">{e.title}</span>}
             </div>
             {e.detail && <p className="mt-0.5 max-w-xl text-[12.5px] text-ink-2">{e.detail}</p>}

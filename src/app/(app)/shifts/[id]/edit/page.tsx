@@ -50,7 +50,7 @@ export default async function EditShiftPage({ params }: { params: Promise<{ id: 
       <PageHeader title="Edit shift" description={`${guardName} · ${shift.location.name} · ${dateInputValue(shift.startAt)}`} />
       <Card><CardBody>
         {locked && (
-          <div className="mb-4 rounded-[8px] border border-warn/40 bg-warn-soft px-3 py-2 text-[12.5px] text-[#8a5e05]">
+          <div className="mb-4 rounded-[8px] border border-warn/40 bg-warn-soft px-3 py-2 text-[12.5px] text-warn">
             <span className="font-semibold">Schedule locked.</span> {policy.reason}
           </div>
         )}

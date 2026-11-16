@@ -35,7 +35,7 @@ export default async function NewRecurrencePage() {
               <div className="flex flex-wrap gap-2">
                 {DAYS.map((d, i) => (
                   <label key={d} className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[8px] border border-line bg-surface px-3 text-[13px] has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
-                    <input type="checkbox" name="daysOfWeek[]" value={IDX[i]} defaultChecked className="accent-[#4f9f3a]" /> {d}
+                    <input type="checkbox" name="daysOfWeek[]" value={IDX[i]} defaultChecked className="accent-[var(--color-accent)]" /> {d}
                   </label>
                 ))}
               </div>

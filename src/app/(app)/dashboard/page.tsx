@@ -9,17 +9,17 @@ import { TrendChart } from "@/components/dashboard/trend-chart";
 import { Gauge } from "@/components/dashboard/gauge";
 import { SendMessage } from "@/components/dashboard/send-message";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
-import { Status } from "@/components/ui/status";
+import { buttonClass } from "@/components/ui/button";
+import { NeedsYouNow } from "@/components/dashboard/needs-you-now";
+import { buildQueue } from "@/lib/dashboard/queue";
 import { STATUS_META, ON_SITE_STATUSES } from "@/lib/services/shifts";
-import { fmtTime } from "@/lib/time";
 import { subDays } from "date-fns";
 import { liveCalls, callInclude } from "@/lib/gateway/calls";
 import { LiveCallCards } from "@/components/calls/live-calls";
 import { getSettingNumber } from "@/lib/settings";
 import { effectiveStatus } from "@/lib/gateway/service";
 import { cn } from "@/lib/cn";
-import { ALERT_META, alertInclude } from "@/lib/gateway/alerts";
-import { ago } from "@/lib/time";
+import { alertInclude } from "@/lib/gateway/alerts";
 
 export const metadata = { title: "Overview" };
 
@@ -36,40 +36,43 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     getSettingNumber("gateway.offlineMinutes"),
   ]);
   const patrol = await patrolOverview();
-  const openAlerts = await db.guardAlert.findMany({ where: { status: { in: ["OPEN", "ACKNOWLEDGED"] } }, include: alertInclude, orderBy: [{ status: "asc" }, { occurredAt: "desc" }], take: 6 });
+  const openAlerts = await db.guardAlert.findMany({ where: { status: { in: ["OPEN", "ACKNOWLEDGED"] } }, include: alertInclude, orderBy: [{ status: "asc" }, { occurredAt: "desc" }], take: 12 });
   const gatewayOnline = gateways.filter((g) => effectiveStatus(g, offlineMinutes) === "ONLINE").length;
   const showCalls = gateways.length > 0 || live.length > 0 || missedCalls.length > 0;
-  const last = (a: number[]) => a[a.length - 1] - a[a.length - 2];
   const posture = rate.pct >= 85 ? { word: "Strong", tone: "ok" as const, line: "Guards are reporting for duty on time." } : rate.pct >= 60 ? { word: "Watch", tone: "warn" as const, line: "Several guards have not confirmed arrival." } : { word: "Weak", tone: "critical" as const, line: "Attendance is well below target. Call the sites." };
 
-  const icon = (s: string) => s === "CRITICAL" ? "e911_emergency" : s === "ASSISTANCE" ? "medical_services" : s === "INCIDENT" ? "report" : s === "NOT_CONFIRMED" ? "person_off" : "timer";
+
+  const queue = buildQueue({
+    alerts: openAlerts,
+    shifts: attention,
+    devices: gateways.filter((g) => g.activationStatus === "ACTIVE" && effectiveStatus(g, offlineMinutes) === "OFFLINE").map((g) => ({ id: g.id, deviceName: g.deviceName, lastSeenAt: g.lastSeenAt })),
+  });
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: process.env.TIMEZONE || "Africa/Harare" }).format(new Date()));
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const sites = await db.location.count({ where: { active: true } });
+  const patrolTone = patrol.missed > 0 ? "warn" : patrol.due === 0 ? "neutral" : "ok";
 
   return (
     <div className="min-w-0 space-y-4">
-      {can.manageLocations(user) && <Link href="/setup" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-bright/40 bg-accent-soft px-5 py-4"><div><strong className="text-sm">Set up a site, guard and phone</strong><p className="mt-1 text-xs text-ink-2">Follow four guided steps, then start a patrol.</p></div><span className="text-sm font-medium">Open guided setup →</span></Link>}
-      <section className="crisis-command flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line p-6"><div className="relative"><p className="text-[11px] uppercase tracking-[.24em] text-ink-3">Crisis Security / command centre</p><h1 className="mt-2 text-2xl font-semibold">The field, in focus.</h1><p className="mt-2 text-sm text-ink-2">{patrol.completed} patrols verified · {patrol.active} windows open · {patrol.missed} awaiting evidence</p></div><Link className="relative rounded-lg border border-line-strong bg-surface px-4 py-2 text-sm" href="/patrols">Open patrol command ↗</Link></section>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Guards on duty" description={`Confirmed on post right now across ${o.activeShifts} active shifts.`} value={o.onDuty} delta={last(series.onDuty)} series={series.onDuty} tone="ok" />
-        <KpiCard title="Not reported" description="Shifts in the last 24 hours with no arrival confirmed after escalation." value={o.notReported} delta={last(series.notReported)} deltaGoodWhen="down" series={series.notReported} tone={o.notReported > 0 ? "critical" : "neutral"} />
-        <KpiCard title="Open incidents" description={`Incidents awaiting resolution, plus ${o.assistance} assistance request${o.assistance === 1 ? "" : "s"}.`} value={o.incidents} delta={last(series.incidents)} deltaGoodWhen="down" series={series.incidents} tone={o.incidents > 0 ? "critical" : "neutral"} />
-        <KpiCard title="Completed today" description={`Shifts confirmed complete since midnight. ${o.scheduledToday} scheduled today.`} value={o.completedToday} delta={last(series.completed)} series={series.completed} tone="ok" />
-      </div>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[34px] leading-none text-ink sm:text-[44px]">{greeting}, {user.name.split(" ")[0]}</h1>
+          <p className="mt-2 text-[15px] text-ink-2">{queue.length === 0 ? "Nothing needs you" : `${queue.length} thing${queue.length === 1 ? "" : "s"} need${queue.length === 1 ? "s" : ""} you`} · {o.onDuty} guard{o.onDuty === 1 ? "" : "s"} on duty · {sites} site{sites === 1 ? "" : "s"}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {can.manageLocations(user) && <Link href="/setup" className={buttonClass("primary")}><Icon name="assignment" size={18} filled />Guided setup</Link>}
+          <Link href="/patrols" className={buttonClass("secondary")}><Icon name="route" size={18} filled />Patrol command</Link>
+        </div>
+      </header>
 
-      {openAlerts.length > 0 && (
-        <Card className="border-critical/40">
-          <CardHeader title={<><Icon name="e911_emergency" className="mr-1 inline h-4 w-4 text-critical" filled />Guard alerts from phones · {openAlerts.length} open</>} description="Sent through the guard app. Acknowledge so the guard sees who is handling it." action={<Link href="/alerts" className="text-[13px] font-medium text-accent hover:underline">Open alerts <Icon name="chevron_right" className="inline h-3 w-3" /></Link>} />
-          <CardBody className="pt-2">
-            <ul className="divide-y divide-line">
-              {openAlerts.map((a) => { const m = ALERT_META[a.type]; return (
-                <li key={a.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div className="min-w-0"><Link href={`/alerts?focus=${a.id}`} className="font-medium text-ink hover:underline"><Status tone={m.tone === "info" || m.tone === "neutral" ? "neutral" : m.tone}>{m.label}</Status> · {a.guard.firstName} {a.guard.lastName}{a.location ? ` · ${a.location.name}` : ""}</Link>{a.message && <p className="truncate text-[12.5px] text-ink-2">“{a.message}”</p>}</div>
-                  <span className="whitespace-nowrap text-[12px] text-ink-3">{ago(a.occurredAt)}{a.status === "ACKNOWLEDGED" ? " · acknowledged" : ""}</span>
-                </li>
-              ); })}
-            </ul>
-          </CardBody>
-        </Card>
-      )}
+      <NeedsYouNow items={queue} calm={{ guards: o.onDuty, patrolsVerified: patrol.completed }} />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard title="Guards on duty" value={o.onDuty} of={`of ${o.scheduledToday} scheduled`} note={o.scheduledToday > o.onDuty ? `${o.scheduledToday - o.onDuty} not yet on post` : "Everyone scheduled is on post"} icon="schedule" tone={o.scheduledToday > o.onDuty ? "warn" : "ok"} series={series.onDuty} />
+        <KpiCard title="Patrols verified" value={patrol.completed} of={`/ ${patrol.due} due`} note={patrol.missed > 0 ? `${patrol.missed} awaiting evidence` : `${patrol.active} window${patrol.active === 1 ? "" : "s"} open now`} icon={patrol.missed > 0 ? "error" : "check_circle"} tone={patrolTone} />
+        <KpiCard title="Not reported" value={o.notReported} note="Arrival not confirmed after escalation" icon="error" tone={o.notReported > 0 ? "critical" : "neutral"} series={series.notReported} />
+        <KpiCard title="Open incidents" value={o.incidents} note={`${o.assistance} assistance request${o.assistance === 1 ? "" : "s"}`} icon="support_agent" tone="neutral" series={series.incidents} />
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
         <Card>
@@ -77,9 +80,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             title="Operations activity"
             description="Automated checks sent, replies received and confirmations, by hour."
             action={
-              <div className="inline-flex rounded-[var(--radius-control)] border border-line bg-surface p-0.5">
+              <div className="inline-flex rounded-full border border-line bg-surface-2 p-0.5">
                 {(["12h", "24h", "7d"] as const).map((r) => (
-                  <Link key={r} href={`/dashboard?range=${r}`} className={cn("h-7 rounded-[6px] px-2.5 text-[12.5px] font-medium leading-7", range === r ? "bg-surface-2 text-ink" : "text-ink-2 hover:text-ink")}>{r === "7d" ? "Last 7 days" : `Last ${r.replace("h", " hours")}`}</Link>
+                  <Link key={r} href={`/dashboard?range=${r}`} className={cn("h-8 rounded-full px-3 text-[12.5px] font-medium leading-8", range === r ? "bg-surface text-ink" : "text-ink-2 hover:text-ink")}>{r === "7d" ? "Last 7 days" : `Last ${r.replace("h", " hours")}`}</Link>
                 ))}
               </div>
             }
@@ -88,14 +91,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Card>
 
         <Card>
-          <CardHeader title={<>Attendance rate · {rate.pct}</>} description="Shifts started in the last 24 hours with arrival confirmed." />
+          <CardHeader title="Attendance" description="Shifts started in the last 24 hours with arrival confirmed." />
           <CardBody className="flex flex-col items-center">
             <Gauge value={rate.pct} />
-            <div className="mt-2 flex w-full items-end justify-between">
-              <span className="text-[22px] font-semibold text-ink">{posture.word}</span>
-              <span className={cn("text-[13px] font-medium tnum", rate.delta > 0 ? "text-ok" : rate.delta < 0 ? "text-critical" : "text-ink-3")}>{rate.delta > 0 ? "↑" : rate.delta < 0 ? "↓" : ""} {Math.abs(rate.delta)} pts <span className="font-normal text-ink-3">vs last 7 days</span></span>
-            </div>
-            <p className="mt-1 w-full text-[13px] text-ink-2">{posture.line} {rate.arrived} of {rate.started} arrived, {rate.onTime} on time.</p>
+            <p className="mt-3 text-center text-[13px] text-ink-2">{posture.line} {rate.arrived} of {rate.started} arrived, {rate.onTime} on time.</p>
+            <p className={cn("mt-1 text-[13px] font-medium tnum", rate.delta > 0 ? "text-ok" : rate.delta < 0 ? "text-critical" : "text-ink-3")}>{rate.delta > 0 ? "↑" : rate.delta < 0 ? "↓" : ""} {Math.abs(rate.delta)} pts <span className="font-normal text-ink-3">vs last 7 days</span></p>
           </CardBody>
         </Card>
       </div>
@@ -107,50 +107,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Card>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_480px]">
-        <Card>
-          <CardHeader title="Needs attention" action={<Link href="/operations" className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline">View all <Icon name="chevron_right" size={12} filled /></Link>} />
-          <CardBody className="pt-3">
-            {attention.length === 0 ? (
-              <div className="flex items-center gap-3 rounded-[12px] border border-dashed border-line px-4 py-6 text-[13px] text-ink-2"><span className="h-2 w-2 rounded-full bg-ok" />Every live shift is in order. Nothing needs you right now.</div>
-            ) : (
-              <ul className="divide-y divide-line">
-                {attention.map((s) => {
-                  const meta = STATUS_META[s.status];
-                  return (
-                    <li key={s.id}>
-                      <Link href={`/shifts/${s.id}`} className="flex items-center gap-3 py-3.5 hover:bg-surface-2/60 -mx-2 px-2 rounded-[10px] sm:gap-4">
-                        <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-line", s.status === "CRITICAL" ? "bg-critical-soft text-critical" : "bg-surface text-ink-2")}><Icon name={icon(s.status)} size={18} filled /></span>
-                        {/* One fact per line. Both used to share two truncated lines, so on a phone
-                            the row read "Peter Ncube · Westgate Ma…" over "01:00–13:00 · …" — losing
-                            the site and the times, which is the whole reason to look at the row. */}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[14px] font-medium text-ink">{s.guard.firstName} {s.guard.lastName}</p>
-                          <p className="truncate text-[13px] text-ink-2">{s.location.name}</p>
-                          <p className="truncate text-[12.5px] text-ink-3 tnum">{fmtTime(s.startAt)}–{fmtTime(s.endAt)} · {s.attendance?.arrivalConfirmedAt ? `arrived ${fmtTime(s.attendance.arrivalConfirmedAt)}` : "arrival not confirmed"}</p>
-                        </div>
-                        <Status tone={meta.tone} pulse={s.status === "CRITICAL"}>{meta.label}</Status>
-                        {/* The whole row is the link; on a phone the chevron only costs width. */}
-                        <Icon name="chevron_right" size={14} className="hidden text-ink-3 sm:block" filled />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <div className="mt-3 flex items-center gap-2 border-t border-dashed border-line pt-3 text-[12.5px] text-ink-3">
-              <Icon name="calendar_today" size={14} filled /> {o.scheduledToday} shifts scheduled today · {o.late} late · {o.missedChecks} missed welfare check{o.missedChecks === 1 ? "" : "s"} · {o.totalGuards} active guards
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader title="Send a message" description={`Signed as ${user.name}`} action={<Link href="/messages/new" className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline">Compose · groups, WhatsApp, email <Icon name="chevron_right" size={12} filled /></Link>} />
-          <CardBody>
-            <SendMessage guards={onDutyGuards.map((s) => ({ id: s.guardId, name: `${s.guard.firstName} ${s.guard.lastName}`, status: STATUS_META[s.status].label }))} />
-          </CardBody>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader title="Message guards" description={`Signed as ${user.name}`} action={<Link href="/messages/new" className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline">Compose · groups, WhatsApp, email <Icon name="chevron_right" size={12} filled /></Link>} />
+        <CardBody>
+          <SendMessage guards={onDutyGuards.map((s) => ({ id: s.guardId, name: `${s.guard.firstName} ${s.guard.lastName}`, status: STATUS_META[s.status].label }))} />
+        </CardBody>
+      </Card>
     </div>
   );
 }
