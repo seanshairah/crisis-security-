@@ -12,7 +12,7 @@ import { acknowledgeCallRequest, CallRequestError } from "@/lib/gateway/call-req
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const auth = await authenticateGateway(req);
   if (!auth.device) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const rl = rateLimit(`cmdack:${auth.device.id}`, 30, 60_000);
+  const rl = await rateLimit(`cmdack:${auth.device.id}`, 30, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Too many acknowledgements" }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   const { id } = await ctx.params;
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;

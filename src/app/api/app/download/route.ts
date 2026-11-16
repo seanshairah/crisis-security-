@@ -47,7 +47,7 @@ export async function GET(req: Request) {
     headers: {
       "Content-Type": "application/vnd.android.package-archive",
       "Content-Length": String(bytes.byteLength),
-      "Content-Disposition": `attachment; filename="omega-guard-${d.release.versionName}.apk"`,
+      "Content-Disposition": `attachment; filename="crisis-guard-${d.release.versionName}.apk"`,
       // The sha256 lets the phone, or an administrator, confirm the bytes arrived whole.
       "X-APK-SHA256": d.release.sha256,
       "X-APK-Version": d.release.versionName,

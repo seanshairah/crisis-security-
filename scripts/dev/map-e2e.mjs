@@ -65,7 +65,7 @@ try {
     // The application's own layers, not just a Mapbox basemap: a map that paints tiles but adds no
     // layers looks fine in a screenshot and shows no guard at all.
     const style = await page.evaluate(() => {
-      const m = window.__omegaMap;
+      const m = window.__crisisMap;
       if (!m) return null;
       const layers = m.getStyle().layers.filter((l) => l.id.startsWith("omega-")).map((l) => l.id);
       return { layers, sites: m.querySourceFeatures("omega-sites").length, rendered: m.queryRenderedFeatures({ layers }).length };
@@ -82,7 +82,7 @@ try {
       await sat.first().click();
       await page.waitForTimeout(3500);
       check("satellite style keeps one canvas", (await page.locator('[data-testid="mapbox-map"] canvas.mapboxgl-canvas').count()) === 1);
-      const after = await page.evaluate(() => (window.__omegaMap ? window.__omegaMap.getStyle().layers.filter((l) => l.id.startsWith("omega-")).length : 0));
+      const after = await page.evaluate(() => (window.__crisisMap ? window.__crisisMap.getStyle().layers.filter((l) => l.id.startsWith("omega-")).length : 0));
       check("application layers re-added after a style switch", after >= 10, `${after} layers`);
     }
   }
@@ -104,7 +104,7 @@ try {
     });
     check("fleet map painted", markers > 0);
     const fleet = await page.evaluate(() => {
-      const m = window.__omegaMap;
+      const m = window.__crisisMap;
       if (!m) return null;
       const layers = m.getStyle().layers.filter((l) => l.id.startsWith("omega-")).map((l) => l.id);
       return { cluster: layers.includes("omega-cluster"), points: m.querySourceFeatures("omega-points").length, sites: m.querySourceFeatures("omega-sites").length };

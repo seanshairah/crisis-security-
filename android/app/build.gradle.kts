@@ -21,24 +21,24 @@ fun signing(key: String): String? = System.getenv(key) ?: keystoreProps.getPrope
 val releaseKeystore = signing("ANDROID_KEYSTORE_PATH")
 
 // Development-only cleartext allowlist for debug builds: a comma-separated list of hosts (e.g. a laptop's LAN IP
-// 192.168.1.20) the debug app may call over plain http://. Read from `omega.devHttpHosts` in android/local.properties
+// 192.168.1.20) the debug app may call over plain http://. Read from `crisis.devHttpHosts` in android/local.properties
 // (not committed) or GATEWAY_DEV_HTTP_HOSTS in the environment. Release builds never get it: HTTPS stays mandatory.
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
-val devHttpHosts: String = (System.getenv("GATEWAY_DEV_HTTP_HOSTS") ?: localProps.getProperty("omega.devHttpHosts") ?: "").trim()
+val devHttpHosts: String = (System.getenv("GATEWAY_DEV_HTTP_HOSTS") ?: localProps.getProperty("crisis.devHttpHosts") ?: "").trim()
 
 android {
-    namespace = "zw.co.omega.gateway" // Kotlin namespace retained during staged migration; app identity is independent
+    namespace = "zw.co.crisis.security" // Crisis namespace; the installed application ID remains stable
     compileSdk = 35
 
     defaultConfig {
         applicationId = "zw.co.crisis.security"
         minSdk = 24          // Android 7.0: old phones are the point of this app
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.10.0"
+        versionCode = 17
+        versionName = "1.11.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Default server pre-filled on the activation screen; the user can change it.
         buildConfigField("String", "DEFAULT_SERVER_URL", "\"${System.getenv("GATEWAY_DEFAULT_SERVER_URL") ?: "https://crisis.invalid"}\"")
@@ -49,15 +49,15 @@ android {
         // built on one machine cannot update one built on another (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
         // Point every machine at one shared development keystore to avoid that; never commit it, and
         // never uninstall the app to get round it (that loses its activation and its queued events).
-        //   omega.debugKeystore=/path/to/omega-dev.jks  (android/local.properties) or OMEGA_DEBUG_KEYSTORE
-        //   optional: omega.debugKeystorePassword / omega.debugKeyAlias / omega.debugKeyPassword
-        val sharedDebug = (System.getenv("OMEGA_DEBUG_KEYSTORE") ?: localProps.getProperty("omega.debugKeystore"))?.trim()?.takeIf { it.isNotEmpty() }
+        //   crisis.debugKeystore=/path/to/crisis-dev.jks  (android/local.properties) or CRISIS_DEBUG_KEYSTORE
+        //   optional: crisis.debugKeystorePassword / crisis.debugKeyAlias / crisis.debugKeyPassword
+        val sharedDebug = (System.getenv("CRISIS_DEBUG_KEYSTORE") ?: localProps.getProperty("crisis.debugKeystore"))?.trim()?.takeIf { it.isNotEmpty() }
         if (sharedDebug != null) {
             getByName("debug") {
                 storeFile = file(sharedDebug)
-                storePassword = System.getenv("OMEGA_DEBUG_KEYSTORE_PASSWORD") ?: localProps.getProperty("omega.debugKeystorePassword") ?: "android"
-                keyAlias = System.getenv("OMEGA_DEBUG_KEY_ALIAS") ?: localProps.getProperty("omega.debugKeyAlias") ?: "androiddebugkey"
-                keyPassword = System.getenv("OMEGA_DEBUG_KEY_PASSWORD") ?: localProps.getProperty("omega.debugKeyPassword") ?: "android"
+                storePassword = System.getenv("CRISIS_DEBUG_KEYSTORE_PASSWORD") ?: localProps.getProperty("crisis.debugKeystorePassword") ?: "android"
+                keyAlias = System.getenv("CRISIS_DEBUG_KEY_ALIAS") ?: localProps.getProperty("crisis.debugKeyAlias") ?: "androiddebugkey"
+                keyPassword = System.getenv("CRISIS_DEBUG_KEY_PASSWORD") ?: localProps.getProperty("crisis.debugKeyPassword") ?: "android"
             }
             logger.lifecycle("Debug builds signed with the shared development keystore $sharedDebug")
         }

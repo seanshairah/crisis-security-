@@ -1,6 +1,6 @@
-# Omega Protection Services portal — production image built from Next.js standalone output.
-# Build:  docker build -t omega-portal .
-# Run:    docker run -p 3000:3000 --env-file .env.production omega-portal
+# Crisis Security portal — production image built from Next.js standalone output.
+# Build:  docker build -t crisis-portal .
+# Run:    docker run -p 3000:3000 --env-file .env.production crisis-portal
 # Secrets (DATABASE_URL, AUTH_SECRET, SMS_*, VAPID_*) are passed at run time, never baked in.
 # Migrations are applied from outside the container: `npx prisma migrate deploy` (or scripts/neon-migrate.ts).
 
@@ -18,7 +18,7 @@ RUN apk add --no-cache libc6-compat openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Build-time placeholders only: the build does not connect to the database.
-ENV NEXT_TELEMETRY_DISABLED=1 DATABASE_URL="postgresql://build:build@localhost:5432/build" DATABASE_OVER_HTTP=false AUTH_SECRET="build-time-placeholder-not-used-at-runtime-0000"
+ENV NEXT_TELEMETRY_DISABLED=1 DATABASE_URL="postgresql://build:build@localhost:5432/build" DATABASE_OVER_HTTP=false AUTH_SECRET="build-time-placeholder-not-used-at-runtime-0000" CRON_SECRET="build-time-cron-placeholder-000000000" AUTOMATION_SECRET="build-time-automation-placeholder-000000000"
 RUN npm run build
 
 FROM node:22-alpine AS runner

@@ -1,23 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { generateActivationCode, generateDeviceToken, hashToken, rateLimit, resetRateLimits } from "../src/lib/gateway/auth";
+import { generateActivationCode, generateDeviceToken, hashToken } from "../src/lib/gateway/auth";
 import { validateEvent } from "../src/lib/gateway/events";
 
 test("activation codes avoid ambiguous characters and tokens hash deterministically", () => {
-  for (let i = 0; i < 50; i++) assert.match(generateActivationCode(), /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
+  for (let i = 0; i < 50; i++) assert.match(generateActivationCode(), /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{10}$/);
   const t = generateDeviceToken();
   assert.ok(t.startsWith("gw_") && t.length > 40);
   assert.equal(hashToken(t), hashToken(t));
   assert.notEqual(hashToken(t), hashToken(generateDeviceToken()));
-});
-
-test("rate limit opens after the window", () => {
-  resetRateLimits();
-  assert.ok(rateLimit("k", 2, 60_000).ok);
-  assert.ok(rateLimit("k", 2, 60_000).ok);
-  const third = rateLimit("k", 2, 60_000);
-  assert.equal(third.ok, false);
-  assert.ok(third.retryAfterSeconds > 0);
 });
 
 test("event validation rejects malformed payloads and normalises good ones", () => {

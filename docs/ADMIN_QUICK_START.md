@@ -6,7 +6,7 @@ The local app connects to the separate `crisis_security` database on port 5433. 
 
 1. **Site & checkpoints:** Add the site and its client, choose the position on the map, then add a checkpoint. Download its QR sign before leaving the page. Turn on patrols and save the timing. For the USB test, choose **Short test · every 1–2 minutes**.
 2. **Choose a guard:** Add a guard or choose an existing guard, then set their individual PIN. Give the guard their sign-in number and PIN privately.
-3. **Connect the phone:** Name the company phone, enter its SIM number, then get an activation code. Install the supplied **1.10.0 local-test APK**, connect the USB data cable, and allow USB debugging. The APK has the local server address prefilled. Enter the activation code on the phone; the checklist updates when it connects.
+3. **Connect the phone:** Name the company phone, enter its SIM number, then get an activation code. Install the supplied **1.11.0 local-test APK**, connect the USB data cable, and allow USB debugging. The APK has the local server address prefilled. Enter the activation code on the phone; the checklist updates when it connects.
 4. **Schedule & start:** Schedule a shift covering the test time. Sign into Field operations on the phone with the guard number and PIN. Wait for the checkpoint prompt, scan the QR sign at its actual position, and check the result in the web Patrol command screen.
 
 Use real site/checkpoint coordinates for a field test. A screenshot or copied QR code alone is not evidence that a guard was at the site; GPS must also pass. Grant the Android app precise location, camera and notification permissions when asked.

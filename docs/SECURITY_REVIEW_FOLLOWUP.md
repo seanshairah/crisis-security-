@@ -1,24 +1,30 @@
-# Security review follow-up
+# Security review resolution
 
-First remediation batch, 16 November 2026:
+Current implementation and deployment boundaries are defined in [Security operations](SECURITY_OPERATIONS.md). This replaces the earlier partial-batch checklist.
 
-- Inbound SMS accepts only the configured provider. Shared-secret providers require `X-Webhook-Secret`; URL query secrets are no longer accepted. Missing/default secrets and missing Twilio/Sendai signatures fail closed. Configure the provider or trusted ingress to send this header before enabling those inbound integrations.
-- Cron GET requires a bearer credential; a browser admin cookie alone cannot trigger it. Secret checks use constant-time digest comparisons.
-- Default/missing production cron and automation secrets are fatal. Non-simulated SMS configurations also refuse missing/default webhook secrets.
-- Android release tasks fail without a dedicated release keystore; debug testing continues independently.
-- Next.js upgraded from 15.5.27 to 15.5.29 following the actual npm audit, which also identified GHSA-2464-fhr4-w9xw.
-- Added GitHub CI with a disposable PostgreSQL service for type checking, lint, unit tests, migrations and the real patrol/setup integration scripts. This workflow has not yet been run on GitHub.
+| Review area | Resolution |
+| --- | --- |
+| SMS webhook trust | Only the active provider is accepted. Missing/default credentials fail closed; shared secrets use headers and constant-time digest comparisons. Twilio and Sendai no longer accept unsigned requests. |
+| Shared throttling and proxy spoofing | PostgreSQL atomic counters replace process Maps. Forwarded headers require explicit trusted-hop configuration. Login budgets isolate source/account pairs. Activation uses 10-character codes and source/code caps. |
+| Cron credentials and GET side effects | Production cron/automation secrets must be private and at least 32 characters. GET requires bearer authentication, not a portal cookie. |
+| Offline time and late evidence | Transport clock correction preserves raw times; excessive lateness and unknown clocks require review instead of automatic completion. Rooted-phone GPS and fully offline provenance remain documented trust limitations, not attestation claims. |
+| Release signing | Release tasks refuse missing signing configuration. A permanent private Crisis release identity was created locally; no signing secrets are committed. CI uses an unrelated disposable identity for release checks. |
+| Session revocation | Persisted token versions invalidate old sessions after password reset/logout. Issuer, audience and HS256 are checked. HTTPS deployments use a Host-prefixed cookie; fixed development signing secrets were removed. |
+| Login timing and passwords | Unknown users perform bcrypt verification. New hashes use cost 12, older hashes upgrade on successful login, and new passwords require 12 characters within bcrypt's 72-byte limit. |
+| Guard PIN fairness | Guard/device-pair budgets replace global device and global guard locks. Unknown guards perform scrypt verification. New repeated/sequential PINs are rejected. Admin-issued PINs do not claim human non-repudiation. |
+| API errors | Validation/domain failures have safe 400/404/409/429 responses; infrastructure/unexpected errors use generic 500/503 responses. Auth database failures are not treated as invalid cookies. |
+| Patrol throughput | Device budgets and 20-row processing bounds limit work. Each committed event has an individual receipt; retry/unacknowledged rows remain durable. |
+| Transactions and missed alerts | Serializable retries are bounded, jittered and use shorter timeouts. In-window delayed accepted evidence reconciles the exact missed-window notification. |
+| Dependencies and Docker | Next.js is patched; production dependency audit is clean. Runner uses a fresh base stage and receives no build-stage secret environment. Docker context excludes private signing/local-test material. |
+| Readability | Patrol/security handlers are formatted with Prettier, checked in CI; sign-in has explicit device lock, guard authentication and shift selection helpers. |
+| Duplicate models | Removed the unused v1 QR scheme and duplicate session/offline scan models. Runtime service integration tests cover actual handover, dedupe and evidence rules. |
+| Crisis identity | Human-facing defaults, download names, map identifiers, Android namespace and signing variable names use Crisis. Installed release/debug application IDs remain stable. |
+| Documentation | Maintained index, security guide and generated Zod patrol contracts replace conflicting API references; historical audits are archived. |
+| CI and scheduler | Disposable Postgres covers real patrol/setup/security/HTTP regressions and the full gateway e2e suite. Android debug/release verification is included. Vercel requests minute cron; GitHub is explicitly a bounded five-minute fallback. |
+| CSP | Added a baseline policy for resource origins, framing, forms, objects and base URIs. Inline allowances required by the current Next.js integration are documented. |
 
-Remaining work from the review is not represented as fixed: shared database throttling and trusted proxy policy; bounded lateness and clock trust for offline evidence; PIN lockout fairness; API error classification and patrol batch limits; missed-alert reconciliation; formatting and consolidation of duplicate helpers/docs; CSP and deployment scheduler configuration.
+## Operator-owned rollout steps
 
-The installed Android application ID is already `zw.co.crisis.security` (debug uses `.debug`). The legacy Kotlin namespace does not change that identity. QR v1 helper functions have test callers; they are not currently used by the production patrol flow. Static QR plus phone GPS is not hardware attestation, as documented in COORDINATE_PATROLS.md.
+Source completion does not provision an external production HTTPS address, enable external SMS/cron accounts, or perform the physical Pixel test the user deferred. Configure the chosen Crisis-only endpoint, correct proxy hop policy, webhook headers and independent secret/key backups before company rollout. The production signing password and keystore remain private local files, with a local recovery copy; an off-machine backup is still the owner's responsibility.
 
-Second remediation batch:
-
-- Added a persisted User tokenVersion and checked it on every portal session lookup. Password resets increment it through both admin update paths. Logout increments it for the account, invalidating all existing sessions, and accepts POST only.
-- New session JWTs require the Crisis issuer/audience and version claim. Existing portal cookies require a new login after this update. Guard-device bearer tokens and patrol sessions are unaffected.
-- Unknown-email logins now perform bcrypt comparison in both login handlers. New password hashes use cost 12; older hashes retain their existing cost, so this is not a claim of perfectly identical response timing.
-- Added a real HTTP/PostgreSQL regression script: two independent cookies are rejected after password reset, a copied cookie fails after logout, and GET logout returns 405. The script passed against the disposable database. CI now builds and starts the isolated portal to run it.
-- Applied the additive user-session migration to isolated Postgres and the separate connected Crisis database after a Crisis-only backup. No Omega records were changed.
-
-Verification: 175 server unit tests passed, type checking and the production build passed, and the session revocation HTTP integration passed. Shared throttling, patrol clock/lateness policy and API error handling remain open.
+The release APK is separate from the debug USB APK. Both may coexist, and future updates must retain their own signing identity. Sync old test evidence before activating a production replacement. No Omega live records or deployment were changed.

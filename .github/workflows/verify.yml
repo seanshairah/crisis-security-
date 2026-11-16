@@ -24,6 +24,11 @@ jobs:
       AUTH_SECRET: isolated-ci-auth-secret-never-for-deployment
       PATROL_QR_SIGNING_SECRET: isolated-ci-qr-secret-never-for-deployment
       SMS_PROVIDER: simulated
+      APP_URL: http://localhost:3141
+      ADMIN_EMAIL: ci@crisis.test.invalid
+      ADMIN_PASSWORD: isolated-ci-password-not-for-deployment
+      QA_EMAIL: ci@crisis.test.invalid
+      QA_PASSWORD: isolated-ci-password-not-for-deployment
       CRON_SECRET: isolated-ci-cron-secret-never-for-deployment
       AUTOMATION_SECRET: isolated-ci-automation-secret-never-for-deployment
       AUTOMATION_INPROCESS: "false"
@@ -37,11 +42,15 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
+      - run: npm run db:seed
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run format:check
+      - run: npm run docs:api:check
       - run: npm test
       - run: npm run test:patrol-integration
       - run: npm run test:setup-integration
+      - run: npx tsx scripts/dev/security-hardening-integration.ts
       - run: npm run build
       - name: Start isolated portal
         run: |
@@ -53,3 +62,23 @@ jobs:
           cat /tmp/crisis-session-test.log
           exit 1
       - run: node scripts/dev/session-revocation-integration.mjs
+      - run: npm run test:all
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android JVM tests and debug build
+        run: ./android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug
+      - name: Create disposable signing identity for release verification
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/ci-release.p12" -storetype PKCS12 -alias ci-verification -keyalg RSA -validity 2 -storepass ci-verification-only -keypass ci-verification-only -dname "CN=Crisis CI verification only"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/ci-release.p12" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=ci-verification-only" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=ci-verification" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=ci-verification-only" >> "$GITHUB_ENV"
+      - name: Release tests, lint and assembly with disposable CI signer
+        run: ./android/gradlew -p android :app:testReleaseUnitTest :app:assembleRelease

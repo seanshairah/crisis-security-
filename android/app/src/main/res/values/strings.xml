@@ -9,9 +9,9 @@
     <string name="code_hint">A8F42X</string>
     <string name="activate_device">Activate this phone</string>
     <string name="activating">Activating…</string>
-    <string name="activation_help">Ask the administrator to register this phone under Gateway phones in the portal. They will give you a 6-character code.</string>
+    <string name="activation_help">Ask the administrator to register this phone under Gateway phones in the portal. They will give you a 10-character code.</string>
     <string name="err_server">Enter the server address, starting with https://</string>
-    <string name="err_code">Enter the 6-character activation code.</string>
+    <string name="err_code">Enter the 10-character activation code.</string>
     <string name="err_network">Could not reach the server. Check mobile data or Wi‑Fi, then try again.</string>
     <!-- Shown small, under the message above, for whoever has to diagnose it. -->
     <string name="err_detail">Details: %1$s</string>

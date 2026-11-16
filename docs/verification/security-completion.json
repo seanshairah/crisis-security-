@@ -1,0 +1,37 @@
+{
+  "version": "1.11.0",
+  "date": "2026-11-16",
+  "physicalDeviceTest": "Deferred by user; not claimed",
+  "productionDependencyVulnerabilities": 0,
+  "serverUnitTests": 171,
+  "gatewayIntegrationChecks": 151,
+  "databaseSuites": [
+    "patrol lifecycle, clock correction, late review, reconciliation and PIN pair isolation",
+    "guided setup/idempotency",
+    "shared rate budgets, proxy spoofing, SMS provider rejection and partial batch receipts"
+  ],
+  "sessionHttpReplayRegression": "passed",
+  "android": {
+    "debug": {
+      "tests": 71,
+      "failures": 0
+    },
+    "release": {
+      "tests": 71,
+      "failures": 0
+    }
+  },
+  "apks": {
+    "debug": {
+      "file": "crisis-security-1.11.0-usb-test.apk",
+      "sha256": "3ef86b84377a4d6df05b605973eaf01ebe9e8b96874f27fcf3cc1e1a20784382",
+      "certificateSha256": "5d93d819232eefe1b52becf0030a11e55761361c18d85b3f302a98bb0b2911e6"
+    },
+    "release": {
+      "file": "crisis-security-1.11.0-release.apk",
+      "sha256": "abfe582cd0bb5738dcb702019229010271cc9e92c61f75d5a3125a4898eafc10",
+      "certificateSha256": "8f26a1dbcde27b9cf201b2366e31043f59d72c0089bd523cdbbdee3bf3298fe8"
+    }
+  },
+  "releaseLint": "Local download stalled; full release lint is configured in GitHub CI. Local signed release assembly excluded lint tasks; do not interpret assembly as a completed physical rollout test."
+}

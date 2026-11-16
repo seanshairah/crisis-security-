@@ -1,3 +1,5 @@
+> For current security, namespace, shared-device patrols and deployment behavior, use the documentation index and SECURITY_OPERATIONS.md. This document retains historical architectural context.
+
 # Crisis Security — Milestone 4: standalone visual preview
 
 ## Run on your Mac without npm, Prisma, Docker or a database

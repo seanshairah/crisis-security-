@@ -41,9 +41,9 @@ export async function sendToRecipients(input: SendInput): Promise<SendOutcome[]>
     const fn = input.channel === "WHATSAPP" ? provider.sendWhatsApp?.bind(provider) : undefined;
     const fnEmail = input.channel === "EMAIL" ? provider.sendEmail?.bind(provider) : undefined;
     const msg = await db.smsMessage.create({
-      data: { channel: input.channel, subject: input.subject ?? null, direction: "OUTBOUND", fromNumber: process.env.SMS_SENDER_ID ?? "OMEGASEC", toNumber: to, body: input.body, type: input.type ?? "GENERAL", status: "QUEUED", provider: provider.name, guardId: r.guardId ?? null },
+      data: { channel: input.channel, subject: input.subject ?? null, direction: "OUTBOUND", fromNumber: process.env.SMS_SENDER_ID ?? "CRISIS", toNumber: to, body: input.body, type: input.type ?? "GENERAL", status: "QUEUED", provider: provider.name, guardId: r.guardId ?? null },
     });
-    const result = fn ? await fn(to, input.body) : fnEmail ? await fnEmail(to, input.subject ?? "Omega Protection Services", input.body) : { ok: false, error: `${provider.name} does not support ${input.channel.toLowerCase()}` };
+    const result = fn ? await fn(to, input.body) : fnEmail ? await fnEmail(to, input.subject ?? "Crisis Security", input.body) : { ok: false, error: `${provider.name} does not support ${input.channel.toLowerCase()}` };
     await db.smsMessage.update({ where: { id: msg.id }, data: { status: result.ok ? "SENT" : "FAILED", providerMessageId: result.providerMessageId ?? null, error: result.error ?? null } });
     await audit({ userId: input.actor.id, actor: input.actor.name, action: result.ok ? "MESSAGE_SENT" : "MESSAGE_FAILED", entity: "SmsMessage", entityId: msg.id, details: { channel: input.channel, to, error: result.error } });
     out.push({ name: r.name, to, ok: result.ok, error: result.error, messageId: msg.id });

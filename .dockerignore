@@ -15,3 +15,7 @@ android/*.jks
 artifacts
 docs
 scripts/dev/*.png
+
+.local
+deliverables
+*.keystore

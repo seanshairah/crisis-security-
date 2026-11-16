@@ -27,7 +27,7 @@ export type MapboxMapProps = {
   onUnavailable?: (reason: string) => void;
 };
 
-const SRC = { fence: "omega-fences", site: "omega-sites", acc: "omega-accuracy", trail: "omega-trails", point: "omega-points" } as const;
+const SRC = { fence: "crisis-fences", site: "crisis-sites", acc: "crisis-accuracy", trail: "crisis-trails", point: "crisis-points" } as const;
 const GLYPH_PX = 40;
 
 /** Material Symbol rendered to a canvas so markers use the same glyphs as the rest of the interface. */
@@ -86,39 +86,39 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
 
     for (const p of pp) {
       for (const [suffix, colour] of [["w", "#ffffff"], ["d", "#161616"]] as const) {
-        const id = `omega-${p.kind}-${suffix}`;
+        const id = `crisis-${p.kind}-${suffix}`;
         if (m.hasImage(id)) continue;
         const img = glyphImage(({ guard: "shield_person", request: "my_location", candidate: "my_location", call: "call", exit: "directions_run", return: "where_to_vote", unavailable: "location_off", pin: "pin_drop", check: "check", latest: "location_on" } as Record<string, IconName>)[p.kind] ?? "location_on", colour);
         if (img) m.addImage(id, img, { pixelRatio: 2 });
       }
     }
 
-    if (m.getLayer("omega-fence-fill")) return; // layers exist for this style; only data changed
-    m.addLayer({ id: "omega-fence-fill", type: "fill", source: SRC.fence, paint: { "fill-color": MAP_COLOUR.site, "fill-opacity": 0.08 } });
-    m.addLayer({ id: "omega-fence-line", type: "line", source: SRC.fence, paint: { "line-color": MAP_COLOUR.site, "line-width": 2 } });
-    m.addLayer({ id: "omega-trail", type: "line", source: SRC.trail, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": MAP_COLOUR.trail, "line-width": 2, "line-opacity": 0.75, "line-dasharray": [2, 1.5] } });
-    m.addLayer({ id: "omega-accuracy-fill", type: "fill", source: SRC.acc, paint: { "fill-color": ["get", "colour"], "fill-opacity": 0.1 } });
-    m.addLayer({ id: "omega-accuracy-line", type: "line", source: SRC.acc, paint: { "line-color": ["get", "colour"], "line-width": 1, "line-dasharray": [3, 2], "line-opacity": 0.8 } });
-    m.addLayer({ id: "omega-site-dot", type: "circle", source: SRC.site, paint: { "circle-radius": 5, "circle-color": "#1B5E20", "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
-    m.addLayer({ id: "omega-site-label", type: "symbol", source: SRC.site, minzoom: 12, layout: { "text-field": ["get", "name"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top", "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#2b2b2b", "text-halo-color": "#ffffff", "text-halo-width": 1.4 } });
-    m.addLayer({ id: "omega-alert-ring", type: "circle", source: SRC.point, filter: ["all", ["!", ["has", "point_count"]], ["!=", ["get", "alert"], ""]], paint: { "circle-radius": ["+", ["get", "radius"], 5], "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": MAP_COLOUR.alert, "circle-stroke-width": 3 } });
+    if (m.getLayer("crisis-fence-fill")) return; // layers exist for this style; only data changed
+    m.addLayer({ id: "crisis-fence-fill", type: "fill", source: SRC.fence, paint: { "fill-color": MAP_COLOUR.site, "fill-opacity": 0.08 } });
+    m.addLayer({ id: "crisis-fence-line", type: "line", source: SRC.fence, paint: { "line-color": MAP_COLOUR.site, "line-width": 2 } });
+    m.addLayer({ id: "crisis-trail", type: "line", source: SRC.trail, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": MAP_COLOUR.trail, "line-width": 2, "line-opacity": 0.75, "line-dasharray": [2, 1.5] } });
+    m.addLayer({ id: "crisis-accuracy-fill", type: "fill", source: SRC.acc, paint: { "fill-color": ["get", "colour"], "fill-opacity": 0.1 } });
+    m.addLayer({ id: "crisis-accuracy-line", type: "line", source: SRC.acc, paint: { "line-color": ["get", "colour"], "line-width": 1, "line-dasharray": [3, 2], "line-opacity": 0.8 } });
+    m.addLayer({ id: "crisis-site-dot", type: "circle", source: SRC.site, paint: { "circle-radius": 5, "circle-color": "#1B5E20", "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
+    m.addLayer({ id: "crisis-site-label", type: "symbol", source: SRC.site, minzoom: 12, layout: { "text-field": ["get", "name"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top", "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#2b2b2b", "text-halo-color": "#ffffff", "text-halo-width": 1.4 } });
+    m.addLayer({ id: "crisis-alert-ring", type: "circle", source: SRC.point, filter: ["all", ["!", ["has", "point_count"]], ["!=", ["get", "alert"], ""]], paint: { "circle-radius": ["+", ["get", "radius"], 5], "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": MAP_COLOUR.alert, "circle-stroke-width": 3 } });
     if (cl) {
       // A cluster is a count, not a state: it stays neutral so a group of guards is never read as "on site".
-      m.addLayer({ id: "omega-cluster", type: "circle", source: SRC.point, filter: ["has", "point_count"], paint: { "circle-color": "#2b2b2b", "circle-opacity": 0.92, "circle-radius": ["step", ["get", "point_count"], 15, 5, 19, 15, 24], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      m.addLayer({ id: "omega-cluster-count", type: "symbol", source: SRC.point, filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"] }, paint: { "text-color": "#ffffff" } });
+      m.addLayer({ id: "crisis-cluster", type: "circle", source: SRC.point, filter: ["has", "point_count"], paint: { "circle-color": "#2b2b2b", "circle-opacity": 0.92, "circle-radius": ["step", ["get", "point_count"], 15, 5, 19, 15, 24], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      m.addLayer({ id: "crisis-cluster-count", type: "symbol", source: SRC.point, filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"] }, paint: { "text-color": "#ffffff" } });
     }
     const unclustered = ["!", ["has", "point_count"]] as unknown as never;
-    m.addLayer({ id: "omega-point", type: "circle", source: SRC.point, filter: unclustered, paint: { "circle-radius": ["get", "radius"], "circle-color": ["case", ["get", "hollow"], "#ffffff", ["get", "colour"]], "circle-stroke-color": ["case", ["get", "hollow"], ["get", "colour"], "#ffffff"], "circle-stroke-width": 2 } });
-    m.addLayer({ id: "omega-point-glyph", type: "symbol", source: SRC.point, filter: unclustered, layout: { "icon-image": ["concat", "omega-", ["get", "kind"], ["case", ["get", "hollow"], "-d", "-w"]], "icon-size": ["case", ["get", "emphasis"], 0.5, 0.38], "icon-allow-overlap": true }, paint: {} });
-    m.addLayer({ id: "omega-point-label", type: "symbol", source: SRC.point, filter: ["all", unclustered, ["get", "emphasis"]], minzoom: 11, layout: { "text-field": ["get", "label"], "text-size": 11, "text-offset": [0, 1.3], "text-anchor": "top", "text-max-width": 18, "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#161616", "text-halo-color": "#ffffff", "text-halo-width": 1.6 } });
+    m.addLayer({ id: "crisis-point", type: "circle", source: SRC.point, filter: unclustered, paint: { "circle-radius": ["get", "radius"], "circle-color": ["case", ["get", "hollow"], "#ffffff", ["get", "colour"]], "circle-stroke-color": ["case", ["get", "hollow"], ["get", "colour"], "#ffffff"], "circle-stroke-width": 2 } });
+    m.addLayer({ id: "crisis-point-glyph", type: "symbol", source: SRC.point, filter: unclustered, layout: { "icon-image": ["concat", "crisis-", ["get", "kind"], ["case", ["get", "hollow"], "-d", "-w"]], "icon-size": ["case", ["get", "emphasis"], 0.5, 0.38], "icon-allow-overlap": true }, paint: {} });
+    m.addLayer({ id: "crisis-point-label", type: "symbol", source: SRC.point, filter: ["all", unclustered, ["get", "emphasis"]], minzoom: 11, layout: { "text-field": ["get", "label"], "text-size": 11, "text-offset": [0, 1.3], "text-anchor": "top", "text-max-width": 18, "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#161616", "text-halo-color": "#ffffff", "text-halo-width": 1.6 } });
 
-    for (const layer of ["omega-point", "omega-point-glyph", "omega-site-dot", "omega-cluster"]) {
+    for (const layer of ["crisis-point", "crisis-point-glyph", "crisis-site-dot", "crisis-cluster"]) {
       if (!m.getLayer(layer)) continue;
       m.on("mouseenter", layer, () => { m.getCanvas().style.cursor = "pointer"; });
       m.on("mouseleave", layer, () => { m.getCanvas().style.cursor = ""; });
     }
     // Popups are built as DOM nodes with textContent: guard names and device names are data, never markup.
-    for (const layer of ["omega-point", "omega-point-glyph", "omega-site-dot"]) {
+    for (const layer of ["crisis-point", "crisis-point-glyph", "crisis-site-dot"]) {
       if (!m.getLayer(layer)) continue;
       m.on("click", layer, (e) => {
         const f = e.features?.[0];
@@ -126,7 +126,7 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         const pr = f.properties as Record<string, string> | null;
         if (!pr) return;
         const box = document.createElement("div");
-        box.className = "omega-popup";
+        box.className = "crisis-popup";
         const title = document.createElement("strong");
         title.textContent = pr.label || pr.name || "Position";
         box.append(title);
@@ -150,7 +150,7 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         })();
       });
     }
-    if (m.getLayer("omega-cluster")) m.on("click", "omega-cluster", (e) => {
+    if (m.getLayer("crisis-cluster")) m.on("click", "crisis-cluster", (e) => {
       const f = e.features?.[0];
       if (!f) return;
       const source = m.getSource(SRC.point) as GeoJSONSource;
@@ -195,9 +195,9 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         m.addControl(new mod.ScaleControl({ maxWidth: 90, unit: "metric" }), "bottom-left");
         m.on("style.load", () => { styleReady.current = true; paint(); if (!ready.current) { ready.current = true; fit(); } });
         // Test hook: the browser suites assert on the real layers and sources rather than on pixels.
-        (window as unknown as { __omegaMap?: unknown }).__omegaMap = m;
+        (window as unknown as { __crisisMap?: unknown }).__crisisMap = m;
         m.on("error", (e) => { if (e.error?.message) console.warn("[map]", e.error.message); });
-        m.on("click", (e) => { const hit = m.queryRenderedFeatures(e.point, { layers: ["omega-point", "omega-point-glyph", "omega-site-dot", "omega-cluster"].filter((l) => m.getLayer(l)) }); if (!hit.length) onPickRef.current?.(e.lngLat.lat, e.lngLat.lng); });
+        m.on("click", (e) => { const hit = m.queryRenderedFeatures(e.point, { layers: ["crisis-point", "crisis-point-glyph", "crisis-site-dot", "crisis-cluster"].filter((l) => m.getLayer(l)) }); if (!hit.length) onPickRef.current?.(e.lngLat.lat, e.lngLat.lng); });
         ro = new ResizeObserver(() => { try { m.resize(); } catch { /* unmounted */ } });
         ro.observe(host.current);
       } catch (e) {

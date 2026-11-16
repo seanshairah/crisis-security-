@@ -15,14 +15,14 @@ async function main() {
     assert.equal(await db.location.count({ where: { name: siteInput.name } }), 1);
     await assert.rejects(saveSetup({ ...siteInput, name: 'Changed after retry' }, user), /already been used/);
     const siteId = String(sites[0].id);
-    const guardInput = { requestId: randomUUID(), kind: 'guard', firstName: 'Test', lastName: 'Guard', phone: `+26377${Date.now().toString().slice(-7)}`, nationalId: `TEST-${tag}`, locationId: siteId, pin: '654321' };
+    const guardInput = { requestId: randomUUID(), kind: 'guard', firstName: 'Test', lastName: 'Guard', phone: `+26377${Date.now().toString().slice(-7)}`, nationalId: `TEST-${tag}`, locationId: siteId, pin: '745912' };
     const guard = await saveSetup(guardInput, user);
     assert.equal((await saveSetup(guardInput, user)).id, guard.id);
     const credential = await db.patrolCredential.findUniqueOrThrow({ where: { guardId: String(guard.id) } });
     assert.equal(await verifyGuardPin(guardInput.pin, credential.pinHash), true);
     const audit = await db.auditLog.findUniqueOrThrow({ where: { id: `setup:${guardInput.requestId}` } });
     assert.ok(!JSON.stringify(audit.details).includes(guardInput.pin));
-    await assert.rejects(saveSetup({ ...guardInput, pin: '123456' }, user), /different PIN/);
+    await assert.rejects(saveSetup({ ...guardInput, pin: '746291' }, user), /different PIN/);
     const phoneInput = { requestId: randomUUID(), kind: 'handset', deviceName: 'Guided company phone', phoneNumber: '+263772100123', locationId: siteId };
     const phones = await Promise.all([saveSetup(phoneInput, user), saveSetup(phoneInput, user)]);
     assert.equal(phones[0].id, phones[1].id); assert.ok(phones[0].activationCode);

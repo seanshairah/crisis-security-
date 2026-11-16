@@ -1,3 +1,5 @@
+> Updated security policy: [Security operations](SECURITY_OPERATIONS.md). Version 1.11.0 supplies transport clock samples; excessive delays or uncertain clocks require review rather than automatic completion.
+
 # Coordinate patrol update · Android 1.10.0 debug
 
 The guard's home is now Field operations. It uses the Crisis charcoal/camouflage styling, a large scan action when a patrol is due, the latest scan result, recent scans, emergency/help and phone settings. Individual guard sign-in and the existing company-device activation and monitoring services are retained.

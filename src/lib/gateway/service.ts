@@ -1,3 +1,4 @@
+import { DomainError } from "@/lib/security/api-errors";
 /**
  * Gateway device lifecycle: create → activation code → activate (token) → heartbeats →
  * online/offline → disable/revoke. Everything here is additive to the SMS system.
@@ -29,7 +30,7 @@ export type CreateGatewayInput = { deviceName: string; phoneNumber: string; loca
 
 export async function createGateway(input: CreateGatewayInput) {
   const phone = normalisePhone(input.phoneNumber);
-  if (!isValidPhone(phone)) throw new Error("Enter a valid phone number for the gateway SIM.");
+  if (!isValidPhone(phone)) throw new DomainError("Enter a valid phone number for the gateway SIM.");
   const device = await db.gatewayDevice.create({
     data: {
       deviceName: input.deviceName.trim(),
@@ -58,8 +59,8 @@ async function uniqueCode(): Promise<string> {
 /** A fresh code for a pending device, or to re-activate a device whose phone was replaced. */
 export async function regenerateActivationCode(id: string, actor: { userId: string; name: string }) {
   const device = await db.gatewayDevice.findUnique({ where: { id } });
-  if (!device) throw new Error("Gateway not found");
-  if (device.status === "REVOKED") throw new Error("A revoked gateway cannot be re-activated. Create a new one.");
+  if (!device) throw new DomainError("Gateway not found");
+  if (device.status === "REVOKED") throw new DomainError("A revoked gateway cannot be re-activated. Create a new one.");
   const updated = await db.gatewayDevice.update({
     where: { id },
     data: { activationCode: await uniqueCode(), activationExpiresAt: addHours(new Date(), ACTIVATION_CODE_HOURS), activationStatus: "PENDING", tokenHash: null, tokenIssuedAt: null, status: device.status === "DISABLED" ? "DISABLED" : "OFFLINE" },
@@ -76,13 +77,13 @@ export type DeviceInfo = { appVersion?: string; androidVersion?: string; deviceM
 export async function activateGateway(code: string, info: DeviceInfo, ip: string | null) {
   const clean = code.trim().toUpperCase();
   const device = await db.gatewayDevice.findUnique({ where: { activationCode: clean } });
-  if (!device || device.activationStatus !== "PENDING") throw new Error("Activation code not recognised");
-  if (device.status === "REVOKED") throw new Error("This gateway has been revoked");
-  if (device.activationExpiresAt && device.activationExpiresAt < new Date()) throw new Error("Activation code has expired. Ask an administrator for a new one.");
+  if (!device || device.activationStatus !== "PENDING") throw new DomainError("Activation code not recognised");
+  if (device.status === "REVOKED") throw new DomainError("This gateway has been revoked");
+  if (device.activationExpiresAt && device.activationExpiresAt < new Date()) throw new DomainError("Activation code has expired. Ask an administrator for a new one.");
   const token = generateDeviceToken();
   const now = new Date();
   const updated = await db.gatewayDevice.update({
-    where: { id: device.id },
+    where: { id: device.id, activationCode: clean, activationStatus: "PENDING" },
     data: {
       activationStatus: "ACTIVE", activationCode: null, activationExpiresAt: null, activatedAt: now,
       tokenHash: hashToken(token), tokenIssuedAt: now, lastSeenAt: now, lastIp: ip,
@@ -216,7 +217,7 @@ export async function updateGateway(id: string, data: { deviceName?: string; pho
   if (data.deviceName !== undefined) patch.deviceName = data.deviceName.trim();
   if (data.phoneNumber !== undefined) {
     const phone = normalisePhone(data.phoneNumber);
-    if (!isValidPhone(phone)) throw new Error("Enter a valid phone number for the gateway SIM.");
+    if (!isValidPhone(phone)) throw new DomainError("Enter a valid phone number for the gateway SIM.");
     patch.phoneNumber = phone;
   }
   if (data.locationId !== undefined) patch.location = data.locationId ? { connect: { id: data.locationId } } : { disconnect: true };
@@ -230,8 +231,8 @@ export async function updateGateway(id: string, data: { deviceName?: string; pho
 
 export async function setGatewayDisabled(id: string, disabled: boolean, actor: { userId: string; name: string }) {
   const device = await db.gatewayDevice.findUnique({ where: { id } });
-  if (!device) throw new Error("Gateway not found");
-  if (device.status === "REVOKED") throw new Error("A revoked gateway cannot be changed.");
+  if (!device) throw new DomainError("Gateway not found");
+  if (device.status === "REVOKED") throw new DomainError("A revoked gateway cannot be changed.");
   const updated = await db.gatewayDevice.update({ where: { id }, data: disabled ? { status: "DISABLED", disabledAt: new Date() } : { status: "OFFLINE", disabledAt: null } });
   await audit({ userId: actor.userId, actor: actor.name, action: disabled ? "GATEWAY_DISABLED" : "GATEWAY_ENABLED", entity: "GatewayDevice", entityId: id });
   return updated;

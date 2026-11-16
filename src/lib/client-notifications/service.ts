@@ -249,7 +249,7 @@ async function deliver(row: ClientNotification, actor: { id: string; name: strin
       const provider = getProvider();
       const fn = row.channel === "EMAIL" ? provider.sendEmail?.bind(provider) : undefined;
       const wa = row.channel === "WHATSAPP" ? provider.sendWhatsApp?.bind(provider) : undefined;
-      const m = await db.smsMessage.create({ data: { channel: row.channel, subject: row.subject, direction: "OUTBOUND", fromNumber: process.env.SMS_SENDER_ID ?? "OMEGASEC", toNumber: row.recipient, body: row.message, type: "CLIENT_UPDATE", status: "QUEUED", provider: provider.name, guardId: row.guardId, shiftId: row.shiftId, locationId: row.locationId, clientId: row.clientId } });
+      const m = await db.smsMessage.create({ data: { channel: row.channel, subject: row.subject, direction: "OUTBOUND", fromNumber: process.env.SMS_SENDER_ID ?? "CRISIS", toNumber: row.recipient, body: row.message, type: "CLIENT_UPDATE", status: "QUEUED", provider: provider.name, guardId: row.guardId, shiftId: row.shiftId, locationId: row.locationId, clientId: row.clientId } });
       const r = fn ? await fn(row.recipient, row.subject ?? "Update from the control room", row.message) : wa ? await wa(row.recipient, row.message) : { ok: false, error: `${provider.name} cannot send ${CHANNEL_NAME[row.channel].toLowerCase()}`, providerMessageId: undefined };
       await db.smsMessage.update({ where: { id: m.id }, data: { status: r.ok ? "SENT" : "FAILED", providerMessageId: r.providerMessageId ?? null, error: r.error ?? null } });
       smsMessageId = m.id; ok = r.ok; reason = r.error ?? null;

@@ -19,7 +19,7 @@ export const GET = guarded("SUPERVISOR", async (req) => {
  * The client is worked out from the shift, guard, incident or site; it is never taken from the request.
  */
 export const POST = guarded("SUPERVISOR", async (req, _ctx, user) => {
-  const rl = rateLimit(`clientnotify:${user.id}`, 10, 60_000);
+  const rl = await rateLimit(`clientnotify:${user.id}`, 10, 60_000);
   if (!rl.ok) return error("Too many messages. Wait a moment.", 429);
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   try {

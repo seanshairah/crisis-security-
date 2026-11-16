@@ -1,1 +1,1 @@
-export { DELETE as POST } from '../session/route';
+export { DELETE as POST } from "../session/route";

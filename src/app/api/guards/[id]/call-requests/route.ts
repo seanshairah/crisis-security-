@@ -20,7 +20,7 @@ export const GET = guarded<Ctx>("SUPERVISOR", async (_req, ctx) => {
 /** Ask a gateway phone to call this guard. Idempotent on `idempotencyKey`; returns the call in progress if there is one. */
 export const POST = guarded<Ctx>("SUPERVISOR", async (req, ctx, user) => {
   const { id: guardId } = await ctx.params;
-  const rl = rateLimit(`callreq:${user.id}`, 10, 60_000);
+  const rl = await rateLimit(`callreq:${user.id}`, 10, 60_000);
   if (!rl.ok) return error("Too many call requests. Wait a moment.", 429);
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);

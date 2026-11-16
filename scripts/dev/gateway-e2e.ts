@@ -9,11 +9,8 @@
 process.env.SMS_PROVIDER = process.env.SMS_PROVIDER || "simulated";
 import { config } from "dotenv"; config();
 // Guard rail: these scripts create and delete records by name pattern. Never run them against a production database.
-const dbUrl = process.env.DATABASE_URL ?? "";
-if (!/localhost|127\.0\.0\.1/.test(dbUrl) && process.env.ALLOW_LIVE_DB !== "1") {
-  console.error("Refusing to run against a non-local DATABASE_URL. Set ALLOW_LIVE_DB=1 only for a database that holds no real data.");
-  process.exit(2);
-}
+const verificationDb = new URL(process.env.DATABASE_URL ?? 'http://missing');
+if (!['localhost','127.0.0.1'].includes(verificationDb.hostname) || verificationDb.port !== '55439' || verificationDb.pathname !== '/crisis_test') throw Error('Use only the isolated crisis_test database on port 55439');
 import { addHours, subMinutes } from "date-fns";
 import { randomUUID } from "node:crypto";
 import { db } from "../../src/lib/db";
@@ -21,7 +18,8 @@ import { processIncomingMessage } from "../../src/lib/sms/pipeline";
 import { runAutomationTick } from "../../src/lib/automation/engine";
 import { createGateway, revokeGateway, gatewayMaintenance } from "../../src/lib/gateway/service";
 
-const BASE = process.env.APP_URL ?? "http://localhost:3000";
+const BASE = process.env.APP_URL ?? "http://localhost:3141";
+if (BASE !== "http://localhost:3141") throw Error("Use the isolated portal on localhost:3141");
 // Not +263771234567: gateway-qa-data.ts seeds that number for its own QA guard, and Guard.phone is unique.
 const GUARD_PHONE = "+263771234581";
 let passed = 0, failed = 0;
