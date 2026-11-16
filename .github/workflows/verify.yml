@@ -1,0 +1,40 @@
+name: Verify Crisis source
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  portal:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crisis_test
+          POSTGRES_PASSWORD: crisis_test_local_only
+          POSTGRES_DB: crisis_test
+        ports:
+          - 55439:5432
+        options: >-
+          --health-cmd "pg_isready -U crisis_test -d crisis_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://crisis_test:crisis_test_local_only@127.0.0.1:55439/crisis_test
+      AUTH_SECRET: isolated-ci-auth-secret-never-for-deployment
+      PATROL_QR_SIGNING_SECRET: isolated-ci-qr-secret-never-for-deployment
+      SMS_PROVIDER: simulated
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:patrol-integration
+      - run: npm run test:setup-integration

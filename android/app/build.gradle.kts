@@ -83,10 +83,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = if (releaseKeystore != null) signingConfigs.getByName("release") else {
-                logger.warn("WARNING: no release keystore configured (ANDROID_KEYSTORE_PATH); signing the release APK with the debug key.")
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = if (releaseKeystore != null) signingConfigs.getByName("release") else null
         }
     }
 
@@ -111,4 +108,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303") // real org.json for JVM unit tests (the Android SDK stub throws)
+}
+
+// Refuse every release artifact when signing credentials are absent. Debug testing stays available.
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it.project == project && it.name.contains("Release", ignoreCase = true) } && releaseKeystore.isNullOrBlank()) {
+        throw GradleException("Crisis release signing requires ANDROID_KEYSTORE_PATH and release credentials. Configure android/keystore.properties or the ANDROID_KEYSTORE environment variables.")
+    }
 }

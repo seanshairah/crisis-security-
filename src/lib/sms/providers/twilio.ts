@@ -1,3 +1,4 @@
+import { secretMatches, usableSecret } from "@/lib/security/secrets";
 import type { SmsProvider, SendResult, WebhookRequest, InboundMessage } from "../provider";
 import { parseBody, providerConfig } from "../provider";
 
@@ -30,13 +31,13 @@ export class TwilioProvider implements SmsProvider {
   async verifyWebhook(req: WebhookRequest): Promise<boolean> {
     const cfg = providerConfig();
     const sig = req.headers.get("x-twilio-signature");
-    if (!cfg.apiSecret || !sig) return !cfg.apiSecret;
+    if (!usableSecret(cfg.apiSecret) || !sig) return false;
     const params = parseBody(req);
     const data = req.url + Object.keys(params).sort().map((k) => k + params[k]).join("");
     const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(cfg.apiSecret), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
     const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
     const expected = Buffer.from(mac).toString("base64");
-    return expected === sig;
+    return secretMatches(expected, sig);
   }
 
   async parseInbound(req: WebhookRequest): Promise<InboundMessage[]> {

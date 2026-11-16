@@ -1,3 +1,4 @@
+import { secretMatches } from "@/lib/security/secrets";
 import { NextResponse } from "next/server";
 import { runScheduledTick } from "@/lib/automation/scheduler";
 import { apiUser } from "@/lib/auth/rbac";
@@ -12,7 +13,8 @@ export const maxDuration = 60;
 async function authorised(req: Request) {
   const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const secrets = [process.env.AUTOMATION_SECRET, process.env.CRON_SECRET].filter(Boolean);
-  if (bearer && secrets.includes(bearer)) return true;
+  if (secrets.some(secret => secretMatches(secret, bearer))) return true;
+  if (req.method === "GET") return false;
   const { status } = await apiUser("ADMIN");
   return status === 200;
 }

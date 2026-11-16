@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { applyDeliveryToNotifications } from "@/lib/client-notifications/service";
 import { db } from "@/lib/db";
-import { getProvider, PROVIDER_NAMES } from "@/lib/sms";
+import { getProvider, PROVIDER_NAMES, activeProviderName } from "@/lib/sms";
 import type { WebhookRequest } from "@/lib/sms/provider";
 import { processIncomingMessage } from "@/lib/sms/pipeline";
 import { audit } from "@/lib/audit";
@@ -12,7 +12,7 @@ import { audit } from "@/lib/audit";
  */
 export async function POST(req: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider: name } = await params;
-  if (!PROVIDER_NAMES.includes(name)) return NextResponse.json({ error: "unknown provider" }, { status: 404 });
+  if (!PROVIDER_NAMES.includes(name) || name !== activeProviderName()) return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   const provider = getProvider(name);
   const wreq: WebhookRequest = { headers: req.headers, url: req.url, rawBody: await req.text(), contentType: req.headers.get("content-type") ?? "" };
 

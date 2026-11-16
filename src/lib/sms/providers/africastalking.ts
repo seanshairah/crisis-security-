@@ -1,3 +1,4 @@
+import { secretMatches } from "@/lib/security/secrets";
 import type { SmsProvider, SendResult, WebhookRequest, InboundMessage } from "../provider";
 import { parseBody, providerConfig } from "../provider";
 
@@ -5,7 +6,7 @@ import { parseBody, providerConfig } from "../provider";
  * Africa's Talking — covers Econet, NetOne and Telecel in Zimbabwe with two-way SMS.
  * Outbound: POST https://api.africastalking.com/version1/messaging
  * Inbound:  the dashboard "Incoming messages" callback posts form fields
- *           from, to, text, date, id, linkId. We require ?key=SMS_WEBHOOK_SECRET on the URL.
+ *           from, to, text, date, id, linkId. We require X-Webhook-Secret in a private request header.
  */
 export class AfricasTalkingProvider implements SmsProvider {
   readonly name = "africastalking";
@@ -31,8 +32,7 @@ export class AfricasTalkingProvider implements SmsProvider {
 
   async verifyWebhook(req: WebhookRequest): Promise<boolean> {
     const { webhookSecret } = providerConfig();
-    if (!webhookSecret) return true;
-    return new URL(req.url).searchParams.get("key") === webhookSecret;
+    return secretMatches(webhookSecret, req.headers.get("x-webhook-secret"));
   }
 
   async parseInbound(req: WebhookRequest): Promise<InboundMessage[]> {

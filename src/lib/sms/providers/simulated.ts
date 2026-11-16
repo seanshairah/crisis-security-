@@ -1,3 +1,4 @@
+import { secretMatches } from "@/lib/security/secrets";
 import type { SmsProvider, SendResult, WebhookRequest, InboundMessage } from "../provider";
 import { parseBody } from "../provider";
 
@@ -23,8 +24,7 @@ export class SimulatedProvider implements SmsProvider {
 
   async verifyWebhook(req: WebhookRequest): Promise<boolean> {
     const secret = process.env.SMS_WEBHOOK_SECRET;
-    if (!secret) return true;
-    return req.headers.get("x-webhook-secret") === secret || new URL(req.url).searchParams.get("key") === secret;
+    return secretMatches(secret, req.headers.get("x-webhook-secret"));
   }
 
   async parseInbound(req: WebhookRequest): Promise<InboundMessage[]> {

@@ -1,3 +1,4 @@
+import { usableSecret } from "@/lib/security/secrets";
 import type { SmsProvider, SendResult, WebhookRequest, InboundMessage, DeliveryReport } from "../provider";
 import { parseBody, providerConfig } from "../provider";
 
@@ -64,7 +65,7 @@ export class SendaiProvider implements SmsProvider {
 
   async verifyWebhook(req: WebhookRequest): Promise<boolean> {
     const { webhookSecret } = providerConfig();
-    if (!webhookSecret) return true; // not configured yet: accept, but set it before going live
+    if (!usableSecret(webhookSecret)) return false;
     const sig = req.headers.get("x-sendai-signature") ?? "";
     if (!sig) return false;
     const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(webhookSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
