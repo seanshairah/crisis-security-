@@ -14,7 +14,7 @@ import zw.co.crisis.security.ui.HoldMath
 class EmergencyScreensTest {
     private fun states(status: String?) = DeliveryTrail.steps(status).map { it.state }
 
-    @Test fun `a queued alert is only saved; nothing is claimed as received`() {
+    @Test fun `a queued alert is only saved and nothing is claimed as received`() {
         assertEquals(listOf(DONE, WAITING, WAITING), states("QUEUED"))
         assertEquals(listOf(DONE, WAITING, WAITING), states(null))
         assertFalse(DeliveryTrail.delivered("QUEUED"))
