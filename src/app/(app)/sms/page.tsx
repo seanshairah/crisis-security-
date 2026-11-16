@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { requireUser } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { messagesSummary } from "@/lib/list-summaries";
 import type { Prisma } from "@prisma/client";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Status } from "@/components/ui/status";
@@ -40,6 +41,7 @@ export default async function SmsLogsPage({ searchParams }: { searchParams: Prom
   return (
     <div>
       <PageHeader title="Message logs" description={`Every SMS, WhatsApp and email in and out, with how the system read each reply. Provider: ${activeProviderName()}.`} actions={<Link href="/messages/new" className="inline-flex h-9 items-center rounded-[8px] bg-accent-gradient px-3.5 text-sm font-medium hover:bg-accent-strong">Compose</Link>} />
+      <SummaryTiles items={await messagesSummary()} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segments items={[{ href: keep({ direction: "", status: "" }), label: "All", count: counts[0], active: !sp.direction && !sp.status }, { href: keep({ direction: "OUTBOUND", status: "" }), label: "Sent", count: counts[1], active: sp.direction === "OUTBOUND" }, { href: keep({ direction: "INBOUND", status: "" }), label: "Received", count: counts[2], active: sp.direction === "INBOUND" }, { href: keep({ status: "FAILED", direction: "" }), label: "Failed", count: counts[3], active: sp.status === "FAILED", tone: counts[3] ? "critical" : undefined }]} />
         <form className="flex flex-wrap items-center gap-2">

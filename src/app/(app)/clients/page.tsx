@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { clientsSummary } from "@/lib/list-summaries";
 import { ON_SITE_STATUSES } from "@/lib/services/shifts";
-import { PageHeader } from "@/components/ui/page";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Status } from "@/components/ui/status";
@@ -18,6 +19,7 @@ export default async function ClientsPage() {
   return (
     <div>
       <PageHeader title="Clients" description="Each client owns one or more sites. Deployments and reports can be viewed per client." actions={can.manageLocations(user) && <LinkButton href="/clients/new" variant="primary">Add client</LinkButton>} />
+      <SummaryTiles items={await clientsSummary()} />
       <Card>
         <Table>
           <THead><tr><th>Client</th><th>Industry</th><th>Contact</th><th>Sites</th><th>Guards on duty</th><th>Status</th><th></th></tr></THead>

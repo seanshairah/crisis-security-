@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { locationsSummary } from "@/lib/list-summaries";
 import { ON_SITE_STATUSES } from "@/lib/services/shifts";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Status } from "@/components/ui/status";
@@ -21,6 +22,7 @@ export default async function LocationsPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <PageHeader title="Locations" description="Every site under contract, with who is on post right now." actions={can.manageLocations(user) && <LinkButton href="/locations/new" variant="primary">Add location</LinkButton>} />
+      <SummaryTiles items={await locationsSummary()} />
       <Segments className="mb-4" items={[{ href: "/locations", label: "All clients", active: !sp.clientId }, ...clients.map((c) => ({ href: `/locations?clientId=${c.id}`, label: c.name, active: sp.clientId === c.id }))]} />
       <Card>
         <Table>

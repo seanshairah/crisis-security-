@@ -1,8 +1,9 @@
 import { subDays } from "date-fns";
 import { requireUser } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { callsSummary } from "@/lib/list-summaries";
 import { callRows, liveCalls, callMetrics, type CallFilter } from "@/lib/gateway/calls";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select, Input } from "@/components/ui/form";
 import { LiveCallCards } from "@/components/calls/live-calls";
@@ -31,6 +32,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
     <div>
       <AutoRefresh seconds={10} />
       <PageHeader title="Calls" description={`Calls to the gateway phones. Last 30 days: ${metrics.total} calls, ${metrics.missed} missed, ${metrics.unknown} from unknown numbers.`} actions={<a href="/reports/calls" className="inline-flex h-9 items-center rounded-[8px] border border-line bg-surface px-3.5 text-sm font-medium hover:bg-surface-2">Call report</a>} />
+      <SummaryTiles items={callsSummary(metrics)} />
       <Card className="mb-4">
         <CardHeader title="Live" description="Calls in progress, then unhandled missed calls from the last 24 hours." />
         <div className="p-4 pt-0"><LiveCallCards live={live} missed={missed.filter((m) => !live.some((l) => l.id === m.id))} /></div>

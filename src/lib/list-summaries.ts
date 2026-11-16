@@ -8,7 +8,9 @@ import type { SummaryTile } from "@/components/ui/page";
 export async function guardsSummary(): Promise<SummaryTile[]> {
   const [active, onDuty, away, watched] = await Promise.all([
     db.guard.count({ where: { active: true } }),
-    db.shift.groupBy({ by: ["guardId"], where: { status: { in: ON_SITE_STATUSES } } }).then((r) => r.length),
+    db.shift
+      .groupBy({ by: ["guardId"], where: { status: { in: ON_SITE_STATUSES } } })
+      .then((r) => r.length),
     db.guard.count({ where: { employmentStatus: { in: ["ON_LEAVE", "SUSPENDED"] } } }),
     db.guard.count({ where: { watched: true } }),
   ]);
@@ -24,7 +26,9 @@ export async function shiftsSummary(): Promise<SummaryTile[]> {
   const today = startOfDay(new Date());
   const tomorrow = new Date(+today + 86400000);
   const [scheduled, onDuty, attention, completed] = await Promise.all([
-    db.shift.count({ where: { startAt: { gte: today, lt: tomorrow }, status: { not: "CANCELLED" } } }),
+    db.shift.count({
+      where: { startAt: { gte: today, lt: tomorrow }, status: { not: "CANCELLED" } },
+    }),
     db.shift.count({ where: { status: { in: ON_SITE_STATUSES } } }),
     db.shift.count({ where: { status: { in: ["LATE", "NOT_CONFIRMED"] } } }),
     db.shift.count({ where: { status: "COMPLETED", endAt: { gte: today } } }),
@@ -41,13 +45,21 @@ export async function incidentsSummary(): Promise<SummaryTile[]> {
   const week = subDays(new Date(), 7);
   const [open, emergencies, resolved, total] = await Promise.all([
     db.incident.count({ where: { status: { in: ["OPEN", "ACKNOWLEDGED"] } } }),
-    db.incident.count({ where: { category: "EMERGENCY", status: { in: ["OPEN", "ACKNOWLEDGED"] } } }),
-    db.incident.count({ where: { status: { in: ["RESOLVED", "CLOSED"] }, occurredAt: { gte: week } } }),
+    db.incident.count({
+      where: { category: "EMERGENCY", status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+    }),
+    db.incident.count({
+      where: { status: { in: ["RESOLVED", "CLOSED"] }, occurredAt: { gte: week } },
+    }),
     db.incident.count({ where: { occurredAt: { gte: subDays(new Date(), 30) } } }),
   ]);
   return [
     { label: "Open", value: open, tone: open > 0 ? "warn" : "neutral" },
-    { label: "Open emergencies", value: emergencies, tone: emergencies > 0 ? "critical" : "neutral" },
+    {
+      label: "Open emergencies",
+      value: emergencies,
+      tone: emergencies > 0 ? "critical" : "neutral",
+    },
     { label: "Resolved, last 7 days", value: resolved, tone: "ok" },
     { label: "Reported, last 30 days", value: total },
   ];
@@ -69,14 +81,98 @@ export async function alertsSummary(): Promise<SummaryTile[]> {
   ];
 }
 
-export function devicesSummary(rows: { status: string; activationStatus: string }[]): SummaryTile[] {
+export function devicesSummary(
+  rows: { status: string; activationStatus: string }[],
+): SummaryTile[] {
   const online = rows.filter((r) => r.status === "ONLINE").length;
-  const offline = rows.filter((r) => r.status === "OFFLINE" && r.activationStatus === "ACTIVE").length;
+  const offline = rows.filter(
+    (r) => r.status === "OFFLINE" && r.activationStatus === "ACTIVE",
+  ).length;
   const pending = rows.filter((r) => r.activationStatus !== "ACTIVE").length;
   return [
     { label: "Phones", value: rows.length },
     { label: "Online", value: online, tone: online > 0 ? "ok" : "neutral" },
     { label: "Offline", value: offline, tone: offline > 0 ? "warn" : "neutral" },
     { label: "Waiting to activate", value: pending, note: "Activation code issued" },
+  ];
+}
+
+export async function clientsSummary(): Promise<SummaryTile[]> {
+  const [active, sites, guarded, inactive] = await Promise.all([
+    db.client.count({ where: { active: true } }),
+    db.location.count({ where: { active: true } }),
+    db.shift
+      .groupBy({ by: ["locationId"], where: { status: { in: ON_SITE_STATUSES } } })
+      .then((r) => r.length),
+    db.client.count({ where: { active: false } }),
+  ]);
+  return [
+    { label: "Active clients", value: active },
+    { label: "Sites under contract", value: sites },
+    { label: "Sites with a guard on post", value: guarded, tone: guarded > 0 ? "ok" : "neutral" },
+    { label: "Inactive clients", value: inactive },
+  ];
+}
+
+export async function locationsSummary(): Promise<SummaryTile[]> {
+  const [active, guarded, withoutFence, inactive] = await Promise.all([
+    db.location.count({ where: { active: true } }),
+    db.shift
+      .groupBy({ by: ["locationId"], where: { status: { in: ON_SITE_STATUSES } } })
+      .then((r) => r.length),
+    db.location.count({ where: { active: true, OR: [{ latitude: null }, { longitude: null }] } }),
+    db.location.count({ where: { active: false } }),
+  ]);
+  return [
+    { label: "Active sites", value: active },
+    { label: "With a guard on post", value: guarded, tone: guarded > 0 ? "ok" : "neutral" },
+    {
+      label: "No position set",
+      value: withoutFence,
+      tone: withoutFence > 0 ? "warn" : "neutral",
+      note: "Arrival cannot be checked by GPS",
+    },
+    { label: "Inactive sites", value: inactive },
+  ];
+}
+
+export async function usersSummary(): Promise<SummaryTile[]> {
+  const [active, admins, supervisors, inactive] = await Promise.all([
+    db.user.count({ where: { active: true } }),
+    db.user.count({ where: { active: true, role: { in: ["SUPER_ADMIN", "ADMIN"] } } }),
+    db.user.count({ where: { active: true, role: "SUPERVISOR" } }),
+    db.user.count({ where: { active: false } }),
+  ]);
+  return [
+    { label: "Active users", value: active },
+    { label: "Admins", value: admins },
+    { label: "Supervisors", value: supervisors },
+    { label: "Deactivated", value: inactive, tone: inactive > 0 ? "warn" : "neutral" },
+  ];
+}
+
+export async function messagesSummary(): Promise<SummaryTile[]> {
+  const day = subDays(new Date(), 1);
+  const [out, inbound, failed, queued] = await Promise.all([
+    db.smsMessage.count({ where: { direction: "OUTBOUND", createdAt: { gte: day } } }),
+    db.smsMessage.count({ where: { direction: "INBOUND", createdAt: { gte: day } } }),
+    db.smsMessage.count({ where: { status: "FAILED", createdAt: { gte: day } } }),
+    db.smsMessage.count({ where: { status: "QUEUED" } }),
+  ]);
+  return [
+    { label: "Sent, last 24 hours", value: out },
+    { label: "Replies, last 24 hours", value: inbound },
+    { label: "Failed", value: failed, tone: failed > 0 ? "critical" : "neutral" },
+    { label: "Waiting to send", value: queued, tone: queued > 0 ? "warn" : "neutral" },
+  ];
+}
+
+export function callsSummary(m: { total: number; missed: number; unknown: number }): SummaryTile[] {
+  const answered = Math.max(0, m.total - m.missed);
+  return [
+    { label: "Calls, last 30 days", value: m.total },
+    { label: "Answered", value: answered, tone: "ok" },
+    { label: "Missed", value: m.missed, tone: m.missed > 0 ? "warn" : "neutral" },
+    { label: "From unknown numbers", value: m.unknown, tone: m.unknown > 0 ? "warn" : "neutral" },
   ];
 }

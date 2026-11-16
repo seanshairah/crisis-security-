@@ -1,6 +1,7 @@
 import { requireUser, ROLE_LABEL } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
-import { PageHeader } from "@/components/ui/page";
+import { usersSummary } from "@/lib/list-summaries";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
@@ -18,6 +19,7 @@ export default async function UsersPage() {
   return (
     <div>
       <PageHeader title="Users" description="Administrators and supervisors who can sign in. Guards do not have accounts; they use SMS." actions={<LinkButton href="/users/new" variant="primary">Add user</LinkButton>} />
+      <SummaryTiles items={await usersSummary()} />
       <Card>
         <Table>
           <THead><tr><th>User</th><th>Role</th><th>Phone</th><th>Last sign-in</th><th>Status</th><th></th></tr></THead>

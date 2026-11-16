@@ -48,7 +48,7 @@ no window to prompt from until it syncs again. It is off by default; enable it p
 - **Shift handover**: tables `AttentionClaim`, `Handover`, `HandoverNote`; `/handover` page; "Take it / Release" on the queue. First claim wins, only the
   owner or an admin releases, a handover moves the outgoing operator's claims in one transaction and freezes what was open. Guard alerts keep their owner
   in `acknowledgedBy`. Covered by `npm run test:handover`.
-- **List pages**: four summary tiles (`SummaryTiles`, figures in `src/lib/list-summaries.ts`) above Guards, Shifts, Incidents, Guard alerts and Devices.
+- **List pages**: four summary tiles (`SummaryTiles`, figures in `src/lib/list-summaries.ts`) above Guards, Shifts, Incidents, Guard alerts, Devices, Clients, Sites, Users, Message logs and Calls.
 - **Android emergency**: hold-to-send ring (`HoldRingView`, 2 s, drains back if released; TalkBack users keep the confirm dialog), then an "Emergency sent"
   screen with the delivery trail Saved / Received / Acknowledged driven by the outbox status. The alert is **never delayed**; the handoff's 5 s "undo" is
   implemented as "Sent by mistake? Tell operations", which sends a message and does not retract the alert, because there is no server-side cancel and a
@@ -59,7 +59,9 @@ no window to prompt from until it syncs again. It is off by default; enable it p
 
 ## Not done
 
-- Remaining list pages (Clients, Sites, Message logs, Templates, Calls, Reports, Users, Audit) get the tokens, serif titles and pill controls but no summary tiles yet.
+- Templates, Reports and Audit log have the new tokens and titles but no summary tiles; their content is not a list of records with a status to count.
 - Android screens other than patrol, scan result and emergency keep their layouts and pick up the palette, shapes and serif title.
 - The snapshot images in `android/app/src/test/snapshots` are still the old look until someone runs the workflow above and commits its output.
 - Map components are untouched (handoff: restyle chrome only).
+
+See `docs/DECISIONS.md` for why the emergency undo, window look-ahead, logout scope and handover ownership are the way they are.
