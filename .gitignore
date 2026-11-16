@@ -1,0 +1,35 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.log
+.DS_Store
+tsconfig.tsbuildinfo
+next-env.d.ts
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+android/keystore.properties
+android/*.jks
+
+# Machine-specific and secret files: never committed
+.env.*.local
+android/app/*.jks
+android/app/*.keystore
+android/*.keystore
+android/app/release/
+android/app/debug/
+android/.idea
+android/.kotlin
+activation-*.json
+
+# Crisis repository publishing
+artifacts/inherited-not-for-distribution/
+.env.*
+!.env.example
+!artifacts/verification/*.log
+
+# Local database backups, test credentials and process logs
+.local/

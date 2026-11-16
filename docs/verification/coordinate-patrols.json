@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-16",
+  "version": "1.10.0-debug",
+  "versionCode": 16,
+  "apkSha256": "ff61f93b4350c1f5fc771b02daba4fd05537fab4b4c5a02b773beba54d4794bb",
+  "apkSignature": "verified; same signing certificate as 1.9.5",
+  "serverUnitTests": {
+    "passed": 173,
+    "failed": 0
+  },
+  "androidJvmTests": {
+    "passed": 71,
+    "failed": 0
+  },
+  "checks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "webProductionBuild": "passed",
+    "isolatedPostgresPatrolIntegration": "passed; signed coordinates, copied QR outside checkpoint, tampering, fresh GPS time, replay, offline sync, guard handover",
+    "isolatedPostgresSetupIntegration": "passed",
+    "browserGuidedSetup": "passed; coordinate QR create/reprint/legacy upgrade, desktop/mobile",
+    "emulator": "passed; activation, guard sign-in, scan action during a cached patrol window, real SQLite v1 to v2 payload preservation, synthetic accepted receipt notification; physical QR decoding not tested",
+    "localConnectedCrisisHealth": "database healthy"
+  },
+  "database": {
+    "migration": "20261116090000_coordinate_checkpoint_qr",
+    "crisisBackupBeforeMigration": true,
+    "omegaRecordsModified": false
+  },
+  "physicalPixel1100": "deferred by user; no new physical camera/GPS/notification success claimed",
+  "emulatorReceiptWarning": "Synthetic accepted receipt was injected only into emulator SQLite for notification testing. It is not a server-verified GPS patrol."
+}

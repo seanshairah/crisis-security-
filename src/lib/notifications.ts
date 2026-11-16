@@ -1,0 +1,77 @@
+import { db } from "@/lib/db";
+import type { NotificationSeverity } from "@prisma/client";
+import { pushToAll } from "@/lib/push";
+
+/**
+ * Dashboard notifications. One function, one table. Channels (email, WhatsApp, push)
+ * can be added here later by fanning out from `notify` — callers do not change.
+ */
+export type NotifyInput = {
+  type:
+    | "GUARD_NOT_REPORTED"
+    | "GUARD_LATE"
+    | "ASSISTANCE_REQUESTED"
+    | "INCIDENT_REPORTED"
+    | "WELFARE_MISSED"
+    | "SHIFT_COMPLETED"
+    | "SHIFT_UNCONFIRMED"
+    | "NO_RESPONSE"
+    | "EMERGENCY"
+    | "STILL_ON_DUTY"
+    | "SHIFT_MISSED"
+    | "MISSED_CALL"
+    | "UNKNOWN_CALLER"
+    | "GATEWAY_OFFLINE"
+    | "LOCATION_EXIT"
+    | "LOCATION_EXTENDED"
+    | "LOCATION_RETURNED"
+    | "LOCATION_UNAVAILABLE"
+    | "LOCATION_OVERDUE"
+    | "LOCATION_EXCEPTION"
+    | "LOCATION_INTEGRITY"
+    | "DEVICE_OFFLINE"
+    | "DEVICE_LOW_BATTERY"
+    | "SECURITY_ALERT"
+    | "RUNNING_LATE"
+    | "STATUS_UPDATE"
+    | "SHIFT_OK"
+    | "SHIFT_HANDOVER"
+    | "SMS_FAILING"
+    | "CHECK_IN_CALL_OUTSTANDING"
+    | "CLIENT_NOTIFICATION_APPROVAL"
+    | "CALL_REQUEST_FAILED"
+    | "GUARD_ESCALATED"
+    | "CALL_ATTENDANCE_PENDING"
+    | "GENERAL";
+  severity?: NotificationSeverity;
+  title: string;
+  body: string;
+  guardId?: string | null;
+  shiftId?: string | null;
+  incidentId?: string | null;
+  /** Where a push notification opens; defaults to the incident, shift or guard. */
+  url?: string;
+};
+
+export async function notify(input: NotifyInput) {
+  // A watched guard's events are never quiet: at least WARNING, and labelled.
+  const watched = input.guardId ? await db.guard.findUnique({ where: { id: input.guardId }, select: { watched: true } }) : null;
+  let severity: NotificationSeverity = input.severity ?? "INFO";
+  let title = input.title;
+  if (watched?.watched) {
+    if (severity === "INFO") severity = "WARNING";
+    title = `Watched · ${title}`;
+  }
+  const n = await db.notification.create({
+    data: { type: input.type, severity, title, body: input.body, guardId: input.guardId ?? null, shiftId: input.shiftId ?? null, incidentId: input.incidentId ?? null },
+  });
+  const url = input.url ?? (input.incidentId ? `/incidents/${input.incidentId}` : input.shiftId ? `/shifts/${input.shiftId}` : input.guardId ? `/guards/${input.guardId}` : "/notifications");
+  if (severity !== "INFO" || watched?.watched) {
+    pushToAll({ title, body: input.body, url, tag: n.id, critical: severity === "CRITICAL" }).catch(() => undefined);
+  }
+  return n;
+}
+
+export async function unreadCount() {
+  return db.notification.count({ where: { readAt: null } });
+}

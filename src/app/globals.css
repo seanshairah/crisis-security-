@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-ground: #111416;
+  --color-surface: #1b2023;
+  --color-surface-2: #242a2e;
+  --color-line: #333b40;
+  --color-line-strong: #4c585e;
+  --color-ink: #edf0ee;
+  --color-ink-2: #b6bfbe;
+  --color-ink-3: #87938f;
+
+  --color-accent: #596963;
+  --color-accent-strong: #6b8077;
+  --color-accent-soft: #28362f;
+  --color-accent-bright: #c4d99a;
+
+  --color-ok: #82c9aa;
+  --color-ok-soft: #223a30;
+  --color-warn: #e2b879;
+  --color-warn-soft: #3b3123;
+  --color-critical: #ef807a;
+  --color-critical-soft: #3d2729;
+  --color-info: #96b7dd;
+  --color-info-soft: #273442;
+
+  /* Map overlays. The same values the renderers use (lib/map/features.ts), so a legend swatch in
+     the interface and a marker on the map can never drift apart. */
+  --color-map-site: #2e7d32;
+  --color-map-inside: #2e7d32;
+  --color-map-outside: #c62828;
+  --color-map-recent: #e2b879;
+  --color-map-stale: #8c948a;
+  --color-map-request: #7b3fa0;
+  --color-map-call: #3a50ad;
+  --color-map-trail: #5e665c;
+
+  /* Type scale. Operational density: 11px is a label, 13px is a row, 22px is a page title.
+     Nothing between 15 and 18, so a screen cannot drift into three competing body sizes. */
+  --text-micro: 11px;
+  --text-label: 12px;
+  --text-row: 13px;
+  --text-body: 14px;
+  --text-lead: 15px;
+  --text-figure: 18px;
+  --text-title: 22px;
+
+  /* Icon sizes, matching ICON_SIZE in components/ui/icon.tsx. */
+  --size-icon-xs: 12px;
+  --size-icon-sm: 14px;
+  --size-icon-md: 16px;
+  --size-icon-lg: 20px;
+  --size-icon-xl: 24px;
+
+  --radius-card: 16px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  /* Elevation. Three steps only: a resting surface, a floating panel, a map overlay. */
+  --shadow-rest: 0 1px 2px rgb(22 22 22 / 0.06);
+  --shadow-float: 0 8px 24px -8px rgb(22 22 22 / 0.14), 0 1px 2px rgb(22 22 22 / 0.06);
+  --shadow-overlay: 0 2px 8px -2px rgb(22 22 22 / 0.18);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+::selection { background: #dbeed2; }
+
+input, select, textarea { font: inherit; }
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fade-in 160ms ease-out; }
+
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #4c585e; border-radius: 8px; }
+
+/* Interactive states, one definition for every control. A focus ring is never removed, only moved
+   to :focus-visible, because an operator on a keyboard has to see where they are. */
+:where(a, button, [role="button"], summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+:where(button, [role="button"]):disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Mapbox GL: the map's own furniture, restyled to the portal's surfaces instead of Mapbox's. */
+.mapboxgl-ctrl-group {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-overlay);
+}
+.mapboxgl-ctrl-group button + button { border-top: 1px solid var(--color-line); }
+.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-scale {
+  font-size: var(--text-micro);
+  color: var(--color-ink-3);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+}
+.mapboxgl-ctrl-scale { border-color: var(--color-line-strong); }
+.mapboxgl-popup-content, .leaflet-popup-content-wrapper {
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-float);
+  font-size: var(--text-row);
+  padding: 10px 12px;
+  color: var(--color-ink);
+}
+.omega-popup strong { display: block; margin-bottom: 2px; font-weight: 600; }
+.omega-popup div { color: var(--color-ink-2); }
+.omega-popup a, .leaflet-popup-content a { color: var(--color-accent-strong); font-weight: 500; text-decoration: underline; }
+
+/* Respect a viewer who has asked for less movement: the map still pans, nothing else animates. */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in { animation: none; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+
+/* Crisis Security: subtle grey camouflage, deliberately kept away from form and data surfaces. */
+.crisis-camouflage { background-color: #363d42; background-image: linear-gradient(125deg, transparent 0 24%, #4e595f 24% 35%, transparent 35% 65%, #58636a 65% 74%, transparent 74%), linear-gradient(28deg, #30373c 0 31%, #626d72 31% 40%, #454f54 40% 68%, #333a3f 68%); color: #f5f6f6; }
+
+/* Crisis field identity: low-contrast topographic camo, restrained signal colour. */
+.crisis-command { position: relative; overflow: hidden; background: #20272a; }
+.crisis-command::before { content: ''; position: absolute; inset: 0; opacity: .24;
+  background: repeating-linear-gradient(125deg, transparent 0 70px, #58635b 71px 90px, transparent 91px 140px), repeating-linear-gradient(35deg, #303a38 0 50px, transparent 51px 130px, #414b47 131px 170px);
+  mask-image: linear-gradient(90deg, transparent, #000); pointer-events: none; }
+.crisis-chip { display: inline-flex; gap: .6rem; align-items: center; border: 1px solid var(--color-line); border-radius: 999px; padding: .5rem 1rem; font-size: 12px; color: var(--color-ink-2); background: var(--color-surface); }
+.crisis-chip.selected { border-color: var(--color-accent-bright); color: var(--color-accent-bright); background: var(--color-accent-soft); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

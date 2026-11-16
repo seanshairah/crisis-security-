@@ -1,0 +1,5 @@
+import { z } from 'zod';
+export const policySchema = z.object({ enabled: z.boolean(), minIntervalMinutes: z.number().int().min(1).max(240), maxIntervalMinutes: z.number().int().min(1).max(240), responseMinutes: z.number().int().min(1).max(60) }).refine(p => p.maxIntervalMinutes >= p.minIntervalMinutes, 'Maximum interval must follow minimum');
+export const checkpointSchema = z.object({ name: z.string().trim().min(1).max(100), latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180), radiusM: z.number().int().min(10).max(500), priority: z.number().int().min(1).max(10), minimumVisits: z.number().int().min(0).max(100) });
+export const scanSchema = z.object({ eventId: z.string().uuid(), sessionId: z.string().min(1).max(100), assignmentId: z.string().min(1).max(100), qr: z.string().min(20).max(512), capturedAt: z.string().datetime(), gpsCapturedAt: z.string().datetime().nullable().optional(), latitude: z.number().min(-90).max(90).nullable(), longitude: z.number().min(-180).max(180).nullable(), accuracyM: z.number().positive().max(10000).nullable(), mock: z.boolean() });
+export type Scan = z.infer<typeof scanSchema>;

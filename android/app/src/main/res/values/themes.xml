@@ -1,0 +1,201 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Material 3, light only: guards read this in sunlight and at night on cheap screens, and the
+         colours below were chosen for contrast on a light ground. Sentence-case buttons, M3 shapes. -->
+    <style name="Theme.Gateway" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/ink</item>
+        <item name="colorPrimaryContainer">@color/accent_soft</item>
+        <item name="colorOnPrimaryContainer">@color/accent_strong</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryContainer">@color/accent_soft</item>
+        <item name="colorOnSecondaryContainer">@color/accent_strong</item>
+        <item name="colorError">@color/critical</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/ink</item>
+        <item name="colorOnSurfaceVariant">@color/ink2</item>
+        <item name="colorSurfaceVariant">@color/surface3</item>
+        <item name="colorOutline">@color/line_strong</item>
+        <item name="colorOutlineVariant">@color/line</item>
+        <item name="android:colorBackground">@color/surface2</item>
+        <item name="android:windowBackground">@color/surface2</item>
+        <!-- Drawn edge to edge (required from Android 15); each screen pads itself with Insets. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+        <item name="android:textColorPrimary">@color/ink</item>
+        <item name="materialCardViewStyle">@style/Card</item>
+        <item name="materialButtonStyle">@style/Button.Filled</item>
+        <item name="materialAlertDialogTheme">@style/Dialog</item>
+        <item name="alertDialogTheme">@style/Dialog</item>
+    </style>
+
+    <style name="Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/accent_strong</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Button.Text</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Button.Text</item>
+    </style>
+
+    <!-- Cards: white, 16 dp corners, a hairline outline instead of a shadow. -->
+    <style name="Card" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">@color/line</item>
+        <item name="android:layout_marginTop">12dp</item>
+    </style>
+
+    <!-- Buttons: tall, rounded, bold, never smaller than a thumb. -->
+    <style name="Button.Filled" parent="Widget.Material3.Button">
+        <item name="cornerRadius">14dp</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/accent</item>
+        <item name="android:textColor">@color/surface</item>
+        <item name="elevation">0dp</item>
+    </style>
+    <style name="Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="cornerRadius">14dp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="strokeColor">@color/accent</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="android:textColor">@color/accent_strong</item>
+        <item name="rippleColor">@color/accent_soft</item>
+    </style>
+    <style name="Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/accent_strong</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="rippleColor">@color/accent_soft</item>
+    </style>
+    <style name="Button.Pill" parent="Widget.Material3.Button.TonalButton">
+        <item name="cornerRadius">24dp</item>
+        <!-- Android's floor for a finger, and this one is pressed in the dark with gloves on. -->
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/accent_soft</item>
+        <item name="android:textColor">@color/accent_strong</item>
+        <item name="rippleColor">@color/line</item>
+    </style>
+    <style name="Button.Emergency" parent="Widget.Material3.Button">
+        <item name="cornerRadius">16dp</item>
+        <item name="android:minHeight">76dp</item>
+        <item name="android:textSize">21sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="backgroundTint">@color/critical</item>
+        <item name="android:textColor">@color/surface</item>
+        <item name="iconTint">@color/surface</item>
+        <item name="iconSize">28dp</item>
+        <item name="iconPadding">14dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="rippleColor">@color/critical_strong</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <!-- Type -->
+    <style name="Label">
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">@color/ink3</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:layout_marginTop">14dp</item>
+    </style>
+    <style name="Value">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:layout_marginTop">2dp</item>
+    </style>
+    <style name="Headline">
+        <item name="android:textSize">21sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Body">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/ink2</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+    <style name="Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/line</item>
+    </style>
+
+    <!-- A status chip: soft tinted pill, a dot, one bold word or two. Tinted at runtime. -->
+    <style name="Chip">
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:drawableStart">@drawable/dot</item>
+        <item name="android:drawablePadding">7dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- Alerts list rows -->
+    <style name="ActionRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="ActionIconWrap">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+    </style>
+    <style name="ActionIcon">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+    <style name="ActionText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">14dp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="ActionChevron">
+        <item name="android:layout_width">20dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:src">@drawable/ic_chevron</item>
+        <item name="android:tint">@color/ink3</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+    <style name="RowDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginStart">70dp</item>
+        <item name="android:background">@color/line</item>
+    </style>
+</resources>
