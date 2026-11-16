@@ -7,8 +7,8 @@
  */
 process.env.SMS_PROVIDER = process.env.SMS_PROVIDER || "simulated";
 import { config } from "dotenv"; config();
-const dbUrl = process.env.DATABASE_URL ?? "";
-if (!/localhost|127\.0\.0\.1/.test(dbUrl) && process.env.ALLOW_LIVE_DB !== "1") { console.error("Refusing to run against a non-local DATABASE_URL. Set ALLOW_LIVE_DB=1 only for a database that holds no real data."); process.exit(2); }
+const verificationDb = new URL(process.env.DATABASE_URL ?? 'http://missing');
+if (!['localhost','127.0.0.1'].includes(verificationDb.hostname) || verificationDb.port !== '55439' || verificationDb.pathname !== '/crisis_test') throw Error('Use only the isolated crisis_test database on port 55439');
 import { addHours, subMinutes } from "date-fns";
 import { randomUUID } from "node:crypto";
 import { db } from "../../src/lib/db";
@@ -17,7 +17,8 @@ import { runAutomationTick } from "../../src/lib/automation/engine";
 import { createGateway, revokeGateway, gatewayMaintenance } from "../../src/lib/gateway/service";
 import { locationMaintenance } from "../../src/lib/gateway/location-events";
 
-const BASE = process.env.APP_URL ?? "http://localhost:3000";
+const BASE = process.env.APP_URL ?? "http://localhost:3141";
+if (BASE !== "http://localhost:3141") throw Error("Use the isolated portal on localhost:3141");
 const SITE = { latitude: -17.8292, longitude: 31.0522, radius: 150 };
 const GUARD_PHONE = "+263779900771"; // numbers no seed uses
 const PETER_PHONE = "+263779900772";

@@ -1,3 +1,5 @@
+> For current security, namespace, shared-device patrols and deployment behavior, use the documentation index and SECURITY_OPERATIONS.md. This document retains historical architectural context.
+
 # Android App Architecture (Security Gateway)
 
 One APK, two modes decided by the server at activation: **OPERATIONS_GATEWAY** (a company phone that reports calls) and **GUARD** (a guard's phone that also verifies location during shifts). This document describes the structure after Phase 1, Stage 1.

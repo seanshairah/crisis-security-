@@ -83,7 +83,7 @@ export async function processIncomingMessage(input: IncomingInput): Promise<Pipe
     data: {
       direction: "INBOUND",
       fromNumber: phone,
-      toNumber: process.env.SMS_SENDER_ID ?? "OMEGASEC",
+      toNumber: process.env.SMS_SENDER_ID ?? "CRISIS",
       body: input.body,
       status: "RECEIVED",
       provider: input.provider,

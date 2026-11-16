@@ -9,3 +9,5 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
 
 // A fixed valid hash ensures unknown accounts still perform a password comparison.
 export const DUMMY_PASSWORD_HASH = bcrypt.hashSync("crisis-unusable-dummy-password", 12);
+
+export function passwordNeedsRehash(hash: string): boolean { return bcrypt.getRounds(hash) < 12; }

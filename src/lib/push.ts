@@ -13,7 +13,7 @@ export function pushConfigured(): boolean {
 
 function ensure() {
   if (configured || !pushConfigured()) return;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:admin@omegasecurity.co.zw", process.env.VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:admin@crisissecurity.local", process.env.VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
   configured = true;
 }
 

@@ -21,7 +21,7 @@
     "automation:tick": "tsx scripts/tick.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:gateway-e2e": "tsx scripts/dev/gateway-e2e.ts",
-    "test:e2e": "tsx scripts/dev/gateway-e2e.ts && tsx scripts/dev/location-e2e.ts && tsx scripts/dev/alerts-e2e.ts && tsx scripts/dev/integration-e2e.ts && tsx scripts/dev/location-request-e2e.ts",
+    "test:e2e": "tsx scripts/dev/run-e2e-suite.ts",
     "test:geolocation": "node scripts/dev/geolocation-e2e.mjs",
     "test:all": "npm run typecheck && npm run lint && npm test && npm run test:e2e",
     "db:migration-status": "tsx scripts/dev/migration-status.ts",
@@ -52,7 +52,11 @@
     "test:setup-integration": "tsx scripts/dev/crisis-setup-integration.ts",
     "local:dev": "next dev -H 127.0.0.1 -p 3139",
     "local:start": "next start -H 127.0.0.1 -p 3139",
-    "local:usb": "node scripts/dev/usb-test.mjs"
+    "local:usb": "node scripts/dev/usb-test.mjs",
+    "format:security": "prettier --write \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
+    "format:check": "prettier --check \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
+    "docs:api": "tsx scripts/dev/generate-patrol-api-docs.ts",
+    "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -92,6 +96,7 @@
     "eslint": "^9",
     "eslint-config-next": "^15.5.29",
     "playwright-core": "^1.64.0",
+    "prettier": "^3.10.1",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",

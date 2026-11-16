@@ -29,7 +29,7 @@ export interface VoiceProvider {
 }
 
 /** The menu read to the guard. Kept here so the provider's script and the portal agree. */
-export const WELFARE_PROMPT = "Omega Protection Services shift verification. Press 1 if your shift is going well. Press 2 if you need assistance. Press 3 for an emergency.";
+export const WELFARE_PROMPT = "Crisis Security shift verification. Press 1 if your shift is going well. Press 2 if you need assistance. Press 3 for an emergency.";
 
 class SimulatedVoiceProvider implements VoiceProvider {
   readonly name = "simulated";

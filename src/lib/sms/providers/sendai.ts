@@ -7,7 +7,7 @@ import { parseBody, providerConfig } from "../provider";
  *
  *   SMS_PROVIDER=sendai
  *   SMS_API_KEY=sk_…              bearer key from the Sendai dashboard
- *   SMS_SENDER_ID=OMEGASEC        an approved sender identity (`address` in the sender-ID list)
+ *   SMS_SENDER_ID=CRISIS        an approved sender identity (`address` in the sender-ID list)
  *   SMS_WEBHOOK_SECRET=whsec_…    signing secret shown once when the webhook endpoint is created
  *   SENDAI_WHATSAPP_IDENTITY_ID   id of a verified WhatsApp sender identity (optional; auto-picked if one exists)
  *   SENDAI_EMAIL_IDENTITY_ID      id of a verified email sender identity (optional; auto-picked if one exists)

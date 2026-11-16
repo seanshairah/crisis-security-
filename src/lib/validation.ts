@@ -166,7 +166,7 @@ export const userSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "ADMIN", "SUPERVISOR"]),
   title: opt(z.string()),
   phone: opt(z.string()),
-  password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
+  password: z.string().min(12, "Password must be at least 12 characters").refine(v => new TextEncoder().encode(v).length <= 72, "Password must fit within 72 UTF-8 bytes").optional().or(z.literal("")),
 });
 
 export function formToObject(fd: FormData): Record<string, unknown> {

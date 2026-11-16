@@ -119,9 +119,9 @@ input, select, textarea { font: inherit; }
   padding: 10px 12px;
   color: var(--color-ink);
 }
-.omega-popup strong { display: block; margin-bottom: 2px; font-weight: 600; }
-.omega-popup div { color: var(--color-ink-2); }
-.omega-popup a, .leaflet-popup-content a { color: var(--color-accent-strong); font-weight: 500; text-decoration: underline; }
+.crisis-popup strong { display: block; margin-bottom: 2px; font-weight: 600; }
+.crisis-popup div { color: var(--color-ink-2); }
+.crisis-popup a, .leaflet-popup-content a { color: var(--color-accent-strong); font-weight: 500; text-decoration: underline; }
 
 /* Respect a viewer who has asked for less movement: the map still pans, nothing else animates. */
 @media (prefers-reduced-motion: reduce) {

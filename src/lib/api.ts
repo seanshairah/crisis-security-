@@ -1,3 +1,4 @@
+import { publicFailure } from "@/lib/security/api-errors";
 import { NextResponse } from "next/server";
 import type { Role } from "@prisma/client";
 import { apiUser } from "@/lib/auth/rbac";
@@ -9,13 +10,13 @@ export const error = (message: string, status = 400) => NextResponse.json({ erro
 /** Wrap a handler with auth + error handling. */
 export function guarded<T extends { params: Promise<Record<string, string>> } = { params: Promise<Record<string, string>> }>(minimum: Role, handler: (req: Request, ctx: T, user: SessionUser) => Promise<Response>) {
   return async (req: Request, ctx: T) => {
-    const { user, status } = await apiUser(minimum);
-    if (status !== 200 || !user) return error(status === 401 ? "Not signed in" : "Forbidden", status);
     try {
+      const { user, status } = await apiUser(minimum);
+      if (status !== 200 || !user) return error(status === 401 ? "Not signed in" : "Forbidden", status);
       return await handler(req, ctx, user);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Internal error";
-      return error(msg, /not found/i.test(msg) ? 404 : 400);
+      const failure = publicFailure(e);
+      return error(failure.message, failure.status);
     }
   };
 }

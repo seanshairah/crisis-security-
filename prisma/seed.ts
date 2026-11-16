@@ -1,5 +1,5 @@
 /**
- * Production seed for Omega Protection Services. Safe to run repeatedly.
+ * Production seed for Crisis Security. Safe to run repeatedly.
  * Creates the settings and message templates that are missing and the single super admin.
  * Never touches operational data. Run: npm run db:seed
  *   ADMIN_PASSWORD=…  password for the super admin (required on first run; later runs leave it alone)
@@ -11,7 +11,7 @@ import { TEMPLATE_DEFS } from "../src/lib/sms/templates";
 import { SETTING_DEFS } from "../src/lib/settings";
 import { db } from "../src/lib/db";
 
-export const SUPER_ADMIN = { name: "Mr Kudzu Felix Zveshure", email: "admin@omegasecurity.co.zw", title: "Managing Director", phone: "+263772100100", avatarUrl: "/avatars/admin.svg" };
+export const SUPER_ADMIN = { name: process.env.ADMIN_NAME ?? "Crisis Administrator", email: process.env.ADMIN_EMAIL ?? "admin@crisissecurity.local", title: "Administrator", phone: process.env.ADMIN_PHONE ?? null, avatarUrl: "/avatars/admin.svg" };
 
 export async function ensureBaseline() {
   for (const s of SETTING_DEFS) {
@@ -22,12 +22,11 @@ export async function ensureBaseline() {
   }
   const existing = await db.user.findUnique({ where: { email: SUPER_ADMIN.email } });
   if (existing) {
-    await db.user.update({ where: { id: existing.id }, data: { name: SUPER_ADMIN.name, role: "SUPER_ADMIN", title: SUPER_ADMIN.title, active: true } });
     return existing.id;
   }
   const password = process.env.ADMIN_PASSWORD;
-  if (!password) throw new Error("ADMIN_PASSWORD is required to create the super admin.");
-  const u = await db.user.create({ data: { ...SUPER_ADMIN, role: "SUPER_ADMIN", passwordHash: await bcrypt.hash(password, 10) } });
+  if (!password || password.length < 12 || new TextEncoder().encode(password).length > 72) throw new Error("ADMIN_PASSWORD must be 12 characters or longer and fit within 72 UTF-8 bytes.");
+  const u = await db.user.create({ data: { ...SUPER_ADMIN, role: "SUPER_ADMIN", passwordHash: await bcrypt.hash(password, 12) } });
   return u.id;
 }
 

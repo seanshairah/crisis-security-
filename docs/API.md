@@ -1,6 +1,10 @@
 # REST API
 
-All routes live under `src/app/api/*`. Unless stated otherwise they require the portal session cookie (`omega_session`, set by `POST /api/auth/login`) and are wrapped by `guarded(minimumRole, handler)` which returns `401` (not signed in), `403` (role too low), `404` or `400 { "error": "…" }`. Roles rank `SUPERVISOR < ADMIN < SUPER_ADMIN`. Pagination: `?page=&limit=` (max 200).
+Patrol request schemas are generated from the live Zod definitions: [machine-readable contracts](generated/patrol-api.json). The [security and deployment guide](SECURITY_OPERATIONS.md) defines time review, throttling and scheduler policy.
+
+Logout uses POST only; it invalidates all portal sessions for that account. Password resets also invalidate prior sessions.
+
+All routes live under `src/app/api/*`. Unless stated otherwise they require the portal session cookie (`crisis_session` (or `__Host-crisis_session` on configured production HTTPS hosts), set by `POST /api/auth/login`) and are wrapped by `guarded(minimumRole, handler)` which returns `401` (not signed in), `403` (role too low), `404`, `409`, `429`, or generic `500`/`503` errors for unexpected failures. Roles rank `SUPERVISOR < ADMIN < SUPER_ADMIN`. Pagination: `?page=&limit=` (max 200).
 
 Device routes (gateway phones) use `Authorization: Bearer <deviceToken>` instead of the cookie.
 

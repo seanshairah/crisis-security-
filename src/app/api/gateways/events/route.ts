@@ -12,7 +12,7 @@ import { db } from "@/lib/db";
 export async function POST(req: Request) {
   const auth = await authenticateGateway(req);
   if (!auth.device) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const rl = rateLimit(`ev:${auth.device.id}`, 120, 60_000);
+  const rl = await rateLimit(`ev:${auth.device.id}`, 120, 60_000);
   if (!rl.ok) return NextResponse.json({ error: "Too many events" }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } });
   const body = (await req.json().catch(() => null)) as unknown;
   const events = Array.isArray(body) ? body : body && typeof body === "object" && Array.isArray((body as { events?: unknown }).events) ? (body as { events: unknown[] }).events : body && typeof body === "object" ? [body] : [];

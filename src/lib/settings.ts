@@ -71,7 +71,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "geofence.overdueIntervals", label: "Overdue after", description: "Number of missed check intervals before a monitored shift is flagged as location verification overdue.", group: "geofence", default: "2", type: "number" },
   { key: "location.requestTtlSeconds", label: "Location request deadline", description: "Seconds a \"request current location\" waits for the phone before it expires. 60–600.", group: "geofence", default: "180", type: "number" },
   { key: "geofence.locationRetentionDays", label: "Location event retention", description: "Days to keep location events. 0 keeps everything.", group: "geofence", default: "180", type: "number" },
-  { key: "general.smsSignature", label: "SMS signature", description: "Appended to every outbound message. Leave blank for none.", group: "general", default: "- Omega Protection Services", type: "text" },
+  { key: "general.smsSignature", label: "SMS signature", description: "Appended to every outbound message. Leave blank for none.", group: "general", default: "- Crisis Security", type: "text" },
 ];
 
 export type Settings = Record<string, string>;

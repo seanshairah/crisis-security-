@@ -16,7 +16,7 @@ export function UserForm({ action, user, submitLabel }: { action: (s: ActionStat
       </FormSection>
       <FormSection title="Access" description="Super admins manage users and settings. Admins run operations. Supervisors can view their sites and handle incidents.">
         <Field label="Role" required><Select name="role" defaultValue={user?.role ?? "ADMIN"}><option value="SUPER_ADMIN">Super admin</option><option value="ADMIN">Operations admin</option><option value="SUPERVISOR">Supervisor</option></Select></Field>
-        <Field label={user ? "New password" : "Password"} required={!user} hint={user ? "Leave blank to keep the current password." : "At least 8 characters."}><Input type="password" name="password" autoComplete="new-password" required={!user} /></Field>
+        <Field label={user ? "New password" : "Password"} required={!user} hint={user ? "Leave blank to keep the current password." : "At least 12 characters."}><Input type="password" name="password" autoComplete="new-password" required={!user} /></Field>
       </FormSection>
     </ActionForm>
   );

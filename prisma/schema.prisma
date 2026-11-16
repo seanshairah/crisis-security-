@@ -1581,6 +1581,9 @@ model PatrolEvent {
   payloadHash String
   decision String
   capturedAt DateTime
+  rawCapturedAt DateTime?
+  rawGpsCapturedAt DateTime?
+  clockOffsetMs Float?
   gpsCapturedAt DateTime?
   receivedAt DateTime @default(now())
   latitude Float?
@@ -1589,4 +1592,11 @@ model PatrolEvent {
   distanceM Float?
   delayed Boolean @default(false)
   @@index([sessionId, capturedAt])
+}
+
+model SecurityRateBucket {
+  key String @id
+  count Int
+  resetAt DateTime
+  @@index([resetAt])
 }

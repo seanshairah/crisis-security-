@@ -12,7 +12,7 @@ import type { GatewayDevice } from "@prisma/client";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O, 1/I
 
-export function generateActivationCode(length = 6): string {
+export function generateActivationCode(length = 10): string {
   const bytes = randomBytes(length);
   let out = "";
   for (let i = 0; i < length; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
@@ -41,28 +41,5 @@ export async function authenticateGateway(req: Request): Promise<GatewayAuthResu
   return { device };
 }
 
-export function clientIp(req: Request): string | null {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? null;
-}
-
-// ── Rate limiting: a fixed window per key, kept in memory. On serverless hosts each instance
-// keeps its own counters, so this is a brake on abuse rather than a precise quota.
-const buckets = new Map<string, { count: number; resetAt: number }>();
-
-export function rateLimit(key: string, limit: number, windowMs: number): { ok: boolean; retryAfterSeconds: number } {
-  const now = Date.now();
-  const b = buckets.get(key);
-  if (!b || b.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    if (buckets.size > 5000) for (const [k, v] of buckets) if (v.resetAt <= now) buckets.delete(k);
-    return { ok: true, retryAfterSeconds: 0 };
-  }
-  b.count++;
-  if (b.count > limit) return { ok: false, retryAfterSeconds: Math.ceil((b.resetAt - now) / 1000) };
-  return { ok: true, retryAfterSeconds: 0 };
-}
-
-/** Test hook. */
-export function resetRateLimits() {
-  buckets.clear();
-}
+export { clientIp } from "@/lib/security/client-ip";
+export { rateLimit } from "@/lib/security/rate-limit";
