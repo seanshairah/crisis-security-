@@ -24,6 +24,10 @@ jobs:
       AUTH_SECRET: isolated-ci-auth-secret-never-for-deployment
       PATROL_QR_SIGNING_SECRET: isolated-ci-qr-secret-never-for-deployment
       SMS_PROVIDER: simulated
+      CRON_SECRET: isolated-ci-cron-secret-never-for-deployment
+      AUTOMATION_SECRET: isolated-ci-automation-secret-never-for-deployment
+      AUTOMATION_INPROCESS: "false"
+      AUTOMATION_HEARTBEAT_TICK: "false"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,3 +42,14 @@ jobs:
       - run: npm test
       - run: npm run test:patrol-integration
       - run: npm run test:setup-integration
+      - run: npm run build
+      - name: Start isolated portal
+        run: |
+          node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3141 > /tmp/crisis-session-test.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3141/login > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/crisis-session-test.log
+          exit 1
+      - run: node scripts/dev/session-revocation-integration.mjs

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { verifyPassword } from "@/lib/auth/password";
+import { verifyPassword, DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
 import { createSession, destroySession, getSessionUser } from "@/lib/auth/session";
 import { audit } from "@/lib/audit";
 import { loginBlocked, recordLoginFailure, clearLoginFailures } from "@/lib/auth/throttle";
@@ -19,7 +19,8 @@ export async function login(formData: FormData) {
     redirect("/login?error=throttled");
   }
   const user = await db.user.findUnique({ where: { email } });
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  const validPassword = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+  if (!user || !validPassword) {
     recordLoginFailure(ip, email);
     await audit({ actor: email || "unknown", action: "LOGIN_FAILED", entity: "User", details: { email }, ip });
     redirect("/login?error=1");

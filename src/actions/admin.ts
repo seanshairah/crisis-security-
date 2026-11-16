@@ -34,7 +34,7 @@ export async function updateUser(id: string, _: ActionState, fd: FormData): Prom
     if (!r.success) return { error: firstIssue(r.error) };
     const d = r.data;
     const avatarUrl = await resolvePhoto(fd, "avatarUrl");
-    const u = await db.user.update({ where: { id }, data: { name: d.name, email: d.email, role: d.role, title: d.title, phone: d.phone, ...(avatarUrl !== undefined ? { avatarUrl } : {}), ...(d.password ? { passwordHash: await hashPassword(d.password) } : {}) } });
+    const u = await db.user.update({ where: { id }, data: { name: d.name, email: d.email, role: d.role, title: d.title, phone: d.phone, ...(avatarUrl !== undefined ? { avatarUrl } : {}), ...(d.password ? { passwordHash: await hashPassword(d.password), tokenVersion: { increment: 1 } } : {}) } });
     await auditAs(me, "USER_UPDATED", "User", u.id, { email: u.email, role: u.role, passwordChanged: Boolean(d.password) });
   } catch (e) {
     return fail(e);
