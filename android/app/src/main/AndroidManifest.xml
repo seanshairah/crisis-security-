@@ -49,6 +49,8 @@
         </activity>
         <activity android:name=".ui.PatrolCaptureActivity" android:exported="false" android:screenOrientation="portrait" android:theme="@style/zxing_CaptureTheme" />
         <activity android:name=".ui.PatrolActivity" android:exported="false" />
+        <activity android:name=".ui.EmergencySentActivity" android:exported="false" android:launchMode="singleTop" />
+        <activity android:name=".ui.ScanResultActivity" android:exported="false" />
         <activity android:name=".ui.MainActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".ui.PermissionsActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" android:parentActivityName=".ui.MainActivity" />

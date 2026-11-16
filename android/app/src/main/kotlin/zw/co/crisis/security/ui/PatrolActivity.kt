@@ -22,6 +22,7 @@ import zw.co.crisis.security.R
 import zw.co.crisis.security.patrol.CheckpointCode
 import zw.co.crisis.security.patrol.CoordinateCheckpoint
 import zw.co.crisis.security.patrol.PatrolMessages
+import zw.co.crisis.security.patrol.ScanOutcome
 import zw.co.crisis.security.service.GatewayService
 import java.util.UUID
 import zw.co.crisis.security.data.Prefs
@@ -184,6 +185,16 @@ class PatrolActivity : AppCompatActivity() {
             // Upload is independent of capture. Failed transport never rolls back a queued scan.
             withContext(Dispatchers.IO) { runCatching { PatrolRuntime(this@PatrolActivity).sync(api()) } }
             val receipt = store.recentRows().firstOrNull { it.eventId == event.getString("eventId") }
+            val distanceM = if (fix != null) FloatArray(1).also { android.location.Location.distanceBetween(fix.latitude, fix.longitude, a.optDouble("latitude"), a.optDouble("longitude"), it) }[0].toInt() else -1
+            val outcome = ScanOutcome.of(receipt?.decision, localDecision)
+            startActivity(Intent(this@PatrolActivity, ScanResultActivity::class.java)
+                .putExtra(ScanResultActivity.EXTRA_OUTCOME, outcome.name)
+                .putExtra(ScanResultActivity.EXTRA_CHECKPOINT, a.getString("checkpointName"))
+                .putExtra(ScanResultActivity.EXTRA_TIME, localTime(GatewayEvent.iso(now)))
+                .putExtra(ScanResultActivity.EXTRA_MESSAGE, if (outcome == ScanOutcome.VERIFIED) null else PatrolMessages.result(receipt?.state ?: "RECEIVED", receipt?.decision, localDecision))
+                .putExtra(ScanResultActivity.EXTRA_DISTANCE_M, distanceM)
+                .putExtra(ScanResultActivity.EXTRA_RADIUS_M, a.optInt("radiusM", -1))
+                .putExtra(ScanResultActivity.EXTRA_ACCURACY_M, fix?.accuracy?.toInt() ?: -1))
             if(receipt?.decision == "ACCEPTED") "Checkpoint verified ✓" else if(localDecision != "LOCAL_MATCH") PatrolMessages.result("RECEIVED",localDecision) else "Scan saved · awaiting confirmation"
         }
     }

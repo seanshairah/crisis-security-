@@ -247,7 +247,7 @@
     <string name="call_mon_title_off">Not monitoring</string>
     <string name="call_mon_title_partial">Partly monitoring</string>
     <string name="alerts_intro">Everything here reaches the control room. Saved on the phone first, so nothing is lost without internet.</string>
-    <string name="emergency_long_hint">Tap, then confirm. Sends your last known position at once and starts a fresh GPS check.</string>
+    <string name="emergency_long_hint">Hold for 2 seconds. Sends your last known position at once and starts a fresh GPS check.</string>
     <string name="shift_label_short">Shift</string>
     <string name="duty_site_label_short">Duty site</string>
     <string name="sync_label_short">Sync</string>
@@ -351,4 +351,38 @@
     <string name="call_line_no_numbers">Call log permission is needed to see the numbers.</string>
     <string name="ops_call_note">When the portal asks this phone to call a guard, a screen opens for you to confirm. The call starts only when you tap Call.</string>
     <string name="device_label">Device</string>
+
+    <!-- Emergency: hold to send, and the delivery trail -->
+    <string name="emergency_hold_title">Hold to send an emergency alert</string>
+    <string name="emergency_hold_label">HOLD</string>
+    <string name="emergency_hold_hint">Keep your finger down for 2 seconds. Let go to cancel. Nothing is sent until the ring is full.</string>
+    <string name="sent_title_delivered">Emergency sent</string>
+    <string name="sent_title_saved">Saved. Sending when online</string>
+    <string name="sent_sub_delivered">Operations has your alert and your last position.</string>
+    <string name="sent_sub_saved">Your alert is safe on this phone and goes out the moment there is a connection. Call operations if you can.</string>
+    <string name="trail_saved">Saved on this phone</string>
+    <string name="trail_received_done">Received by operations</string>
+    <string name="trail_received_waiting">Waiting for a connection</string>
+    <string name="trail_received_failed">Could not be delivered yet. The phone keeps trying</string>
+    <string name="trail_ack_done">Acknowledged by %1$s</string>
+    <string name="trail_ack_waiting">Waiting for someone in operations to acknowledge</string>
+    <string name="sent_mistake">Sent by mistake? Tell operations (%1$d)</string>
+    <string name="sent_mistake_note">The guard says the emergency alert was sent by mistake. Please confirm by phone.</string>
+    <string name="sent_mistake_done">Operations has been told it was a mistake. They will still check on you.</string>
+    <string name="sent_call_ops">Call operations</string>
+    <string name="sent_done">Done</string>
+    <!-- Scan result -->
+    <string name="scan_title_verified">Verified checkpoint</string>
+    <string name="scan_title_saved">Scan saved</string>
+    <string name="scan_title_problem">Scan needs attention</string>
+    <string name="scan_stat_distance">Distance</string>
+    <string name="scan_stat_accuracy">GPS accuracy</string>
+    <string name="scan_stat_none">No fix</string>
+    <string name="scan_inside_fence">%1$d m · inside the fence</string>
+    <string name="scan_outside_fence">%1$d m · outside the fence</string>
+    <string name="scan_accuracy_value">±%1$d m · limit 50 m</string>
+    <string name="scan_confirmed">Confirmed by operations</string>
+    <string name="scan_note_saved">Saved on this phone. It will be confirmed when there is a connection. Nothing more to do.</string>
+    <string name="scan_back">Back to patrol</string>
+    <string name="scan_next_random">Next check: at a random time. We will alert you.</string>
 </resources>

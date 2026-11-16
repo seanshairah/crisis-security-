@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { alertsSummary } from "@/lib/list-summaries";
 import { ALERT_META, alertInclude } from "@/lib/gateway/alerts";
 import { acknowledgeAlert, resolveAlert } from "@/actions/alerts";
-import { PageHeader } from "@/components/ui/page";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
@@ -42,6 +43,7 @@ export default async function AlertsPage({ searchParams }: { searchParams: Promi
           {([["open", "Open"], ["all", "Last 7 days"]] as const).map(([k, l]) => <Link key={k} href={`/alerts?view=${k}`} className={cn("h-8 rounded-[6px] px-3 text-[13px] font-medium leading-8", view === k ? "bg-surface-2 text-ink" : "text-ink-2 hover:text-ink")}>{l}</Link>)}
         </div>
       } />
+      <SummaryTiles items={await alertsSummary()} />
       <Card>
         <CardHeader title={view === "open" ? `${open.length} open` : `${rows.length} alert${rows.length === 1 ? "" : "s"}`} description="Emergencies and incidents also open an incident record; status messages are informational and need no acknowledgement." />
         <Table>

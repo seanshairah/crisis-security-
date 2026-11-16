@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { guardsSummary } from "@/lib/list-summaries";
 import type { Prisma } from "@prisma/client";
 import { ON_SITE_STATUSES } from "@/lib/services/shifts";
 import { guardLiveStatus, GUARD_STATUS_LABEL } from "@/lib/services/guards";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Avatar } from "@/components/ui/avatar";
@@ -41,6 +42,7 @@ export default async function GuardsPage({ searchParams }: { searchParams: Promi
   return (
     <div>
       <PageHeader title="Guards" description={`${counts[0]} active guards. Phone numbers are unique so SMS replies route to the right person.`} actions={can.manageGuards(user) && <LinkButton href="/guards/new" variant="primary">Add guard</LinkButton>} />
+      <SummaryTiles items={await guardsSummary()} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segments items={[
           { href: "/guards", label: "Active", count: counts[0], active: f === "active" },

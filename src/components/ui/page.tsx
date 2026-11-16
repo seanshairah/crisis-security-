@@ -58,3 +58,21 @@ export function Explainer({ title, children, className }: { title: string; child
     </details>
   );
 }
+
+export type SummaryTile = { label: string; value: number | string; note?: string; tone?: "ok" | "warn" | "critical" | "neutral" };
+
+/** Four figures above a list: what is in it, at a glance, before the filters and the table. */
+export function SummaryTiles({ items, className }: { items: SummaryTile[]; className?: string }) {
+  const tint = { ok: "border-ok/30 bg-ok-soft", warn: "border-warn/30 bg-warn-soft", critical: "border-critical/40 bg-critical-soft", neutral: "border-line bg-surface-2" };
+  return (
+    <div className={cn("mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4", className)}>
+      {items.map((t) => (
+        <div key={t.label} className={cn("rounded-[20px] border px-4 py-3.5", tint[t.tone ?? "neutral"])}>
+          <p className="text-[12.5px] text-ink-2">{t.label}</p>
+          <p className="mt-1 text-[30px] font-medium leading-none text-ink tnum">{t.value}</p>
+          {t.note && <p className="mt-1.5 text-[12px] text-ink-3">{t.note}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}

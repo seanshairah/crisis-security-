@@ -2,9 +2,10 @@ import Link from "next/link";
 import { addDays, startOfDay, subDays } from "date-fns";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { shiftsSummary } from "@/lib/list-summaries";
 import type { Prisma } from "@prisma/client";
 import { shiftInclude } from "@/lib/services/shifts";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { ShiftStatusLabel } from "@/components/shift-status";
@@ -48,6 +49,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
       <PageHeader title="Shifts" description="Schedule guards to sites. Duration and the welfare midpoint are worked out for you." actions={can.manageShifts(user) && (
         <ButtonGroup><LinkButton href="/shifts/recurring/new">Recurring pattern</LinkButton><LinkButton href="/shifts/new" variant="primary">New shift</LinkButton></ButtonGroup>
       )} />
+      <SummaryTiles items={await shiftsSummary()} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segments items={[
           { href: "/shifts?view=today", label: "Today", count: counts[0], active: view === "today" },

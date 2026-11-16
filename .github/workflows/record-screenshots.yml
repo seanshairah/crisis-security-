@@ -1,0 +1,24 @@
+# Re-records the Android layout snapshots after a visual change. Run by hand (Actions -> Record Android
+# screenshots), download the artifact, and commit the images from it into android/app/src/test/snapshots/images.
+# It uploads instead of committing, so a snapshot only changes when a person has looked at the new pictures.
+name: Record Android screenshots
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Record snapshots
+        run: ./android/gradlew -p android -Pscreenshots :app:recordPaparazziDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-snapshots
+          path: android/app/src/test/snapshots/images
+          if-no-files-found: error

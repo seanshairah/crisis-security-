@@ -1,7 +1,12 @@
 package zw.co.crisis.security.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.view.Gravity
+import android.view.accessibility.AccessibilityManager
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.net.Uri
 import android.text.InputType
 import android.view.WindowManager
@@ -26,13 +31,37 @@ import zw.co.crisis.security.data.Prefs
 object AlertFlow {
     fun interface Feedback { fun show(text: String, emergency: Boolean) }
 
+    /**
+     * Hold for two seconds to send. One deliberate gesture instead of tap-then-confirm; it cannot fire from a
+     * pocket tap, and a ring shows it filling. A guard using TalkBack cannot hold, so they keep the confirm dialog.
+     */
     fun confirmEmergency(a: Activity, fb: Feedback) {
-        AlertDialog.Builder(a)
-            .setTitle(R.string.emergency_confirm_title)
-            .setMessage(R.string.emergency_confirm_body)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.emergency_confirm_send) { _, _ -> send(a, AlertSender.Type.EMERGENCY, null, fb) }
-            .show()
+        val am = a.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+        if (am?.isTouchExplorationEnabled == true) {
+            AlertDialog.Builder(a)
+                .setTitle(R.string.emergency_confirm_title)
+                .setMessage(R.string.emergency_confirm_body)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.emergency_confirm_send) { _, _ -> sendEmergency(a, fb) }
+                .show()
+            return
+        }
+        val pad = (24 * a.resources.displayMetrics.density).toInt()
+        val column = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(pad, pad, pad, 0) }
+        column.addView(TextView(a).apply { setText(R.string.emergency_hold_title); setTextAppearance(R.style.Display); textSize = 28f; gravity = Gravity.CENTER })
+        val ring = HoldRingView(a).apply { label = a.getString(R.string.emergency_hold_label) }
+        column.addView(ring, LinearLayout.LayoutParams(-2, -2).apply { topMargin = pad / 2; bottomMargin = pad / 2 })
+        column.addView(TextView(a).apply { setText(R.string.emergency_hold_hint); setTextColor(a.getColor(R.color.ink2)); textSize = 14f; gravity = Gravity.CENTER })
+        val dialog = AlertDialog.Builder(a).setView(column).setNegativeButton(android.R.string.cancel, null).create()
+        ring.onComplete = { dialog.dismiss(); sendEmergency(a, fb) }
+        dialog.show()
+    }
+
+    /** Sends at once (never delayed), then shows the delivery trail so the guard sees what has actually reached operations. */
+    fun sendEmergency(a: Activity, fb: Feedback) {
+        val r = AlertSender.send(a, AlertSender.Type.EMERGENCY, null)
+        fb.show(if (r.online) a.getString(R.string.alert_sent_emergency, a.getString(if (r.hadLocation) R.string.alert_with_position else R.string.alert_without_position)) else a.getString(R.string.alert_saved_offline), true)
+        a.startActivity(Intent(a, EmergencySentActivity::class.java).putExtra(EmergencySentActivity.EXTRA_EVENT_ID, r.eventId).putExtra(EmergencySentActivity.EXTRA_ONLINE, r.online))
     }
 
     fun askMessage(a: Activity, type: AlertSender.Type, titleRes: Int, hintRes: Int, required: Boolean, fb: Feedback) {

@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { classifyFix } from "@/lib/geofence";
 import { hashGuardPin, verifyGuardPin } from "./shared-device";
 import { createPatrolPlan } from "./plan";
+import { revealWindows } from "./reveal";
 import { scanSchema, type Scan } from "./validation";
 
 export const qrHash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -212,7 +213,7 @@ export async function patrolConfig(deviceId: string) {
       startedAt: session.startedAt,
       expiresAt: session.expiresAt,
       policyVersion: session.policyVersion,
-      assignments: session.assignments.map((a) => ({
+      assignments: revealWindows(session.assignments, now).map((a) => ({
         id: a.id,
         checkpointId: a.checkpointId,
         checkpointName: a.checkpoint.name,

@@ -38,17 +38,28 @@ buttons and pills fully rounded. Touch targets are at least 44 px (48 dp on Andr
 
 Guards must not see the patrol schedule in advance. The guard app shows a check only while its window is open (countdown to close) and otherwise
 says "Next check: at a random time. We will alert you." Operations see the assigned windows in Patrol command.
-Note the phone still *receives* every window in its session config (it needs them to validate scans offline); the UI hides them, but a rooted
-phone could read them. Moving window delivery to just-in-time push would close that and is the follow-up if the threat model includes guards
-pre-positioning for a known time.
+By default the phone still *receives* every window in its session config (it needs them to prompt and to check scans while offline); the UI hides
+them, but a rooted phone could read them. Set `PATROL_WINDOW_LOOKAHEAD_MINUTES` (5-240) to stop the server sending windows that open further
+ahead than that (`src/lib/patrol/reveal.ts`). The cost is offline resilience: a phone that loses its connection for longer than the look-ahead has
+no window to prompt from until it syncs again. It is off by default; enable it per deployment once your coverage gaps are known.
 
-## Not done from the handoff
+## Added after the first pass
 
-- **Shift handover view** (dashboard v2): needs a data model for handover notes and per-item owners on shifts; the queue shows owners only where the
-  data exists (alert acknowledgement).
-- The remaining list pages keep their existing tables and filters; they pick up the new tokens, serif titles and pill controls, but the four summary
-  tiles + filter-chip + footer pattern was not rebuilt page by page.
-- Android screens other than the patrol screen keep their existing layouts and pick up the new palette, shapes and serif title; the scan-result,
-  emergency hold-ring and delivery-trail screens were not rebuilt.
+- **Shift handover**: tables `AttentionClaim`, `Handover`, `HandoverNote`; `/handover` page; "Take it / Release" on the queue. First claim wins, only the
+  owner or an admin releases, a handover moves the outgoing operator's claims in one transaction and freezes what was open. Guard alerts keep their owner
+  in `acknowledgedBy`. Covered by `npm run test:handover`.
+- **List pages**: four summary tiles (`SummaryTiles`, figures in `src/lib/list-summaries.ts`) above Guards, Shifts, Incidents, Guard alerts and Devices.
+- **Android emergency**: hold-to-send ring (`HoldRingView`, 2 s, drains back if released; TalkBack users keep the confirm dialog), then an "Emergency sent"
+  screen with the delivery trail Saved / Received / Acknowledged driven by the outbox status. The alert is **never delayed**; the handoff's 5 s "undo" is
+  implemented as "Sent by mistake? Tell operations", which sends a message and does not retract the alert, because there is no server-side cancel and a
+  delayed emergency is the wrong trade.
+- **Android scan result**: verified / saved / problem screen with distance (inside or outside the fence) and GPS accuracy against the 50 m limit. It does
+  not show the next check time, by the randomised-check rule.
+- **Screenshots**: `Record Android screenshots` workflow (run by hand) uploads freshly rendered snapshots to commit after a visual change.
+
+## Not done
+
+- Remaining list pages (Clients, Sites, Message logs, Templates, Calls, Reports, Users, Audit) get the tokens, serif titles and pill controls but no summary tiles yet.
+- Android screens other than patrol, scan result and emergency keep their layouts and pick up the palette, shapes and serif title.
+- The snapshot images in `android/app/src/test/snapshots` are still the old look until someone runs the workflow above and commits its output.
 - Map components are untouched (handoff: restyle chrome only).
-- Paparazzi snapshot images under `android/app/src/test/snapshots` predate the redesign; re-record with `./gradlew -Pscreenshots :app:recordPaparazziDebug`.

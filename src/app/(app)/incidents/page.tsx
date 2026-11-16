@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { incidentsSummary } from "@/lib/list-summaries";
 import type { Prisma } from "@prisma/client";
 import { CATEGORY_LABEL, sevTone, statusTone } from "@/lib/services/incidents";
-import { PageHeader, Segments } from "@/components/ui/page";
+import { PageHeader, Segments, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Status } from "@/components/ui/status";
@@ -32,6 +33,7 @@ export default async function IncidentsPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <PageHeader title="Incidents" description="Everything guards reported by SMS, plus incidents logged by supervisors." actions={<LinkButton href="/incidents/new" variant="primary">Log incident</LinkButton>} />
+      <SummaryTiles items={await incidentsSummary()} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Segments items={[{ href: "/incidents", label: "Open", count: counts[0], active: f === "open", tone: "critical" }, { href: "/incidents?f=resolved", label: "Resolved", active: f === "resolved", tone: "ok" }, { href: "/incidents?f=critical", label: "Critical", count: counts[1], active: f === "critical" }, { href: "/incidents?f=all", label: "All", count: counts[2], active: f === "all" }]} />
         <form className="flex flex-wrap items-center gap-2">

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { devicesSummary } from "@/lib/list-summaries";
 import { getSettingNumber } from "@/lib/settings";
 import { effectiveStatus, gatewayInclude, GATEWAY_STATUS_META } from "@/lib/gateway/service";
-import { PageHeader } from "@/components/ui/page";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Rows, CardRow } from "@/components/ui/rows";
@@ -36,6 +37,7 @@ export default async function GatewaysPage() {
     <div>
       <AutoRefresh seconds={30} />
       <PageHeader title="Devices" description={`Operations gateway phones and guard phones running the Security Gateway app. ${online} of ${rows.length} online; offline after ${offlineMinutes} min without a heartbeat.`} actions={can.manageLocations(user) && <LinkButton href="/gateways/new" variant="primary">Register device</LinkButton>} />
+      <SummaryTiles items={devicesSummary(rows.map((r) => ({ status: r.status, activationStatus: r.g.activationStatus })))} />
       {can.manageLocations(user) && <AppReleaseBanner release={release} dist={dist} outdated={outdated} />}
       <Card>
         <Rows
