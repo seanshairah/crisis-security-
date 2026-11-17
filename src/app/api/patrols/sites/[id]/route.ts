@@ -4,20 +4,21 @@ import { db } from "@/lib/db";
 import { randomUUID } from "node:crypto";
 import { createCoordinateQr } from "@/lib/patrol/checkpoint-qr";
 import { checkpointSchema, policySchema } from "@/lib/patrol/validation";
+import { deploymentDefault } from "@/lib/patrol/reveal";
 import { qrHash, serial } from "@/lib/patrol/service";
 export const GET = guarded("SUPERVISOR", async (_req, ctx) => {
   const { id } = await ctx.params;
-  return json(
-    await db.location.findUniqueOrThrow({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        patrolPolicy: true,
-        checkpoints: { orderBy: { createdAt: "asc" } },
-      },
-    }),
-  );
+  const site = await db.location.findUniqueOrThrow({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      patrolPolicy: true,
+      checkpoints: { orderBy: { createdAt: "asc" } },
+    },
+  });
+  // What "Deployment default" resolves to, so the setup screen can say it in words.
+  return json({ ...site, lookaheadDefault: deploymentDefault() });
 });
 export const PUT = guarded("ADMIN", async (req, ctx, user) => {
   const { id } = await ctx.params;

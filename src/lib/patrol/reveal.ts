@@ -1,30 +1,74 @@
 /**
  * Just-in-time delivery of patrol windows.
  *
- * A guard must not know the schedule in advance. By default the phone is given the whole session plan
- * (it needs the windows to prompt and to check scans while offline), and the app simply does not show
- * future windows. With PATROL_WINDOW_LOOKAHEAD_MINUTES set, the server stops sending windows that open
- * further ahead than that, so a rooted phone has nothing to read. The trade-off is offline: a phone that
- * loses its connection for longer than the look-ahead has no window to prompt from until it syncs again,
- * so pick a value comfortably longer than your usual coverage gaps (the phone syncs every few minutes online).
+ * A guard must not know the schedule in advance. With a look-ahead, the server only sends the phone windows that
+ * are already open or open within the look-ahead, so a rooted phone has no night's schedule to read. The phone
+ * re-syncs about every 5 minutes online, so upcoming windows keep arriving in time.
+ *
+ * The cost is offline: a phone without signal for longer than the look-ahead has nothing to prompt from until it
+ * syncs again. Off sends the whole plan, so prompting survives any outage.
+ *
+ * Each site chooses (PatrolPolicy.lookaheadMode):
+ *   DEFAULT  follow PATROL_WINDOW_LOOKAHEAD_MINUTES ("auto", a number of minutes, or unset/0 for off)
+ *   OFF      whole plan on the phone
+ *   AUTO     the site's longest gap + 30 minutes, kept between 45 and 120: the next check is always on the phone,
+ *            with half an hour of lost signal to spare
+ *   CUSTOM   lookaheadMinutes, 5-240
  */
 export const MIN_LOOKAHEAD_MINUTES = 5;
 export const MAX_LOOKAHEAD_MINUTES = 240;
+export const AUTO_BUFFER_MINUTES = 30;
+export const AUTO_MIN_MINUTES = 45;
+export const AUTO_MAX_MINUTES = 120;
 
-/** 0 (or unset, or invalid) means "send the whole plan", the existing behaviour. */
-export function lookaheadMinutes(
-  raw: string | undefined = process.env.PATROL_WINDOW_LOOKAHEAD_MINUTES,
-): number {
+export type LookaheadMode = "DEFAULT" | "OFF" | "AUTO" | "CUSTOM";
+export type LookaheadPolicy = {
+  lookaheadMode?: LookaheadMode | null;
+  lookaheadMinutes?: number | null;
+  maxIntervalMinutes: number;
+};
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** Minutes for an explicit value; 0 means off. */
+export function lookaheadMinutes(raw: string | number | null | undefined): number {
   const n = Number(raw);
-  if (!raw || !Number.isFinite(n) || n <= 0) return 0;
-  return Math.min(MAX_LOOKAHEAD_MINUTES, Math.max(MIN_LOOKAHEAD_MINUTES, Math.floor(n)));
+  if (raw === null || raw === undefined || raw === "" || !Number.isFinite(n) || n <= 0) return 0;
+  return clamp(Math.floor(n), MIN_LOOKAHEAD_MINUTES, MAX_LOOKAHEAD_MINUTES);
+}
+
+export function autoLookahead(maxIntervalMinutes: number): number {
+  return clamp(maxIntervalMinutes + AUTO_BUFFER_MINUTES, AUTO_MIN_MINUTES, AUTO_MAX_MINUTES);
+}
+
+/** The deployment default as a mode: "auto", a fixed number, or off. */
+export function deploymentDefault(
+  raw: string | undefined = process.env.PATROL_WINDOW_LOOKAHEAD_MINUTES,
+): { mode: "OFF" | "AUTO" | "CUSTOM"; minutes: number } {
+  if (raw?.trim().toLowerCase() === "auto") return { mode: "AUTO", minutes: 0 };
+  const m = lookaheadMinutes(raw);
+  return m > 0 ? { mode: "CUSTOM", minutes: m } : { mode: "OFF", minutes: 0 };
+}
+
+/** The look-ahead in minutes for one site (0 = whole plan). */
+export function siteLookahead(
+  policy: LookaheadPolicy | null | undefined,
+  envRaw: string | undefined = process.env.PATROL_WINDOW_LOOKAHEAD_MINUTES,
+): number {
+  if (!policy) return 0;
+  const mode = policy.lookaheadMode ?? "DEFAULT";
+  if (mode === "OFF") return 0;
+  if (mode === "AUTO") return autoLookahead(policy.maxIntervalMinutes);
+  if (mode === "CUSTOM") return lookaheadMinutes(policy.lookaheadMinutes);
+  const d = deploymentDefault(envRaw);
+  return d.mode === "AUTO" ? autoLookahead(policy.maxIntervalMinutes) : d.minutes;
 }
 
 /** Windows already open, past, or opening within the look-ahead. Everything later stays on the server. */
 export function revealWindows<T extends { dueAt: Date }>(
   assignments: T[],
   now: Date,
-  lookahead = lookaheadMinutes(),
+  lookahead: number,
 ): T[] {
   if (lookahead <= 0) return assignments;
   const horizon = +now + lookahead * 60_000;

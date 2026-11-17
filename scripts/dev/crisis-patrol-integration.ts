@@ -18,6 +18,7 @@ async function main() {
     qrHash,
     expirePatrols,
     endPatrolSession,
+    patrolConfig,
   } = await import("../../src/lib/patrol/service");
   const { guardDeviceConfig } = await import("../../src/lib/gateway/service");
   const { eligibleDeviceForGuard, createLocationRequest } =
@@ -158,6 +159,35 @@ async function main() {
     assert.ok(session.assignments.length > 0);
     const resumed = await startPatrolSession(device.id, guards[0].guardNo, "746291");
     assert.equal(resumed.session!.id, session.id);
+    // Look-ahead: the phone is only sent windows opening within the site's look-ahead; OFF sends them all.
+    const full = session.assignments.length;
+    await db.patrolPolicy.update({
+      where: { locationId: site.id },
+      data: { lookaheadMode: "CUSTOM", lookaheadMinutes: 5 },
+    });
+    const trimmed = (await patrolConfig(device.id)).session!.assignments;
+    const horizon = Date.now() + 5 * 60_000 + 1000;
+    assert.ok(
+      trimmed.length > 0 && trimmed.length < full,
+      `look-ahead trims the plan (${trimmed.length} of ${full})`,
+    );
+    assert.ok(
+      trimmed.every((a) => +new Date(a.dueAt) <= horizon),
+      "no window beyond the look-ahead reaches the phone",
+    );
+    await db.patrolPolicy.update({
+      where: { locationId: site.id },
+      data: { lookaheadMode: "OFF", lookaheadMinutes: null },
+    });
+    assert.equal(
+      (await patrolConfig(device.id)).session!.assignments.length,
+      full,
+      "off sends the whole plan",
+    );
+    await db.patrolPolicy.update({
+      where: { locationId: site.id },
+      data: { lookaheadMode: "DEFAULT" },
+    });
     assert.equal((await guardDeviceConfig(device)).guard?.id, guards[0].id);
     assert.equal((await eligibleDeviceForGuard(guards[0].id))?.id, device.id);
     const request = await createLocationRequest({

@@ -5,11 +5,22 @@ export const policySchema = z
     minIntervalMinutes: z.number().int().min(1).max(240),
     maxIntervalMinutes: z.number().int().min(1).max(240),
     responseMinutes: z.number().int().min(1).max(60),
+    /** How far ahead the guard phone is sent patrol windows; see src/lib/patrol/reveal.ts. */
+    lookaheadMode: z.enum(["DEFAULT", "OFF", "AUTO", "CUSTOM"]).default("DEFAULT"),
+    lookaheadMinutes: z.number().int().min(5).max(240).nullable().optional(),
   })
   .refine(
     (p) => p.maxIntervalMinutes >= p.minIntervalMinutes,
     "Maximum interval must follow minimum",
-  );
+  )
+  .refine(
+    (p) => p.lookaheadMode !== "CUSTOM" || typeof p.lookaheadMinutes === "number",
+    "Choose how many minutes ahead the phone is sent windows",
+  )
+  .transform((p) => ({
+    ...p,
+    lookaheadMinutes: p.lookaheadMode === "CUSTOM" ? p.lookaheadMinutes! : null,
+  }));
 export const checkpointSchema = z.object({
   name: z.string().trim().min(1).max(100),
   latitude: z.number().min(-90).max(90),

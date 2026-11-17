@@ -3,6 +3,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import WebSocket from "ws";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import { runtimeDatabaseUrl } from "./db-url";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -22,7 +23,8 @@ export function usesNeonHttp(): boolean {
 function createClient(): PrismaClient {
   const url = process.env.DATABASE_URL ?? "";
   const log: ("warn" | "error")[] = ["warn", "error"];
-  if (!usesNeonHttp()) return new PrismaClient({ log });
+  if (!usesNeonHttp())
+    return new PrismaClient({ log, ...(url ? { datasourceUrl: runtimeDatabaseUrl(url) } : {}) });
 
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
   if (proxy) {
