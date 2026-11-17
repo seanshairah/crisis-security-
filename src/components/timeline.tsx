@@ -3,7 +3,10 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { fmtTime, fmtDate } from "@/lib/time";
 import { cn } from "@/lib/cn";
 
-const META: Record<CheckInType, { label: string; tone: "ok" | "warn" | "critical" | "neutral" | "info"; icon: IconName }> = {
+const META: Record<
+  CheckInType,
+  { label: string; tone: "ok" | "warn" | "critical" | "neutral" | "info"; icon: IconName }
+> = {
   SHIFT_STARTED: { label: "Shift started", tone: "neutral", icon: "flag" },
   ARRIVAL_SMS_SENT: { label: "Arrival check sent", tone: "info", icon: "send" },
   ARRIVAL_REMINDER_SENT: { label: "Arrival reminder sent", tone: "warn", icon: "send" },
@@ -44,32 +47,81 @@ const META: Record<CheckInType, { label: string; tone: "ok" | "warn" | "critical
   LOCATION_EXIT: { label: "LOCATION EXIT", tone: "critical", icon: "directions_run" },
   LOCATION_OUTSIDE: { label: "Still outside the site", tone: "critical", icon: "wrong_location" },
   LOCATION_RETURNED: { label: "LOCATION RETURNED", tone: "ok", icon: "where_to_vote" },
-  LOCATION_UNAVAILABLE: { label: "Location unavailable", tone: "warn", icon: "signal_cellular_off" },
-  LOCATION_OVERDUE: { label: "Location verification overdue", tone: "warn", icon: "signal_cellular_off" },
+  LOCATION_UNAVAILABLE: {
+    label: "Location unavailable",
+    tone: "warn",
+    icon: "signal_cellular_off",
+  },
+  LOCATION_OVERDUE: {
+    label: "Location verification overdue",
+    tone: "warn",
+    icon: "signal_cellular_off",
+  },
   NETWORK_LOCATION: { label: "Network location check", tone: "info", icon: "cell_tower" },
 };
-const ring = { ok: "border-ok text-ok", warn: "border-warn text-warn", critical: "border-critical text-critical", neutral: "border-line-strong text-ink-3", info: "border-info text-info" };
+const ring = {
+  ok: "border-ok text-ok",
+  warn: "border-warn text-warn",
+  critical: "border-critical text-critical",
+  neutral: "border-line-strong text-ink-3",
+  info: "border-info text-info",
+};
 
 type Event = ShiftCheckIn & { smsMessage?: { body: string; direction: string } | null };
 
 export function Timeline({ events, showDates }: { events: Event[]; showDates?: boolean }) {
-  if (events.length === 0) return <p className="py-6 text-center text-[13px] text-ink-3">Nothing has happened on this shift yet.</p>;
+  if (events.length === 0)
+    return (
+      <p className="py-6 text-center text-[13px] text-ink-3">
+        Nothing has happened on this shift yet.
+      </p>
+    );
   return (
     <ol className="relative ml-2 border-l border-line">
       {events.map((e) => {
         const m = META[e.type];
         return (
           <li key={e.id} className="relative pb-5 pl-7 last:pb-0">
-            <span className={cn("absolute -left-[11px] top-0 flex h-[22px] w-[22px] items-center justify-center rounded-full border-[1.5px] bg-surface", ring[m.tone])}><Icon name={m.icon} size={12} filled /></span>
+            <span
+              className={cn(
+                "absolute -left-[11px] top-0 flex h-[22px] w-[22px] items-center justify-center rounded-full border-[1.5px] bg-surface",
+                ring[m.tone],
+              )}
+            >
+              <Icon name={m.icon} size={12} filled />
+            </span>
             <div className="flex flex-wrap items-baseline gap-x-3">
-              <span className="text-[12px] font-medium text-ink-3 tnum">{showDates ? `${fmtDate(e.at)} ` : ""}{fmtTime(e.at)}</span>
-              <span className={cn("text-[14px] font-medium", m.tone === "critical" ? "text-critical" : "text-ink")}>{m.label}</span>
-              {e.source === "SMS" && <Icon name="chat" size={13} className="text-ink-3" aria-label="via SMS" filled />}
-              {e.source === "ADMIN" && <span className="text-[11px] uppercase tracking-[0.06em] text-ink-3">admin</span>}
+              <span className="text-[12px] font-medium text-ink-3 tnum">
+                {showDates ? `${fmtDate(e.at)} ` : ""}
+                {fmtTime(e.at)}
+              </span>
+              <span
+                className={cn(
+                  "text-[14px] font-medium",
+                  m.tone === "critical" ? "text-critical" : "text-ink",
+                )}
+              >
+                {m.label}
+              </span>
+              {e.source === "SMS" && (
+                <Icon name="chat" size={13} className="text-ink-3" aria-label="via SMS" filled />
+              )}
+              {e.source === "ADMIN" && (
+                <span className="text-[11px] uppercase tracking-[0.06em] text-ink-3">admin</span>
+              )}
             </div>
             {e.note && <p className="mt-0.5 text-[13px] text-ink-2">{e.note}</p>}
             {e.smsMessage && (
-              <p className={cn("mt-1.5 inline-block max-w-xl rounded-[10px] px-3 py-2 text-[13px]", e.smsMessage.direction === "INBOUND" ? "bg-accent-soft text-ink" : "bg-surface-2 text-ink-2")}>{e.smsMessage.body}</p>
+              <p
+                className={cn(
+                  "mt-1.5 inline-block max-w-xl rounded-[10px] px-3 py-2 text-[13px]",
+                  e.smsMessage.direction === "INBOUND"
+                    ? "bg-accent-soft text-ink"
+                    : "bg-surface-2 text-ink-2",
+                )}
+              >
+                {e.smsMessage.body}
+              </p>
             )}
           </li>
         );

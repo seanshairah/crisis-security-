@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     // Present even when it cannot be handed out, so the portal can say exactly what is wrong
     // instead of looking as though no build exists.
     reason: d.ok ? null : d.reason,
-    detail: d.ok ? null : ("detail" in d ? d.detail : null),
+    detail: d.ok ? null : "detail" in d ? d.detail : null,
     versionName: release.versionName,
     versionCode: release.versionCode,
     applicationId: release.applicationId,

@@ -112,5 +112,7 @@ const unmanaged = readdirSync(OUT)
   .map((f) => f.replace(/\.xml$/, ""))
   .filter((n) => !(n in ICONS) && !n.startsWith("ic_launcher"));
 
-console.log(`wrote ${written} drawables from Material Symbols (${STYLE}, 400) to ${path.relative(process.cwd(), OUT)}`);
+console.log(
+  `wrote ${written} drawables from Material Symbols (${STYLE}, 400) to ${path.relative(process.cwd(), OUT)}`,
+);
 if (unmanaged.length) console.log(`not generated (still hand-drawn): ${unmanaged.join(", ")}`);

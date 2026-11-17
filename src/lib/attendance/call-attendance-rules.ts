@@ -43,8 +43,15 @@ export type CallAttendancePolicy = {
 };
 
 export const DEFAULT_CALL_POLICY: CallAttendancePolicy = {
-  enabled: true, checkInBeforeMinutes: 60, checkInAfterMinutes: 120, checkOutBeforeMinutes: 60, checkOutAfterMinutes: 120,
-  answeredMinSeconds: 5, answeredMode: "CONFIRMED", missedCallMode: "PENDING", wrongGatewayMode: "FLAG",
+  enabled: true,
+  checkInBeforeMinutes: 60,
+  checkInAfterMinutes: 120,
+  checkOutBeforeMinutes: 60,
+  checkOutAfterMinutes: 120,
+  answeredMinSeconds: 5,
+  answeredMode: "CONFIRMED",
+  missedCallMode: "PENDING",
+  wrongGatewayMode: "FLAG",
 };
 
 export type CallFacts = {
@@ -68,16 +75,31 @@ export type ShiftFacts = {
 
 export type Decision =
   | { action: "IGNORE"; reason: string; flags: string[] }
-  | { action: "RECORD"; intent: CallIntent; status: "CONFIRMED" | "PROVISIONAL" | "PENDING" | "REJECTED"; source: "CALL" | "MISSED_CALL"; flags: string[]; reason: string; sendSmsConfirm: boolean };
+  | {
+      action: "RECORD";
+      intent: CallIntent;
+      status: "CONFIRMED" | "PROVISIONAL" | "PENDING" | "REJECTED";
+      source: "CALL" | "MISSED_CALL";
+      flags: string[];
+      reason: string;
+      sendSmsConfirm: boolean;
+    };
 
 const MIN = 60_000;
 
 /** What a call at this time means for this shift, before any policy. Null when it means nothing. */
-export function callIntent(t: Date, s: ShiftFacts, p: CallAttendancePolicy): { intent: CallIntent; flags: string[] } | { none: string } {
+export function callIntent(
+  t: Date,
+  s: ShiftFacts,
+  p: CallAttendancePolicy,
+): { intent: CallIntent; flags: string[] } | { none: string } {
   const at = t.getTime();
-  const start = s.startAt.getTime(), end = s.endAt.getTime();
-  const inCheckIn = at >= start - p.checkInBeforeMinutes * MIN && at <= start + p.checkInAfterMinutes * MIN;
-  const inCheckOut = at >= end - p.checkOutBeforeMinutes * MIN && at <= end + p.checkOutAfterMinutes * MIN;
+  const start = s.startAt.getTime(),
+    end = s.endAt.getTime();
+  const inCheckIn =
+    at >= start - p.checkInBeforeMinutes * MIN && at <= start + p.checkInAfterMinutes * MIN;
+  const inCheckOut =
+    at >= end - p.checkOutBeforeMinutes * MIN && at <= end + p.checkOutAfterMinutes * MIN;
   if (s.checkedOutAt) return { none: "already clocked out" };
   if (!s.checkedInAt) {
     // Arrival comes first: a short shift whose windows overlap is clocked in, not out.
@@ -95,10 +117,21 @@ export function callIntent(t: Date, s: ShiftFacts, p: CallAttendancePolicy): { i
  * The whole decision for one call on one shift. `expectedGateway` is true when the call reached the
  * gateway assigned to the guard (or their site), false when another one, null when none is assigned.
  */
-export function decideCall(call: CallFacts, shift: ShiftFacts, p: CallAttendancePolicy, expectedGateway: boolean | null): Decision {
+export function decideCall(
+  call: CallFacts,
+  shift: ShiftFacts,
+  p: CallAttendancePolicy,
+  expectedGateway: boolean | null,
+): Decision {
   if (!p.enabled) return { action: "IGNORE", reason: "call attendance is off", flags: [] };
-  if (call.direction !== "INCOMING") return { action: "IGNORE", reason: "the gateway called the guard, not the other way round", flags: [] };
-  if (!call.answered && !call.missed) return { action: "IGNORE", reason: "the call has not ended yet", flags: [] };
+  if (call.direction !== "INCOMING")
+    return {
+      action: "IGNORE",
+      reason: "the gateway called the guard, not the other way round",
+      flags: [],
+    };
+  if (!call.answered && !call.missed)
+    return { action: "IGNORE", reason: "the call has not ended yet", flags: [] };
   const i = callIntent(call.startedAt, shift, p);
   if ("none" in i) return { action: "IGNORE", reason: i.none, flags: [] };
 
@@ -110,39 +143,70 @@ export function decideCall(call: CallFacts, shift: ShiftFacts, p: CallAttendance
 
   if (call.missed) {
     flags.push("MISSED_CALL");
-    if (p.missedCallMode === "DISABLED") return { action: "IGNORE", reason: "missed calls do not count by policy", flags };
-    if (p.missedCallMode === "PROVISIONAL") { status = "PROVISIONAL"; reason = "missed call, applied provisionally"; }
-    else if (p.missedCallMode === "SMS_CONFIRM") { status = "PENDING"; reason = "missed call, waiting for the guard to reply YES"; sendSmsConfirm = true; }
-    else { status = "PENDING"; reason = "missed call, waiting for a supervisor"; }
+    if (p.missedCallMode === "DISABLED")
+      return { action: "IGNORE", reason: "missed calls do not count by policy", flags };
+    if (p.missedCallMode === "PROVISIONAL") {
+      status = "PROVISIONAL";
+      reason = "missed call, applied provisionally";
+    } else if (p.missedCallMode === "SMS_CONFIRM") {
+      status = "PENDING";
+      reason = "missed call, waiting for the guard to reply YES";
+      sendSmsConfirm = true;
+    } else {
+      status = "PENDING";
+      reason = "missed call, waiting for a supervisor";
+    }
   } else if ((call.durationSeconds ?? 0) < p.answeredMinSeconds) {
     flags.push("SHORT_CALL");
-    status = "PENDING"; reason = `answered for under ${p.answeredMinSeconds} s`;
+    status = "PENDING";
+    reason = `answered for under ${p.answeredMinSeconds} s`;
   } else if (p.answeredMode === "PENDING") {
-    status = "PENDING"; reason = "every call waits for a supervisor by policy";
+    status = "PENDING";
+    reason = "every call waits for a supervisor by policy";
   } else {
-    status = "CONFIRMED"; reason = "answered call from the guard's registered number";
+    status = "CONFIRMED";
+    reason = "answered call from the guard's registered number";
   }
 
   if (expectedGateway === false) {
     flags.push("WRONG_GATEWAY");
-    if (p.wrongGatewayMode === "REJECT") { status = "REJECTED"; reason = "called a gateway not assigned to this guard"; sendSmsConfirm = false; }
-    else if (p.wrongGatewayMode === "PENDING") { status = "PENDING"; reason = `${reason}; called a gateway not assigned to this guard`; }
+    if (p.wrongGatewayMode === "REJECT") {
+      status = "REJECTED";
+      reason = "called a gateway not assigned to this guard";
+      sendSmsConfirm = false;
+    } else if (p.wrongGatewayMode === "PENDING") {
+      status = "PENDING";
+      reason = `${reason}; called a gateway not assigned to this guard`;
+    }
   }
   // Provisional means "applied, review later". Only a clock-in can be undone cleanly; closing a shift
   // or settling a welfare check on a missed call waits for a person.
-  if (status === "PROVISIONAL" && i.intent !== "CHECK_IN") { status = "PENDING"; reason = "missed call: only a clock-in is applied provisionally"; }
+  if (status === "PROVISIONAL" && i.intent !== "CHECK_IN") {
+    status = "PENDING";
+    reason = "missed call: only a clock-in is applied provisionally";
+  }
   // A clock-out with no clock-in, and a call on a shift the engine already closed, are for a person.
-  if (flags.includes("NO_CHECK_IN") && (status === "CONFIRMED" || status === "PROVISIONAL")) { status = "PENDING"; reason = "clock-out call, but the guard never clocked in"; }
+  if (flags.includes("NO_CHECK_IN") && (status === "CONFIRMED" || status === "PROVISIONAL")) {
+    status = "PENDING";
+    reason = "clock-out call, but the guard never clocked in";
+  }
   if (shift.closed) {
     flags.push("SHIFT_CLOSED");
-    if (status === "CONFIRMED" || status === "PROVISIONAL") { status = "PENDING"; reason = "the shift was already closed when this call arrived"; }
+    if (status === "CONFIRMED" || status === "PROVISIONAL") {
+      status = "PENDING";
+      reason = "the shift was already closed when this call arrived";
+    }
     sendSmsConfirm = false;
   }
   return { action: "RECORD", intent: i.intent, status, source, flags, reason, sendSmsConfirm };
 }
 
 /** Which of a guard's shifts a call belongs to. One, ambiguous (several equally likely), or none. */
-export function pickShiftForAttendanceCall<T extends { id: string } & ShiftFacts>(t: Date, shifts: T[], p: CallAttendancePolicy): { shift: T } | { ambiguous: T[] } | { none: true } {
+export function pickShiftForAttendanceCall<T extends { id: string } & ShiftFacts>(
+  t: Date,
+  shifts: T[],
+  p: CallAttendancePolicy,
+): { shift: T } | { ambiguous: T[] } | { none: true } {
   const scored = shifts
     .map((s) => ({ s, i: callIntent(t, s, p) }))
     .filter((x): x is { s: T; i: { intent: CallIntent; flags: string[] } } => !("none" in x.i));
@@ -158,8 +222,14 @@ export function pickShiftForAttendanceCall<T extends { id: string } & ShiftFacts
 }
 
 export function parseCallPolicy(v: Record<string, string>): CallAttendancePolicy {
-  const num = (k: string, d: number) => { const n = Number(v[k]); return Number.isFinite(n) && n >= 0 ? n : d; };
-  const pick = <T extends string>(k: string, allowed: readonly T[], d: T): T => (allowed as readonly string[]).includes((v[k] ?? "").trim().toUpperCase()) ? (v[k].trim().toUpperCase() as T) : d;
+  const num = (k: string, d: number) => {
+    const n = Number(v[k]);
+    return Number.isFinite(n) && n >= 0 ? n : d;
+  };
+  const pick = <T extends string>(k: string, allowed: readonly T[], d: T): T =>
+    (allowed as readonly string[]).includes((v[k] ?? "").trim().toUpperCase())
+      ? (v[k].trim().toUpperCase() as T)
+      : d;
   const d = DEFAULT_CALL_POLICY;
   return {
     enabled: (v["callAttendance.enabled"] ?? "true") === "true",
@@ -168,8 +238,20 @@ export function parseCallPolicy(v: Record<string, string>): CallAttendancePolicy
     checkOutBeforeMinutes: num("callAttendance.checkOutBeforeMinutes", d.checkOutBeforeMinutes),
     checkOutAfterMinutes: num("callAttendance.checkOutAfterMinutes", d.checkOutAfterMinutes),
     answeredMinSeconds: num("callAttendance.answeredMinSeconds", d.answeredMinSeconds),
-    answeredMode: pick("callAttendance.answeredMode", ["CONFIRMED", "PENDING"] as const, d.answeredMode),
-    missedCallMode: pick("callAttendance.missedCallMode", ["DISABLED", "PENDING", "PROVISIONAL", "SMS_CONFIRM"] as const, d.missedCallMode),
-    wrongGatewayMode: pick("callAttendance.wrongGatewayMode", ["FLAG", "PENDING", "REJECT"] as const, d.wrongGatewayMode),
+    answeredMode: pick(
+      "callAttendance.answeredMode",
+      ["CONFIRMED", "PENDING"] as const,
+      d.answeredMode,
+    ),
+    missedCallMode: pick(
+      "callAttendance.missedCallMode",
+      ["DISABLED", "PENDING", "PROVISIONAL", "SMS_CONFIRM"] as const,
+      d.missedCallMode,
+    ),
+    wrongGatewayMode: pick(
+      "callAttendance.wrongGatewayMode",
+      ["FLAG", "PENDING", "REJECT"] as const,
+      d.wrongGatewayMode,
+    ),
   };
 }

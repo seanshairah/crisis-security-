@@ -84,7 +84,10 @@ export function distributable(release: AppRelease | null): Distributable {
 }
 
 /** Phones report versionName; the comparison that matters is versionCode. */
-export function isOutOfDate(reportedVersionName: string | null | undefined, release: AppRelease | null): boolean {
+export function isOutOfDate(
+  reportedVersionName: string | null | undefined,
+  release: AppRelease | null,
+): boolean {
   if (!release || !reportedVersionName) return false;
   // A debug build carries a "-debug" suffix and its own applicationId, so it is a different app
   // rather than an older one. It is still worth flagging: it should not be in the field.

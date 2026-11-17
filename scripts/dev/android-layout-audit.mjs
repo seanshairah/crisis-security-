@@ -21,7 +21,9 @@ import path from "node:path";
 const RES = "android/app/src/main/res";
 const args = process.argv.slice(2);
 const VERBOSE = args.includes("--verbose");
-const WIDTHS = args.includes("--width") ? [Number(args[args.indexOf("--width") + 1])] : [320, 360, 411];
+const WIDTHS = args.includes("--width")
+  ? [Number(args[args.indexOf("--width") + 1])]
+  : [320, 360, 411];
 
 // Android's own floor for anything a finger has to hit.
 const TOUCH_MIN = 48;
@@ -37,20 +39,51 @@ const SLOT_MIN = 56;
 const ROBOTO_FACTOR = 0.96;
 const METRICS = {
   regular: {
-    191: "'", 222: "ijl", 260: "|", 278: " !,./:;I[\\]ft", 333: "()-`r", 334: "{}", 355: '"',
-    389: "*", 469: "^", 500: "Jcksvxyz", 556: "#$0123456789?L_abdeghnopqu", 584: "+<=>~",
-    611: "FTZ", 667: "&ABEKPSVXY", 722: "CDHNRUw", 778: "GOQ", 833: "Mm", 889: "%", 944: "W",
+    191: "'",
+    222: "ijl",
+    260: "|",
+    278: " !,./:;I[\\]ft",
+    333: "()-`r",
+    334: "{}",
+    355: '"',
+    389: "*",
+    469: "^",
+    500: "Jcksvxyz",
+    556: "#$0123456789?L_abdeghnopqu",
+    584: "+<=>~",
+    611: "FTZ",
+    667: "&ABEKPSVXY",
+    722: "CDHNRUw",
+    778: "GOQ",
+    833: "Mm",
+    889: "%",
+    944: "W",
     1015: "@",
   },
   bold: {
-    238: "'", 278: " ,./I\\ijl", 280: "|", 333: "!()-:;[]`ft", 389: "*r{}", 474: '"', 500: "z",
-    556: "#$0123456789J_aceksvxy", 584: "+<=>^~", 611: "?FLTZbdghnopqu", 667: "EPSVXY",
-    722: "&ABCDHKNRU", 778: "GOQw", 833: "M", 889: "%m", 944: "W", 975: "@",
+    238: "'",
+    278: " ,./I\\ijl",
+    280: "|",
+    333: "!()-:;[]`ft",
+    389: "*r{}",
+    474: '"',
+    500: "z",
+    556: "#$0123456789J_aceksvxy",
+    584: "+<=>^~",
+    611: "?FLTZbdghnopqu",
+    667: "EPSVXY",
+    722: "&ABCDHKNRU",
+    778: "GOQw",
+    833: "M",
+    889: "%m",
+    944: "W",
+    975: "@",
   },
 };
 const CHAR = { regular: new Map(), bold: new Map() };
 for (const [face, table] of Object.entries(METRICS)) {
-  for (const [w, chars] of Object.entries(table)) for (const c of chars) CHAR[face].set(c, Number(w));
+  for (const [w, chars] of Object.entries(table))
+    for (const c of chars) CHAR[face].set(c, Number(w));
 }
 const FALLBACK = 560;
 
@@ -67,8 +100,10 @@ function wrap(s, avail, sp, bold, spacing) {
   let line = "";
   for (const w of s.split(/\s+/).filter(Boolean)) {
     const next = line ? `${line} ${w}` : w;
-    if (line && textWidth(next, sp, bold, spacing) > avail) { lines.push(line); line = w; }
-    else line = next;
+    if (line && textWidth(next, sp, bold, spacing) > avail) {
+      lines.push(line);
+      line = w;
+    } else line = next;
   }
   if (line) lines.push(line);
   return lines;
@@ -79,25 +114,37 @@ function wrap(s, avail, sp, bold, spacing) {
 
 function parseXml(src) {
   const stack = [{ tag: "#root", attrs: {}, kids: [] }];
-  const re = /<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<\/\s*([\w.$]+)\s*>|<\s*([\w.$]+)((?:\s+[\w:.-]+\s*=\s*"[^"]*")*)\s*(\/?)>|([^<]+)/g;
+  const re =
+    /<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<\/\s*([\w.$]+)\s*>|<\s*([\w.$]+)((?:\s+[\w:.-]+\s*=\s*"[^"]*")*)\s*(\/?)>|([^<]+)/g;
   for (const m of src.matchAll(re)) {
     const [, close, open, attrSrc, selfClose, text] = m;
-    if (close) { stack.pop(); continue; }
+    if (close) {
+      stack.pop();
+      continue;
+    }
     if (open) {
       const attrs = {};
-      for (const a of (attrSrc ?? "").matchAll(/([\w:.-]+)\s*=\s*"([^"]*)"/g)) attrs[a[1]] = decode(a[2]);
+      for (const a of (attrSrc ?? "").matchAll(/([\w:.-]+)\s*=\s*"([^"]*)"/g))
+        attrs[a[1]] = decode(a[2]);
       const node = { tag: open, attrs, kids: [] };
       stack[stack.length - 1].kids.push(node);
       if (!selfClose) stack.push(node);
       continue;
     }
-    if (text && text.trim()) stack[stack.length - 1].text = (stack[stack.length - 1].text ?? "") + text;
+    if (text && text.trim())
+      stack[stack.length - 1].text = (stack[stack.length - 1].text ?? "") + text;
   }
   return stack[0].kids.find((n) => n.tag !== "#root");
 }
 
-const decode = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
-  .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d));
+const decode = (s) =>
+  s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d));
 
 // --- resources ----------------------------------------------------------------
 
@@ -108,10 +155,13 @@ const strings = new Map();
     if (n.tag === "string") strings.set(n.attrs.name, (n.text ?? "").trim());
     // The longest quantity is the one that has to fit.
     else if (n.tag === "plurals") {
-      strings.set(n.attrs.name, n.kids.reduce((best, i) => {
-        const t = (i.text ?? "").trim();
-        return t.length > best.length ? t : best;
-      }, ""));
+      strings.set(
+        n.attrs.name,
+        n.kids.reduce((best, i) => {
+          const t = (i.text ?? "").trim();
+          return t.length > best.length ? t : best;
+        }, ""),
+      );
     }
   }
 }
@@ -143,7 +193,8 @@ const dp = (v, fallback = 0) => {
 /** The element's own attributes over the ones its style supplies, prefixes stripped. */
 function attributes(node) {
   const merged = {};
-  for (const [k, v] of Object.entries(styleAttrs(node.attrs.style))) merged[k.replace(/^android:/, "")] = v;
+  for (const [k, v] of Object.entries(styleAttrs(node.attrs.style)))
+    merged[k.replace(/^android:/, "")] = v;
   for (const [k, v] of Object.entries(node.attrs)) {
     if (k === "style" || k.startsWith("xmlns")) continue;
     merged[k.replace(/^(android|app|tools):/, "")] = v;
@@ -151,13 +202,33 @@ function attributes(node) {
   return merged;
 }
 
-const padStart = (a) => dp(a.paddingStart, dp(a.paddingLeft, dp(a.paddingHorizontal, dp(a.padding, 0))));
-const padEnd = (a) => dp(a.paddingEnd, dp(a.paddingRight, dp(a.paddingHorizontal, dp(a.padding, 0))));
-const marStart = (a) => dp(a.layout_marginStart, dp(a.layout_marginLeft, dp(a.layout_marginHorizontal, dp(a.layout_margin, 0))));
-const marEnd = (a) => dp(a.layout_marginEnd, dp(a.layout_marginRight, dp(a.layout_marginHorizontal, dp(a.layout_margin, 0))));
+const padStart = (a) =>
+  dp(a.paddingStart, dp(a.paddingLeft, dp(a.paddingHorizontal, dp(a.padding, 0))));
+const padEnd = (a) =>
+  dp(a.paddingEnd, dp(a.paddingRight, dp(a.paddingHorizontal, dp(a.padding, 0))));
+const marStart = (a) =>
+  dp(
+    a.layout_marginStart,
+    dp(a.layout_marginLeft, dp(a.layout_marginHorizontal, dp(a.layout_margin, 0))),
+  );
+const marEnd = (a) =>
+  dp(
+    a.layout_marginEnd,
+    dp(a.layout_marginRight, dp(a.layout_marginHorizontal, dp(a.layout_margin, 0))),
+  );
 
-const TEXTISH = new Set(["TextView", "Button", "EditText", "com.google.android.material.button.MaterialButton"]);
-const FRAMES = new Set(["FrameLayout", "ScrollView", "RelativeLayout", "com.google.android.material.card.MaterialCardView"]);
+const TEXTISH = new Set([
+  "TextView",
+  "Button",
+  "EditText",
+  "com.google.android.material.button.MaterialButton",
+]);
+const FRAMES = new Set([
+  "FrameLayout",
+  "ScrollView",
+  "RelativeLayout",
+  "com.google.android.material.card.MaterialCardView",
+]);
 // A button with a leading icon spends this much on the icon and its padding before any text.
 const ICON_CHROME = 48;
 
@@ -172,7 +243,10 @@ function textOf(a) {
   if (raw == null) return null;
   // Format specifiers stand in for runtime values we cannot know; drop them rather than invent a
   // length, and the report says the measurement is of the template.
-  let t = raw.replace(/%\d+\$[sd]|%[sd]/g, "").replace(/\s+/g, " ").trim();
+  let t = raw
+    .replace(/%\d+\$[sd]|%[sd]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (a.textAllCaps === "true") t = t.toUpperCase();
   return t;
 }
@@ -196,9 +270,10 @@ function desiredWidth(node, avail) {
       const ca = attributes(c);
       return marStart(ca) + marEnd(ca) + resolveWidth(c, inner, () => desiredWidth(c, inner));
     });
-    const used = node.tag === "LinearLayout" && isHorizontal(a)
-      ? widths.reduce((x, y) => x + y, 0)
-      : Math.max(0, ...widths);
+    const used =
+      node.tag === "LinearLayout" && isHorizontal(a)
+        ? widths.reduce((x, y) => x + y, 0)
+        : Math.max(0, ...widths);
     return Math.min(avail, used + padStart(a) + padEnd(a));
   }
   return Math.min(avail, dp(a.layout_width, 24));
@@ -212,7 +287,8 @@ function resolveWidth(node, avail, wrapFn) {
 }
 
 /** True when nothing constrains this element: it asked for its content's width and got it. */
-const selfSized = (node) => attributes(node).layout_width === "wrap_content" && !Number(attributes(node).layout_weight ?? 0);
+const selfSized = (node) =>
+  attributes(node).layout_width === "wrap_content" && !Number(attributes(node).layout_weight ?? 0);
 
 const findings = [];
 const note = (f) => findings.push(f);
@@ -232,9 +308,10 @@ function walk(node, avail, ctx) {
     // 0dp with a weight contributes nothing but its margins.
     const base = cs.map((c, i) => {
       const ca = attributes(c);
-      const own = weights[i] > 0 && dp(ca.layout_width, -1) === 0
-        ? 0
-        : resolveWidth(c, inner, () => desiredWidth(c, inner));
+      const own =
+        weights[i] > 0 && dp(ca.layout_width, -1) === 0
+          ? 0
+          : resolveWidth(c, inner, () => desiredWidth(c, inner));
       return own + marStart(ca) + marEnd(ca);
     });
     const spare = inner - base.reduce((x, y) => x + y, 0);
@@ -251,7 +328,14 @@ function walk(node, avail, ctx) {
   for (const c of kids(node)) {
     const ca = attributes(c);
     const room = inner - marStart(ca) - marEnd(ca);
-    walk(c, Math.max(0, resolveWidth(c, room, () => room)), ctx);
+    walk(
+      c,
+      Math.max(
+        0,
+        resolveWidth(c, room, () => room),
+      ),
+      ctx,
+    );
   }
 }
 
@@ -267,41 +351,75 @@ function inspectText(node, a, avail, ctx) {
   // A self-sized element got exactly the width its own text asked for, so a narrow one is a short
   // string, not a squeezed slot. Only a constrained width can be too small.
   if (content < SLOT_MIN && !selfSized(node)) {
-    note({ kind: "slot", where, sample: t ?? "(set at runtime)",
-      msg: `${content.toFixed(0)} dp for text at ${size} sp — under ${SLOT_MIN} dp, so whatever goes here is cut` });
+    note({
+      kind: "slot",
+      where,
+      sample: t ?? "(set at runtime)",
+      msg: `${content.toFixed(0)} dp for text at ${size} sp — under ${SLOT_MIN} dp, so whatever goes here is cut`,
+    });
     return;
   }
   if (t == null) {
-    if (VERBOSE) note({ kind: "dynamic", where, msg: `${content.toFixed(0)} dp at ${size} sp, string set at runtime` });
+    if (VERBOSE)
+      note({
+        kind: "dynamic",
+        where,
+        msg: `${content.toFixed(0)} dp at ${size} sp, string set at runtime`,
+      });
     return;
   }
 
   const words = t.split(/\s+/).filter(Boolean);
-  const longest = words.reduce((w, x) => (textWidth(x, size, bold, spacing) > textWidth(w, size, bold, spacing) ? x : w), "");
+  const longest = words.reduce(
+    (w, x) => (textWidth(x, size, bold, spacing) > textWidth(w, size, bold, spacing) ? x : w),
+    "",
+  );
   const longestW = textWidth(longest, size, bold, spacing);
   if (longestW > content) {
-    note({ kind: "clip", where, sample: t,
-      msg: `"${longest}" needs ${longestW.toFixed(0)} dp and has ${content.toFixed(0)} — it cannot wrap, so it clips` });
+    note({
+      kind: "clip",
+      where,
+      sample: t,
+      msg: `"${longest}" needs ${longestW.toFixed(0)} dp and has ${content.toFixed(0)} — it cannot wrap, so it clips`,
+    });
     return;
   }
 
   const lines = wrap(t, content, size, bold, spacing);
   // A heading that turns into a paragraph is a layout problem, not a copy problem.
   if (lines.length > 2 && (bold || size >= 17)) {
-    note({ kind: "lines", where, sample: t, msg: `${lines.length} lines at ${size} sp${bold ? " bold" : ""} in ${content.toFixed(0)} dp` });
+    note({
+      kind: "lines",
+      where,
+      sample: t,
+      msg: `${lines.length} lines at ${size} sp${bold ? " bold" : ""} in ${content.toFixed(0)} dp`,
+    });
   } else if (VERBOSE) {
-    note({ kind: "ok", where, msg: `${lines.length} line(s), ${content.toFixed(0)} dp at ${size} sp` });
+    note({
+      kind: "ok",
+      where,
+      msg: `${lines.length} line(s), ${content.toFixed(0)} dp at ${size} sp`,
+    });
   }
 }
 
 /** Interactive elements a finger has to land on, measured against Android's 48 dp. */
 function touchTargets(node, ctx) {
   const a = attributes(node);
-  if (node.tag === "Button" || node.tag === "com.google.android.material.button.MaterialButton" || node.tag === "ImageButton" || a.clickable === "true") {
+  if (
+    node.tag === "Button" ||
+    node.tag === "com.google.android.material.button.MaterialButton" ||
+    node.tag === "ImageButton" ||
+    a.clickable === "true"
+  ) {
     const h = a.layout_height === "wrap_content" ? dp(a.minHeight, 0) : dp(a.layout_height, 0);
     const id = (a.id ?? "").replace(/^@\+?id\//, "");
     if (h > 0 && h < TOUCH_MIN) {
-      note({ kind: "touch", where: `${ctx.file}${id ? ` #${id}` : ""}`, msg: `${h} dp tall — under Android's ${TOUCH_MIN} dp` });
+      note({
+        kind: "touch",
+        where: `${ctx.file}${id ? ` #${id}` : ""}`,
+        msg: `${h} dp tall — under Android's ${TOUCH_MIN} dp`,
+      });
     }
   }
   for (const c of kids(node)) touchTargets(c, ctx);
@@ -309,7 +427,9 @@ function touchTargets(node, ctx) {
 
 // --- run ----------------------------------------------------------------------
 
-const layouts = readdirSync(path.join(RES, "layout")).filter((f) => f.endsWith(".xml")).sort();
+const layouts = readdirSync(path.join(RES, "layout"))
+  .filter((f) => f.endsWith(".xml"))
+  .sort();
 const TITLES = {
   slot: "Slots too narrow to hold text",
   clip: "Strings that cannot fit and cannot wrap",

@@ -17,19 +17,31 @@ export type PlaceCallResult = { ok: true; providerCallId: string } | { ok: false
  * passed to the provider as call metadata and echoed back: it finds the check even when the report
  * is for an earlier attempt whose call id has since been replaced.
  */
-export type VoiceReport = { eventId: string; providerCallId: string; status: string; digits: string | null; at: Date; reference?: string | null };
+export type VoiceReport = {
+  eventId: string;
+  providerCallId: string;
+  status: string;
+  digits: string | null;
+  at: Date;
+  reference?: string | null;
+};
 
 export interface VoiceProvider {
   readonly name: string;
   /** Simulated providers never produce real evidence; everything they report is flagged. */
   readonly simulated: boolean;
-  placeWelfareCall(input: { to: string; guardName: string; reference: string }): Promise<PlaceCallResult>;
+  placeWelfareCall(input: {
+    to: string;
+    guardName: string;
+    reference: string;
+  }): Promise<PlaceCallResult>;
   /** Parses a webhook body that has already passed `verifyVoiceWebhook`. */
   parseReport(body: unknown): VoiceReport | null;
 }
 
 /** The menu read to the guard. Kept here so the provider's script and the portal agree. */
-export const WELFARE_PROMPT = "Crisis Security shift verification. Press 1 if your shift is going well. Press 2 if you need assistance. Press 3 for an emergency.";
+export const WELFARE_PROMPT =
+  "Crisis Security shift verification. Press 1 if your shift is going well. Press 2 if you need assistance. Press 3 for an emergency.";
 
 class SimulatedVoiceProvider implements VoiceProvider {
   readonly name = "simulated";
@@ -40,13 +52,28 @@ class SimulatedVoiceProvider implements VoiceProvider {
   }
   parseReport(body: unknown): VoiceReport | null {
     const b = body as Record<string, unknown>;
-    if (!b || typeof b.eventId !== "string" || typeof b.callId !== "string" || typeof b.status !== "string") return null;
+    if (
+      !b ||
+      typeof b.eventId !== "string" ||
+      typeof b.callId !== "string" ||
+      typeof b.status !== "string"
+    )
+      return null;
     const at = typeof b.at === "string" ? new Date(b.at) : new Date();
-    return { eventId: b.eventId, providerCallId: b.callId, status: b.status, digits: typeof b.digits === "string" ? b.digits : null, at: Number.isNaN(at.getTime()) ? new Date() : at, reference: typeof b.reference === "string" ? b.reference : null };
+    return {
+      eventId: b.eventId,
+      providerCallId: b.callId,
+      status: b.status,
+      digits: typeof b.digits === "string" ? b.digits : null,
+      at: Number.isNaN(at.getTime()) ? new Date() : at,
+      reference: typeof b.reference === "string" ? b.reference : null,
+    };
   }
 }
 
-const REGISTRY: Record<string, () => VoiceProvider> = { simulated: () => new SimulatedVoiceProvider() };
+const REGISTRY: Record<string, () => VoiceProvider> = {
+  simulated: () => new SimulatedVoiceProvider(),
+};
 
 /**
  * The simulated provider is refused in a production build unless ALLOW_SIMULATED_VOICE=1, so a
@@ -83,13 +110,21 @@ export function signVoiceWebhook(secret: string, timestamp: string, rawBody: str
  * VOICE_WEBHOOK_SECRET, in `x-voice-signature`, the Unix-millisecond timestamp in
  * `x-voice-timestamp`. No secret configured: every webhook is refused.
  */
-export function verifyVoiceWebhook(secret: string | undefined, signature: string | null, timestamp: string | null, rawBody: string, now = Date.now()): { ok: true } | { ok: false; reason: string } {
+export function verifyVoiceWebhook(
+  secret: string | undefined,
+  signature: string | null,
+  timestamp: string | null,
+  rawBody: string,
+  now = Date.now(),
+): { ok: true } | { ok: false; reason: string } {
   if (!secret) return { ok: false, reason: "no webhook secret configured" };
   if (!signature || !timestamp) return { ok: false, reason: "unsigned" };
   const ts = Number(timestamp);
-  if (!Number.isFinite(ts) || Math.abs(now - ts) > WEBHOOK_MAX_SKEW_MS) return { ok: false, reason: "stale or future timestamp" };
+  if (!Number.isFinite(ts) || Math.abs(now - ts) > WEBHOOK_MAX_SKEW_MS)
+    return { ok: false, reason: "stale or future timestamp" };
   const expected = Buffer.from(signVoiceWebhook(secret, timestamp, rawBody), "hex");
   const given = Buffer.from(signature, "hex");
-  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return { ok: false, reason: "bad signature" };
+  if (expected.length !== given.length || !timingSafeEqual(expected, given))
+    return { ok: false, reason: "bad signature" };
   return { ok: true };
 }

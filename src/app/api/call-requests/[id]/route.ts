@@ -1,5 +1,9 @@
 import { guarded, json, error } from "@/lib/api";
-import { cancelCallRequest, CallRequestError, describeCallRequest } from "@/lib/gateway/call-requests";
+import {
+  cancelCallRequest,
+  CallRequestError,
+  describeCallRequest,
+} from "@/lib/gateway/call-requests";
 
 type Ctx = { params: Promise<{ id: string }> };
 

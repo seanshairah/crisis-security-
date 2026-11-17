@@ -1,15 +1,30 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  callQualifies, computeLateness, describeOutcome, escalationState, fixCorrelates, pickShiftForCall,
-  resolveGrace, statusForVerifiedFix, trustedTimestamp, DEFAULT_CORRELATION,
+  callQualifies,
+  computeLateness,
+  describeOutcome,
+  escalationState,
+  fixCorrelates,
+  pickShiftForCall,
+  resolveGrace,
+  statusForVerifiedFix,
+  trustedTimestamp,
+  DEFAULT_CORRELATION,
   type ShiftCandidate,
 } from "../src/lib/attendance/check-in";
 
 const at = (hhmm: string) => new Date(`2026-03-10T${hhmm}:00.000Z`);
 const START = at("18:00");
 const WINDOW = { beforeMinutes: 60, afterMinutes: 120 };
-const shift = (over: Partial<ShiftCandidate> = {}): ShiftCandidate => ({ id: "s1", startAt: START, endAt: at("23:59"), cancelled: false, alreadyVerified: false, ...over });
+const shift = (over: Partial<ShiftCandidate> = {}): ShiftCandidate => ({
+  id: "s1",
+  startAt: START,
+  endAt: at("23:59"),
+  cancelled: false,
+  alreadyVerified: false,
+  ...over,
+});
 
 // ---------------------------------------------------------------- the grace table from the brief
 
@@ -36,9 +51,17 @@ test("the five-minute grace table holds exactly", () => {
 
 test("part minutes: elapsed time floors, lateness ceils", () => {
   const thirtySecondsIn = new Date(START.getTime() + 30_000);
-  assert.equal(computeLateness(START, thirtySecondsIn, 5).minutesAfterStart, 0, "30 s in is still 0 min after the start");
+  assert.equal(
+    computeLateness(START, thirtySecondsIn, 5).minutesAfterStart,
+    0,
+    "30 s in is still 0 min after the start",
+  );
   const thirtySecondsPastGrace = new Date(START.getTime() + 5 * 60_000 + 30_000);
-  assert.equal(computeLateness(START, thirtySecondsPastGrace, 5).lateMinutes, 1, "any part-minute past grace is a late minute");
+  assert.equal(
+    computeLateness(START, thirtySecondsPastGrace, 5).lateMinutes,
+    1,
+    "any part-minute past grace is a late minute",
+  );
 });
 
 test("a zero grace period makes any arrival after the start late", () => {
@@ -50,7 +73,10 @@ test("grace resolves shift over site over company", () => {
   assert.deepEqual(resolveGrace({ company: 5 }), { minutes: 5, from: "company" });
   assert.deepEqual(resolveGrace({ company: 5, site: 10 }), { minutes: 10, from: "site" });
   assert.deepEqual(resolveGrace({ company: 5, site: 10, shift: 0 }), { minutes: 0, from: "shift" });
-  assert.deepEqual(resolveGrace({ company: 5, site: null, shift: null }), { minutes: 5, from: "company" });
+  assert.deepEqual(resolveGrace({ company: 5, site: null, shift: null }), {
+    minutes: 5,
+    from: "company",
+  });
 });
 
 // ---------------------------------------------------------------- the fix decides the outcome
@@ -59,7 +85,10 @@ test("the geofence verdict outranks the clock", () => {
   const onTime = computeLateness(START, at("18:00"), 5);
   const late = computeLateness(START, at("18:12"), 5);
   assert.equal(statusForVerifiedFix("INSIDE", undefined, onTime), "VERIFIED_ON_TIME");
-  assert.equal(statusForVerifiedFix("INSIDE", undefined, computeLateness(START, at("18:04"), 5)), "VERIFIED_WITHIN_GRACE");
+  assert.equal(
+    statusForVerifiedFix("INSIDE", undefined, computeLateness(START, at("18:04"), 5)),
+    "VERIFIED_WITHIN_GRACE",
+  );
   assert.equal(statusForVerifiedFix("INSIDE", undefined, late), "VERIFIED_LATE");
   // Punctual but in the wrong place is not attendance.
   assert.equal(statusForVerifiedFix("OUTSIDE", undefined, onTime), "OUTSIDE_AREA");
@@ -70,14 +99,29 @@ test("the geofence verdict outranks the clock", () => {
 
 test("the control-room line names both figures for a late arrival", () => {
   const l = computeLateness(START, at("18:12"), 5);
-  assert.equal(describeOutcome("VERIFIED_LATE", l), "Late — 7 min beyond grace (12 min after shift start)");
-  assert.equal(describeOutcome("VERIFIED_WITHIN_GRACE", computeLateness(START, at("18:04"), 5)), "Verified within grace (4 min after shift start)");
-  assert.equal(describeOutcome("VERIFIED_ON_TIME", computeLateness(START, at("17:58"), 5)), "Verified on time");
+  assert.equal(
+    describeOutcome("VERIFIED_LATE", l),
+    "Late — 7 min beyond grace (12 min after shift start)",
+  );
+  assert.equal(
+    describeOutcome("VERIFIED_WITHIN_GRACE", computeLateness(START, at("18:04"), 5)),
+    "Verified within grace (4 min after shift start)",
+  );
+  assert.equal(
+    describeOutcome("VERIFIED_ON_TIME", computeLateness(START, at("17:58"), 5)),
+    "Verified on time",
+  );
 });
 
 // ---------------------------------------------------------------- which calls count
 
-const call = (hhmm: string, over: Partial<Parameters<typeof callQualifies>[0]> = {}) => ({ startedAt: at(hhmm), direction: "OUTGOING" as const, normalizedPhoneNumber: "+263772100100", fromGuardDevice: true, ...over });
+const call = (hhmm: string, over: Partial<Parameters<typeof callQualifies>[0]> = {}) => ({
+  startedAt: at(hhmm),
+  direction: "OUTGOING" as const,
+  normalizedPhoneNumber: "+263772100100",
+  fromGuardDevice: true,
+  ...over,
+});
 
 test("a call from the guard's registered device inside the window qualifies", () => {
   assert.equal(callQualifies(call("17:55"), shift(), WINDOW, []).ok, true);
@@ -91,16 +135,38 @@ test("caller ID alone is never enough: the device must have reported the call", 
 });
 
 test("calls outside the window, on a cancelled shift, or after a verified check-in are rejected", () => {
-  assert.match((callQualifies(call("16:30"), shift(), WINDOW, []) as { reason: string }).reason, /before the check-in window/);
-  assert.match((callQualifies(call("20:30"), shift(), WINDOW, []) as { reason: string }).reason, /after the check-in window/);
-  assert.match((callQualifies(call("18:00"), shift({ cancelled: true }), WINDOW, []) as { reason: string }).reason, /cancelled/);
-  assert.match((callQualifies(call("18:00"), shift({ alreadyVerified: true }), WINDOW, []) as { reason: string }).reason, /already checked in/);
+  assert.match(
+    (callQualifies(call("16:30"), shift(), WINDOW, []) as { reason: string }).reason,
+    /before the check-in window/,
+  );
+  assert.match(
+    (callQualifies(call("20:30"), shift(), WINDOW, []) as { reason: string }).reason,
+    /after the check-in window/,
+  );
+  assert.match(
+    (callQualifies(call("18:00"), shift({ cancelled: true }), WINDOW, []) as { reason: string })
+      .reason,
+    /cancelled/,
+  );
+  assert.match(
+    (
+      callQualifies(call("18:00"), shift({ alreadyVerified: true }), WINDOW, []) as {
+        reason: string;
+      }
+    ).reason,
+    /already checked in/,
+  );
 });
 
 test("an authorised check-in number list excludes unrelated calls", () => {
   const authorised = ["+263772100100"];
   assert.equal(callQualifies(call("18:00"), shift(), WINDOW, authorised).ok, true);
-  const personal = callQualifies(call("18:00", { normalizedPhoneNumber: "+263771111111" }), shift(), WINDOW, authorised);
+  const personal = callQualifies(
+    call("18:00", { normalizedPhoneNumber: "+263771111111" }),
+    shift(),
+    WINDOW,
+    authorised,
+  );
   assert.equal(personal.ok, false);
   assert.match((personal as { reason: string }).reason, /authorised check-in number/);
 });
@@ -172,7 +238,11 @@ test("the check-in moves from grace to overdue to escalation", () => {
   const p = { graceMinutes: 5, escalationMinutes: 15 };
   assert.equal(escalationState(START, at("17:50"), p).phase, "BEFORE_START");
   assert.equal(escalationState(START, at("18:03"), p).phase, "IN_GRACE");
-  assert.equal(escalationState(START, at("18:05"), p).phase, "IN_GRACE", "the grace minute itself is still grace");
+  assert.equal(
+    escalationState(START, at("18:05"), p).phase,
+    "IN_GRACE",
+    "the grace minute itself is still grace",
+  );
   assert.equal(escalationState(START, at("18:06"), p).phase, "OVERDUE");
   assert.equal(escalationState(START, at("18:19"), p).phase, "OVERDUE");
   assert.equal(escalationState(START, at("18:20"), p).phase, "ESCALATE");

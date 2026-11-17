@@ -12,14 +12,18 @@ export class TwilioProvider implements SmsProvider {
   async sendSMS(to: string, body: string): Promise<SendResult> {
     const cfg = providerConfig();
     try {
-      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cfg.apiKey}/Messages.json`, {
-        method: "POST",
-        headers: {
-          Authorization: "Basic " + Buffer.from(`${cfg.apiKey}:${cfg.apiSecret}`).toString("base64"),
-          "Content-Type": "application/x-www-form-urlencoded",
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${cfg.apiKey}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              "Basic " + Buffer.from(`${cfg.apiKey}:${cfg.apiSecret}`).toString("base64"),
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ To: to, From: cfg.senderId, Body: body }),
         },
-        body: new URLSearchParams({ To: to, From: cfg.senderId, Body: body }),
-      });
+      );
       const json = (await res.json()) as { sid?: string; message?: string };
       if (!res.ok) return { ok: false, error: json.message ?? `HTTP ${res.status}` };
       return { ok: true, providerMessageId: json.sid };
@@ -33,8 +37,19 @@ export class TwilioProvider implements SmsProvider {
     const sig = req.headers.get("x-twilio-signature");
     if (!usableSecret(cfg.apiSecret) || !sig) return false;
     const params = parseBody(req);
-    const data = req.url + Object.keys(params).sort().map((k) => k + params[k]).join("");
-    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(cfg.apiSecret), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+    const data =
+      req.url +
+      Object.keys(params)
+        .sort()
+        .map((k) => k + params[k])
+        .join("");
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(cfg.apiSecret),
+      { name: "HMAC", hash: "SHA-1" },
+      false,
+      ["sign"],
+    );
     const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
     const expected = Buffer.from(mac).toString("base64");
     return secretMatches(expected, sig);
@@ -48,6 +63,8 @@ export class TwilioProvider implements SmsProvider {
 
   webhookResponse(): Response {
     // Empty TwiML: we reply via the API, not inline.
-    return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>", { headers: { "Content-Type": "text/xml" } });
+    return new Response('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', {
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 }

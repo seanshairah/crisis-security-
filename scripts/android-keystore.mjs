@@ -25,18 +25,30 @@ import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : undefined; };
+const arg = (name) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i > 0 ? process.argv[i + 1] : undefined;
+};
 const dir = path.resolve(arg("dir") ?? path.join(os.homedir(), "omega-release-keystore"));
 const props = path.resolve(arg("props") ?? "android/keystore.properties");
 const jks = path.join(dir, "omega-release.jks");
 const ALIAS = "omega";
 
-const fail = (msg) => { console.error(`\n${msg}\n`); process.exit(1); };
+const fail = (msg) => {
+  console.error(`\n${msg}\n`);
+  process.exit(1);
+};
 
-if (existsSync(jks)) fail(`A keystore already exists at ${jks}.\nThis script never overwrites a key. If it is the one you want, point android/keystore.properties at it instead.`);
-if (existsSync(props)) fail(`${props} already exists, so a release key is probably configured. Not overwriting it.`);
+if (existsSync(jks))
+  fail(
+    `A keystore already exists at ${jks}.\nThis script never overwrites a key. If it is the one you want, point android/keystore.properties at it instead.`,
+  );
+if (existsSync(props))
+  fail(`${props} already exists, so a release key is probably configured. Not overwriting it.`);
 
-try { execFileSync("keytool", ["-help"], { stdio: "ignore" }); } catch {
+try {
+  execFileSync("keytool", ["-help"], { stdio: "ignore" });
+} catch {
   fail("keytool was not found. Install a JDK (Android Studio ships one), then run this again.");
 }
 
@@ -45,28 +57,55 @@ const password = randomBytes(24).toString("base64url");
 const env = { ...process.env, OMEGA_KS_PASSWORD: password };
 
 mkdirSync(dir, { recursive: true, mode: 0o700 });
-execFileSync("keytool", [
-  "-genkeypair", "-keystore", jks, "-alias", ALIAS,
-  "-keyalg", "RSA", "-keysize", "4096", "-validity", "10000",
-  "-dname", "CN=Omega Protection Services, O=Omega Protection Services, L=Harare, C=ZW",
-  "-storepass:env", "OMEGA_KS_PASSWORD", "-keypass:env", "OMEGA_KS_PASSWORD",
-], { env, stdio: ["ignore", "ignore", "inherit"] });
+execFileSync(
+  "keytool",
+  [
+    "-genkeypair",
+    "-keystore",
+    jks,
+    "-alias",
+    ALIAS,
+    "-keyalg",
+    "RSA",
+    "-keysize",
+    "4096",
+    "-validity",
+    "10000",
+    "-dname",
+    "CN=Omega Protection Services, O=Omega Protection Services, L=Harare, C=ZW",
+    "-storepass:env",
+    "OMEGA_KS_PASSWORD",
+    "-keypass:env",
+    "OMEGA_KS_PASSWORD",
+  ],
+  { env, stdio: ["ignore", "ignore", "inherit"] },
+);
 chmodSync(jks, 0o600);
 
 const esc = (v) => v.replace(/\\/g, "\\\\"); // .properties files treat a backslash as an escape
 mkdirSync(path.dirname(props), { recursive: true });
-writeFileSync(props, [
-  "# Release signing for npm run android:release. Never commit this file or the keystore.",
-  `ANDROID_KEYSTORE_PATH=${esc(jks)}`,
-  `ANDROID_KEYSTORE_PASSWORD=${password}`,
-  `ANDROID_KEY_ALIAS=${ALIAS}`,
-  `ANDROID_KEY_PASSWORD=${password}`,
-  "",
-].join("\n"), { mode: 0o600 });
+writeFileSync(
+  props,
+  [
+    "# Release signing for npm run android:release. Never commit this file or the keystore.",
+    `ANDROID_KEYSTORE_PATH=${esc(jks)}`,
+    `ANDROID_KEYSTORE_PASSWORD=${password}`,
+    `ANDROID_KEY_ALIAS=${ALIAS}`,
+    `ANDROID_KEY_PASSWORD=${password}`,
+    "",
+  ].join("\n"),
+  { mode: 0o600 },
+);
 chmodSync(props, 0o600);
 
-const listing = execFileSync("keytool", ["-list", "-v", "-keystore", jks, "-alias", ALIAS, "-storepass:env", "OMEGA_KS_PASSWORD"], { env, encoding: "utf8" });
-const sha256 = (listing.match(/SHA256:\s*([0-9A-F:]+)/i) ?? [])[1] ?? "(could not read it; run keytool -list -v)";
+const listing = execFileSync(
+  "keytool",
+  ["-list", "-v", "-keystore", jks, "-alias", ALIAS, "-storepass:env", "OMEGA_KS_PASSWORD"],
+  { env, encoding: "utf8" },
+);
+const sha256 =
+  (listing.match(/SHA256:\s*([0-9A-F:]+)/i) ?? [])[1] ??
+  "(could not read it; run keytool -list -v)";
 
 console.log(`
 Release keystore created.

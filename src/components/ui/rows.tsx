@@ -4,7 +4,15 @@ import { cn } from "@/lib/cn";
  * Responsive record list: a table on wide screens, stacked cards on phones.
  * Pass `table` (the full <Table>) and `cards` (one card per record).
  */
-export function Rows({ table, cards, className }: { table: React.ReactNode; cards: React.ReactNode; className?: string }) {
+export function Rows({
+  table,
+  cards,
+  className,
+}: {
+  table: React.ReactNode;
+  cards: React.ReactNode;
+  className?: string;
+}) {
   return (
     <>
       <div className={cn("hidden md:block", className)}>{table}</div>
@@ -23,7 +31,25 @@ function isBlank(v: React.ReactNode): boolean {
   return false;
 }
 
-export function CardRow({ href, avatar, title, subtitle, right, meta, tone, children }: { href?: string; avatar?: React.ReactNode; title: React.ReactNode; subtitle?: React.ReactNode; right?: React.ReactNode; meta?: { label: string; value: React.ReactNode }[]; tone?: "critical"; children?: React.ReactNode }) {
+export function CardRow({
+  href,
+  avatar,
+  title,
+  subtitle,
+  right,
+  meta,
+  tone,
+  children,
+}: {
+  href?: string;
+  avatar?: React.ReactNode;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  right?: React.ReactNode;
+  meta?: { label: string; value: React.ReactNode }[];
+  tone?: "critical";
+  children?: React.ReactNode;
+}) {
   // Callers mark "nothing to show" two ways: the bare string "—", and <span>—</span> for the
   // table variant, where a dash is wanted because it holds the column's alignment. On a phone
   // there are no columns, so a labelled cell reading only "—" costs two lines and says nothing.
@@ -43,12 +69,29 @@ export function CardRow({ href, avatar, title, subtitle, right, meta, tone, chil
       </div>
       {shown.length > 0 && (
         <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-          {shown.map((m) => <div key={m.label} className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">{m.label}</dt><dd className="truncate text-[13px] text-ink tnum">{m.value}</dd></div>)}
+          {shown.map((m) => (
+            <div key={m.label} className="min-w-0">
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                {m.label}
+              </dt>
+              <dd className="truncate text-[13px] text-ink tnum">{m.value}</dd>
+            </div>
+          ))}
         </dl>
       )}
       {children}
     </>
   );
-  const cls = cn("block border-b border-line px-4 py-3.5 last:border-b-0", tone === "critical" && "bg-critical-soft/40", href && "active:bg-surface-2");
-  return href ? <a href={href} className={cls}>{inner}</a> : <div className={cls}>{inner}</div>;
+  const cls = cn(
+    "block border-b border-line px-4 py-3.5 last:border-b-0",
+    tone === "critical" && "bg-critical-soft/40",
+    href && "active:bg-surface-2",
+  );
+  return href ? (
+    <a href={href} className={cls}>
+      {inner}
+    </a>
+  ) : (
+    <div className={cls}>{inner}</div>
+  );
 }

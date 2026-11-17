@@ -43,7 +43,11 @@ export interface SmsProvider {
   webhookResponse(): Response;
 }
 
-export type DeliveryReport = { providerMessageId: string; status: "DELIVERED" | "FAILED" | "SENT"; error?: string };
+export type DeliveryReport = {
+  providerMessageId: string;
+  status: "DELIVERED" | "FAILED" | "SENT";
+  error?: string;
+};
 
 export type ProviderConfig = {
   apiKey: string;
@@ -70,7 +74,8 @@ export function parseBody(req: WebhookRequest): Record<string, string> {
   if (req.contentType.includes("application/json")) {
     try {
       const json = JSON.parse(req.rawBody);
-      for (const [k, v] of Object.entries(json)) out[k] = typeof v === "string" ? v : JSON.stringify(v);
+      for (const [k, v] of Object.entries(json))
+        out[k] = typeof v === "string" ? v : JSON.stringify(v);
     } catch {
       /* ignore */
     }

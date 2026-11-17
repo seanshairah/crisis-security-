@@ -3,7 +3,12 @@
  * from. The labels below are the only words the portal uses for them, so a call is never shown as
  * location and a simulated check never as a real one.
  */
-import type { AttendanceEvidence, EvidenceKind, EvidenceSource, EvidenceStatus } from "@prisma/client";
+import type {
+  AttendanceEvidence,
+  EvidenceKind,
+  EvidenceSource,
+  EvidenceStatus,
+} from "@prisma/client";
 import { db } from "@/lib/db";
 
 export type EvidenceTone = "ok" | "warn" | "critical" | "info" | "neutral" | "muted";
@@ -19,20 +24,56 @@ export const SOURCE_LABEL: Record<EvidenceSource, string> = {
   MANUAL: "Manually verified",
 };
 
-export const KIND_LABEL: Record<EvidenceKind, string> = { CHECK_IN: "Clock-in", WELFARE: "Welfare", CHECK_OUT: "Clock-out", PRESENCE: "Presence" };
+export const KIND_LABEL: Record<EvidenceKind, string> = {
+  CHECK_IN: "Clock-in",
+  WELFARE: "Welfare",
+  CHECK_OUT: "Clock-out",
+  PRESENCE: "Presence",
+};
 
 /** Does this source say anything about where the guard was? Only GPS and network checks do. */
-export const IS_LOCATION_EVIDENCE: Record<EvidenceSource, boolean> = { GPS: true, NETWORK: true, CALL: false, MISSED_CALL: false, SMS: false, IVR: false, MANUAL: false };
+export const IS_LOCATION_EVIDENCE: Record<EvidenceSource, boolean> = {
+  GPS: true,
+  NETWORK: true,
+  CALL: false,
+  MISSED_CALL: false,
+  SMS: false,
+  IVR: false,
+  MANUAL: false,
+};
 
-const SIMULATED_WORD: Record<EvidenceSource, string> = { GPS: "GPS", NETWORK: "network check", CALL: "call", MISSED_CALL: "missed call", SMS: "SMS", IVR: "IVR response", MANUAL: "confirmation" };
+const SIMULATED_WORD: Record<EvidenceSource, string> = {
+  GPS: "GPS",
+  NETWORK: "network check",
+  CALL: "call",
+  MISSED_CALL: "missed call",
+  SMS: "SMS",
+  IVR: "IVR response",
+  MANUAL: "confirmation",
+};
 
-export function evidenceLabel(e: Pick<AttendanceEvidence, "source" | "status"> & { flags?: string[] }): { label: string; tone: EvidenceTone } {
+export function evidenceLabel(
+  e: Pick<AttendanceEvidence, "source" | "status"> & { flags?: string[] },
+): { label: string; tone: EvidenceTone } {
   // A simulated record is never shown with a verified label.
-  if (e.flags?.includes("SIMULATED")) return { label: `Simulated ${SIMULATED_WORD[e.source]} · not real evidence`, tone: "muted" };
-  if (e.status === "PENDING") return { label: e.source === "MISSED_CALL" ? "Missed call · pending" : "Attendance pending", tone: "warn" };
-  if (e.status === "REJECTED") return { label: `${SOURCE_LABEL[e.source]} · rejected`, tone: "muted" };
-  if (e.status === "PROVISIONAL") return { label: `${e.source === "MISSED_CALL" ? "Missed call" : SOURCE_LABEL[e.source]} · provisional`, tone: "info" };
-  return { label: e.source === "MISSED_CALL" ? "Missed call confirmed" : SOURCE_LABEL[e.source], tone: e.source === "GPS" || e.source === "NETWORK" || e.source === "MANUAL" ? "ok" : "info" };
+  if (e.flags?.includes("SIMULATED"))
+    return { label: `Simulated ${SIMULATED_WORD[e.source]} · not real evidence`, tone: "muted" };
+  if (e.status === "PENDING")
+    return {
+      label: e.source === "MISSED_CALL" ? "Missed call · pending" : "Attendance pending",
+      tone: "warn",
+    };
+  if (e.status === "REJECTED")
+    return { label: `${SOURCE_LABEL[e.source]} · rejected`, tone: "muted" };
+  if (e.status === "PROVISIONAL")
+    return {
+      label: `${e.source === "MISSED_CALL" ? "Missed call" : SOURCE_LABEL[e.source]} · provisional`,
+      tone: "info",
+    };
+  return {
+    label: e.source === "MISSED_CALL" ? "Missed call confirmed" : SOURCE_LABEL[e.source],
+    tone: e.source === "GPS" || e.source === "NETWORK" || e.source === "MANUAL" ? "ok" : "info",
+  };
 }
 
 export const FLAG_LABEL: Record<string, string> = {
@@ -49,15 +90,39 @@ export const FLAG_LABEL: Record<string, string> = {
 };
 
 export type NewEvidence = {
-  shiftId: string; guardId: string; kind: EvidenceKind; source: EvidenceSource; status: EvidenceStatus;
-  occurredAt: Date; dedupeKey: string; callLogId?: string | null; smsMessageId?: string | null; gatewayDeviceId?: string | null;
-  flags?: string[]; note?: string | null; decidedById?: string | null; decidedAt?: Date | null;
+  shiftId: string;
+  guardId: string;
+  kind: EvidenceKind;
+  source: EvidenceSource;
+  status: EvidenceStatus;
+  occurredAt: Date;
+  dedupeKey: string;
+  callLogId?: string | null;
+  smsMessageId?: string | null;
+  gatewayDeviceId?: string | null;
+  flags?: string[];
+  note?: string | null;
+  decidedById?: string | null;
+  decidedAt?: Date | null;
 };
 
 /** Store one piece of evidence. A second call with the same key stores nothing and says so. */
-export async function recordEvidence(e: NewEvidence): Promise<{ evidence: AttendanceEvidence; created: boolean }> {
+export async function recordEvidence(
+  e: NewEvidence,
+): Promise<{ evidence: AttendanceEvidence; created: boolean }> {
   const { count } = await db.attendanceEvidence.createMany({
-    data: [{ ...e, flags: e.flags ?? [], callLogId: e.callLogId ?? null, smsMessageId: e.smsMessageId ?? null, gatewayDeviceId: e.gatewayDeviceId ?? null, note: e.note ?? null, decidedById: e.decidedById ?? null, decidedAt: e.decidedAt ?? null }],
+    data: [
+      {
+        ...e,
+        flags: e.flags ?? [],
+        callLogId: e.callLogId ?? null,
+        smsMessageId: e.smsMessageId ?? null,
+        gatewayDeviceId: e.gatewayDeviceId ?? null,
+        note: e.note ?? null,
+        decidedById: e.decidedById ?? null,
+        decidedAt: e.decidedAt ?? null,
+      },
+    ],
     skipDuplicates: true,
   });
   const evidence = (await db.attendanceEvidence.findUnique({ where: { dedupeKey: e.dedupeKey } }))!;
@@ -68,7 +133,12 @@ export async function recordEvidence(e: NewEvidence): Promise<{ evidence: Attend
  * Something else settled what a pending call was waiting for (the guard replied YES, a GPS check
  * verified them). The pending call rows for that shift and kind are marked confirmed by it.
  */
-export async function settlePendingCalls(shiftId: string, kind: EvidenceKind, how: string, at = new Date()): Promise<number> {
+export async function settlePendingCalls(
+  shiftId: string,
+  kind: EvidenceKind,
+  how: string,
+  at = new Date(),
+): Promise<number> {
   const r = await db.attendanceEvidence.updateMany({
     where: { shiftId, kind, status: "PENDING", source: { in: ["CALL", "MISSED_CALL"] } },
     data: { status: "CONFIRMED", decidedAt: at, decisionNote: how },

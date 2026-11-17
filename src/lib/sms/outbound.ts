@@ -59,7 +59,11 @@ export async function sendSms(opts: SendOptions) {
   const result = await provider.sendSMS(opts.to, body);
   const updated = await db.smsMessage.update({
     where: { id: msg.id },
-    data: { status: result.ok ? "SENT" : "FAILED", providerMessageId: result.providerMessageId ?? null, error: result.error ?? null },
+    data: {
+      status: result.ok ? "SENT" : "FAILED",
+      providerMessageId: result.providerMessageId ?? null,
+      error: result.error ?? null,
+    },
   });
   await audit({
     userId: opts.userId ?? null,
@@ -67,15 +71,35 @@ export async function sendSms(opts: SendOptions) {
     action: result.ok ? "SMS_SENT" : "SMS_FAILED",
     entity: "SmsMessage",
     entityId: msg.id,
-    details: { to: opts.to, type: opts.type, provider: provider.name, error: result.error ?? undefined },
+    details: {
+      to: opts.to,
+      type: opts.type,
+      provider: provider.name,
+      error: result.error ?? undefined,
+    },
   });
   return updated;
 }
 
 /** Render a template for a shift and send it to the shift's guard. */
-export async function sendTemplated(shift: ShiftWithRelations, templateKey: string, type: SmsType, extra: TemplateVars = {}) {
+export async function sendTemplated(
+  shift: ShiftWithRelations,
+  templateKey: string,
+  type: SmsType,
+  extra: TemplateVars = {},
+) {
   const settings = await getSettings();
   const template = await getTemplateBody(templateKey);
-  const body = renderTemplate(template, { ...shiftVars(shift, extra), company: settings["general.companyName"] });
-  return sendSms({ to: shift.guard.phone, body, type, guardId: shift.guardId, shiftId: shift.id, locationId: shift.locationId });
+  const body = renderTemplate(template, {
+    ...shiftVars(shift, extra),
+    company: settings["general.companyName"],
+  });
+  return sendSms({
+    to: shift.guard.phone,
+    body,
+    type,
+    guardId: shift.guardId,
+    shiftId: shift.id,
+    locationId: shift.locationId,
+  });
 }

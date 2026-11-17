@@ -54,8 +54,8 @@
     "local:dev": "next dev -H 127.0.0.1 -p 3139",
     "local:start": "next start -H 127.0.0.1 -p 3139",
     "local:usb": "node scripts/dev/usb-test.mjs",
-    "format:security": "prettier --write \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\" \"src/lib/auth/**/*.ts\"",
-    "format:check": "prettier --check \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\" \"src/lib/auth/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
     "docs:api": "tsx scripts/dev/generate-patrol-api-docs.ts",
     "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check"
   },

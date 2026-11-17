@@ -18,7 +18,8 @@ test("development allows eval for the dev server only", () => {
 });
 
 test("every nonce is fresh and long enough", () => {
-  const a = newNonce(), b = newNonce();
+  const a = newNonce(),
+    b = newNonce();
   assert.notEqual(a, b);
   assert.ok(Buffer.from(a, "base64").length >= 16);
 });

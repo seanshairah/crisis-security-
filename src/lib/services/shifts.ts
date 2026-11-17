@@ -1,10 +1,25 @@
 import { db } from "@/lib/db";
 import type { CheckInSource, CheckInType, Prisma, ShiftStatus } from "@prisma/client";
-import { addDays, addMinutes, differenceInMinutes, setHours, setMinutes, startOfDay } from "date-fns";
+import {
+  addDays,
+  addMinutes,
+  differenceInMinutes,
+  setHours,
+  setMinutes,
+  startOfDay,
+} from "date-fns";
 import { audit } from "@/lib/audit";
 import { editPolicy, deletePolicy, type ShiftTraceCounts } from "@/lib/shift-edit";
 
-export const LIVE_STATUSES: ShiftStatus[] = ["AWAITING_ARRIVAL", "ON_DUTY", "LATE", "NOT_CONFIRMED", "ASSISTANCE", "INCIDENT", "CRITICAL"];
+export const LIVE_STATUSES: ShiftStatus[] = [
+  "AWAITING_ARRIVAL",
+  "ON_DUTY",
+  "LATE",
+  "NOT_CONFIRMED",
+  "ASSISTANCE",
+  "INCIDENT",
+  "CRITICAL",
+];
 export const ON_SITE_STATUSES: ShiftStatus[] = ["ON_DUTY", "ASSISTANCE", "INCIDENT", "CRITICAL"];
 export const CLOSED_STATUSES: ShiftStatus[] = ["COMPLETED", "MISSED", "CANCELLED"];
 
@@ -29,7 +44,15 @@ export async function recordEvent(
   opts: { note?: string; source?: CheckInSource; at?: Date; smsMessageId?: string | null } = {},
 ) {
   return db.shiftCheckIn.create({
-    data: { shiftId, guardId, type, note: opts.note, source: opts.source ?? "SYSTEM", at: opts.at ?? new Date(), smsMessageId: opts.smsMessageId ?? undefined },
+    data: {
+      shiftId,
+      guardId,
+      type,
+      note: opts.note,
+      source: opts.source ?? "SYSTEM",
+      at: opts.at ?? new Date(),
+      smsMessageId: opts.smsMessageId ?? undefined,
+    },
   });
 }
 
@@ -80,8 +103,8 @@ export async function createShift(input: CreateShiftInput) {
       recurrenceId: input.recurrenceId ?? null,
       geofenceLatitude: input.geofenceLatitude ?? null,
       geofenceLongitude: input.geofenceLongitude ?? null,
-      geofenceRadiusM: input.geofenceLatitude != null ? input.geofenceRadiusM ?? null : null,
-      geofenceNote: input.geofenceLatitude != null ? input.geofenceNote ?? null : null,
+      geofenceRadiusM: input.geofenceLatitude != null ? (input.geofenceRadiusM ?? null) : null,
+      geofenceNote: input.geofenceLatitude != null ? (input.geofenceNote ?? null) : null,
       attendance: { create: {} },
     },
     include: shiftInclude,
@@ -92,7 +115,22 @@ export async function createShift(input: CreateShiftInput) {
     action: "SHIFT_CREATED",
     entity: "Shift",
     entityId: shift.id,
-    details: { guard: `${shift.guard.firstName} ${shift.guard.lastName}`, location: shift.location.name, startAt: shift.startAt.toISOString(), endAt: shift.endAt.toISOString(), ...(shift.geofenceLatitude != null ? { geofenceOverride: { latitude: shift.geofenceLatitude, longitude: shift.geofenceLongitude, radiusM: shift.geofenceRadiusM ?? shift.location.geofenceRadiusM, note: shift.geofenceNote } } : {}) },
+    details: {
+      guard: `${shift.guard.firstName} ${shift.guard.lastName}`,
+      location: shift.location.name,
+      startAt: shift.startAt.toISOString(),
+      endAt: shift.endAt.toISOString(),
+      ...(shift.geofenceLatitude != null
+        ? {
+            geofenceOverride: {
+              latitude: shift.geofenceLatitude,
+              longitude: shift.geofenceLongitude,
+              radiusM: shift.geofenceRadiusM ?? shift.location.geofenceRadiusM,
+              note: shift.geofenceNote,
+            },
+          }
+        : {}),
+    },
   });
   return shift;
 }
@@ -116,9 +154,20 @@ export type UpdateShiftInput = {
  * move; paperwork can always be corrected. A moved geofence or schedule bumps configVersion so the
  * guard phone re-downloads the shift rather than keeping the old window.
  */
-export async function updateShift(shiftId: string, input: UpdateShiftInput, actor: { userId: string; name: string }) {
-  const before = await db.shift.findUniqueOrThrow({ where: { id: shiftId }, include: { ...shiftInclude, attendance: true } });
-  const policy = editPolicy({ status: before.status, arrivalConfirmedAt: before.attendance?.arrivalConfirmedAt ?? null, arrivalSmsSentAt: before.arrivalSmsSentAt });
+export async function updateShift(
+  shiftId: string,
+  input: UpdateShiftInput,
+  actor: { userId: string; name: string },
+) {
+  const before = await db.shift.findUniqueOrThrow({
+    where: { id: shiftId },
+    include: { ...shiftInclude, attendance: true },
+  });
+  const policy = editPolicy({
+    status: before.status,
+    arrivalConfirmedAt: before.attendance?.arrivalConfirmedAt ?? null,
+    arrivalSmsSentAt: before.arrivalSmsSentAt,
+  });
   if (!policy.canEdit) throw new Error(policy.reason ?? "This shift cannot be edited.");
 
   const movesSchedule =
@@ -126,8 +175,12 @@ export async function updateShift(shiftId: string, input: UpdateShiftInput, acto
     before.locationId !== input.locationId ||
     before.startAt.getTime() !== input.startAt.getTime() ||
     before.endAt.getTime() !== input.endAt.getTime();
-  if (movesSchedule && await db.patrolSession.count({ where: { shiftId } })) throw new Error("A shift with patrol sessions keeps its original guard, site and schedule. Cancel it and create a new posting.");
-  if (movesSchedule && !policy.canMoveSchedule) throw new Error(policy.reason ?? "The schedule of this shift can no longer be changed.");
+  if (movesSchedule && (await db.patrolSession.count({ where: { shiftId } })))
+    throw new Error(
+      "A shift with patrol sessions keeps its original guard, site and schedule. Cancel it and create a new posting.",
+    );
+  if (movesSchedule && !policy.canMoveSchedule)
+    throw new Error(policy.reason ?? "The schedule of this shift can no longer be changed.");
 
   if (input.endAt <= input.startAt) throw new Error("Shift end must be after the start.");
   const duration = computeDuration(input.startAt, input.endAt);
@@ -135,7 +188,13 @@ export async function updateShift(shiftId: string, input: UpdateShiftInput, acto
 
   if (movesSchedule) {
     const overlap = await db.shift.findFirst({
-      where: { id: { not: shiftId }, guardId: input.guardId, status: { notIn: ["CANCELLED"] }, startAt: { lt: input.endAt }, endAt: { gt: input.startAt } },
+      where: {
+        id: { not: shiftId },
+        guardId: input.guardId,
+        status: { notIn: ["CANCELLED"] },
+        startAt: { lt: input.endAt },
+        endAt: { gt: input.startAt },
+      },
     });
     if (overlap) throw new Error("This guard already has a shift that overlaps those times.");
   }
@@ -144,7 +203,8 @@ export async function updateShift(shiftId: string, input: UpdateShiftInput, acto
   const fenceMoved =
     before.geofenceLatitude !== (input.geofenceLatitude ?? null) ||
     before.geofenceLongitude !== (input.geofenceLongitude ?? null) ||
-    before.geofenceRadiusM !== (input.geofenceLatitude != null ? input.geofenceRadiusM ?? null : null);
+    before.geofenceRadiusM !==
+      (input.geofenceLatitude != null ? (input.geofenceRadiusM ?? null) : null);
 
   const shift = await db.shift.update({
     where: { id: shiftId },
@@ -159,25 +219,62 @@ export async function updateShift(shiftId: string, input: UpdateShiftInput, acto
       notes: input.notes ?? null,
       geofenceLatitude: input.geofenceLatitude ?? null,
       geofenceLongitude: input.geofenceLongitude ?? null,
-      geofenceRadiusM: input.geofenceLatitude != null ? input.geofenceRadiusM ?? null : null,
-      geofenceNote: input.geofenceLatitude != null ? input.geofenceNote ?? null : null,
+      geofenceRadiusM: input.geofenceLatitude != null ? (input.geofenceRadiusM ?? null) : null,
+      geofenceNote: input.geofenceLatitude != null ? (input.geofenceNote ?? null) : null,
       ...(movesSchedule || fenceMoved ? { configVersion: { increment: 1 } } : {}),
     },
     include: shiftInclude,
   });
 
   const changes: string[] = [];
-  if (before.guardId !== shift.guardId) changes.push(`guard ${before.guard.firstName} ${before.guard.lastName} → ${shift.guard.firstName} ${shift.guard.lastName}`);
-  if (before.locationId !== shift.locationId) changes.push(`site ${before.location.name} → ${shift.location.name}`);
-  if (before.startAt.getTime() !== shift.startAt.getTime() || before.endAt.getTime() !== shift.endAt.getTime()) changes.push("times changed");
-  if (fenceMoved) changes.push(shift.geofenceLatitude != null ? "shift geofence set" : "shift geofence removed");
-  if (changes.length) await recordEvent(shift.id, shift.guardId, "ADMIN_NOTE", { source: "ADMIN", note: `Shift edited by ${actor.name}: ${changes.join("; ")}.` });
+  if (before.guardId !== shift.guardId)
+    changes.push(
+      `guard ${before.guard.firstName} ${before.guard.lastName} → ${shift.guard.firstName} ${shift.guard.lastName}`,
+    );
+  if (before.locationId !== shift.locationId)
+    changes.push(`site ${before.location.name} → ${shift.location.name}`);
+  if (
+    before.startAt.getTime() !== shift.startAt.getTime() ||
+    before.endAt.getTime() !== shift.endAt.getTime()
+  )
+    changes.push("times changed");
+  if (fenceMoved)
+    changes.push(shift.geofenceLatitude != null ? "shift geofence set" : "shift geofence removed");
+  if (changes.length)
+    await recordEvent(shift.id, shift.guardId, "ADMIN_NOTE", {
+      source: "ADMIN",
+      note: `Shift edited by ${actor.name}: ${changes.join("; ")}.`,
+    });
 
   await audit({
-    userId: actor.userId, actor: actor.name, action: "SHIFT_UPDATED", entity: "Shift", entityId: shiftId,
+    userId: actor.userId,
+    actor: actor.name,
+    action: "SHIFT_UPDATED",
+    entity: "Shift",
+    entityId: shiftId,
     details: {
-      before: { guardId: before.guardId, locationId: before.locationId, startAt: before.startAt.toISOString(), endAt: before.endAt.toISOString(), geofence: { latitude: before.geofenceLatitude, longitude: before.geofenceLongitude, radiusM: before.geofenceRadiusM } },
-      after: { guardId: shift.guardId, locationId: shift.locationId, startAt: shift.startAt.toISOString(), endAt: shift.endAt.toISOString(), geofence: { latitude: shift.geofenceLatitude, longitude: shift.geofenceLongitude, radiusM: shift.geofenceRadiusM } },
+      before: {
+        guardId: before.guardId,
+        locationId: before.locationId,
+        startAt: before.startAt.toISOString(),
+        endAt: before.endAt.toISOString(),
+        geofence: {
+          latitude: before.geofenceLatitude,
+          longitude: before.geofenceLongitude,
+          radiusM: before.geofenceRadiusM,
+        },
+      },
+      after: {
+        guardId: shift.guardId,
+        locationId: shift.locationId,
+        startAt: shift.startAt.toISOString(),
+        endAt: shift.endAt.toISOString(),
+        geofence: {
+          latitude: shift.geofenceLatitude,
+          longitude: shift.geofenceLongitude,
+          radiusM: shift.geofenceRadiusM,
+        },
+      },
       configVersion: shift.configVersion,
     },
   });
@@ -189,10 +286,17 @@ export async function updateShift(shiftId: string, input: UpdateShiftInput, acto
  * cancelled, not deleted. The audit entry keeps a snapshot so the removal itself is on the record.
  */
 export async function deleteShift(shiftId: string, actor: { userId: string; name: string }) {
-  const shift = await db.shift.findUniqueOrThrow({ where: { id: shiftId }, include: { ...shiftInclude, attendance: true } });
-  if (await db.patrolSession.count({ where: { shiftId } })) throw new Error("This shift has patrol session history. Cancel it to preserve its evidence.");
+  const shift = await db.shift.findUniqueOrThrow({
+    where: { id: shiftId },
+    include: { ...shiftInclude, attendance: true },
+  });
+  if (await db.patrolSession.count({ where: { shiftId } }))
+    throw new Error("This shift has patrol session history. Cancel it to preserve its evidence.");
   const counts = await shiftTraceCounts(shiftId);
-  const policy = deletePolicy({ status: shift.status, arrivalConfirmedAt: shift.attendance?.arrivalConfirmedAt ?? null }, counts);
+  const policy = deletePolicy(
+    { status: shift.status, arrivalConfirmedAt: shift.attendance?.arrivalConfirmedAt ?? null },
+    counts,
+  );
   if (!policy.canDelete) throw new Error(policy.reason ?? "This shift cannot be deleted.");
 
   await db.$transaction([
@@ -200,15 +304,36 @@ export async function deleteShift(shiftId: string, actor: { userId: string; name
     db.shift.delete({ where: { id: shiftId } }),
   ]);
   await audit({
-    userId: actor.userId, actor: actor.name, action: "SHIFT_DELETED", entity: "Shift", entityId: shiftId,
-    details: { guard: `${shift.guard.firstName} ${shift.guard.lastName}`, location: shift.location.name, startAt: shift.startAt.toISOString(), endAt: shift.endAt.toISOString(), status: shift.status },
+    userId: actor.userId,
+    actor: actor.name,
+    action: "SHIFT_DELETED",
+    entity: "Shift",
+    entityId: shiftId,
+    details: {
+      guard: `${shift.guard.firstName} ${shift.guard.lastName}`,
+      location: shift.location.name,
+      startAt: shift.startAt.toISOString(),
+      endAt: shift.endAt.toISOString(),
+      status: shift.status,
+    },
   });
   return shift;
 }
 
 /** Everything that would make a shift part of the operational record. */
 export async function shiftTraceCounts(shiftId: string): Promise<ShiftTraceCounts> {
-  const [checkIns, welfareChecks, incidents, smsMessages, callLogs, locationEvents, alerts, notifications, evidence, networkChecks] = await Promise.all([
+  const [
+    checkIns,
+    welfareChecks,
+    incidents,
+    smsMessages,
+    callLogs,
+    locationEvents,
+    alerts,
+    notifications,
+    evidence,
+    networkChecks,
+  ] = await Promise.all([
     db.shiftCheckIn.count({ where: { shiftId } }),
     db.welfareCheck.count({ where: { shiftId } }),
     db.incident.count({ where: { shiftId } }),
@@ -220,13 +345,38 @@ export async function shiftTraceCounts(shiftId: string): Promise<ShiftTraceCount
     db.attendanceEvidence.count({ where: { shiftId } }),
     db.networkLocationCheck.count({ where: { shiftId } }),
   ]);
-  return { checkIns, welfareChecks, incidents, smsMessages, callLogs, locationEvents, alerts, notifications, evidence, networkChecks };
+  return {
+    checkIns,
+    welfareChecks,
+    incidents,
+    smsMessages,
+    callLogs,
+    locationEvents,
+    alerts,
+    notifications,
+    evidence,
+    networkChecks,
+  };
 }
 
-export async function cancelShift(shiftId: string, actor: { userId: string; name: string }, reason?: string) {
-  const shift = await db.shift.update({ where: { id: shiftId }, data: { status: "CANCELLED", pendingPrompt: "NONE" } });
+export async function cancelShift(
+  shiftId: string,
+  actor: { userId: string; name: string },
+  reason?: string,
+) {
+  const shift = await db.shift.update({
+    where: { id: shiftId },
+    data: { status: "CANCELLED", pendingPrompt: "NONE" },
+  });
   await recordEvent(shift.id, shift.guardId, "SHIFT_CANCELLED", { note: reason, source: "ADMIN" });
-  await audit({ userId: actor.userId, actor: actor.name, action: "SHIFT_CANCELLED", entity: "Shift", entityId: shiftId, details: { reason } });
+  await audit({
+    userId: actor.userId,
+    actor: actor.name,
+    action: "SHIFT_CANCELLED",
+    entity: "Shift",
+    entityId: shiftId,
+    details: { reason },
+  });
   return shift;
 }
 
@@ -249,12 +399,17 @@ export async function findLiveShiftForGuard(guardId: string, now = new Date()) {
   // Prefer a shift that has already been prompted; otherwise the one closest to now.
   const prompted = candidates.find((s) => s.pendingPrompt !== "NONE");
   if (prompted) return prompted;
-  return candidates.sort((a, b) => Math.abs(a.startAt.getTime() - now.getTime()) - Math.abs(b.startAt.getTime() - now.getTime()))[0];
+  return candidates.sort(
+    (a, b) =>
+      Math.abs(a.startAt.getTime() - now.getTime()) - Math.abs(b.startAt.getTime() - now.getTime()),
+  )[0];
 }
 
 /** Materialise recurring shifts up to `horizonDays` ahead. Idempotent. */
 export async function materialiseRecurrences(horizonDays: number, now = new Date()) {
-  const recs = await db.shiftRecurrence.findMany({ where: { active: true, OR: [{ endsOn: null }, { endsOn: { gte: now } }] } });
+  const recs = await db.shiftRecurrence.findMany({
+    where: { active: true, OR: [{ endsOn: null }, { endsOn: { gte: now } }] },
+  });
   let created = 0;
   for (const rec of recs) {
     for (let i = 0; i <= horizonDays; i++) {
@@ -271,7 +426,15 @@ export async function materialiseRecurrences(horizonDays: number, now = new Date
       const exists = await db.shift.findFirst({ where: { recurrenceId: rec.id, startAt } });
       if (exists) continue;
       try {
-        await createShift({ guardId: rec.guardId, locationId: rec.locationId, supervisorId: rec.supervisorId, startAt, endAt, instructions: rec.instructions, recurrenceId: rec.id });
+        await createShift({
+          guardId: rec.guardId,
+          locationId: rec.locationId,
+          supervisorId: rec.supervisorId,
+          startAt,
+          endAt,
+          instructions: rec.instructions,
+          recurrenceId: rec.id,
+        });
         created++;
       } catch {
         // overlap with a manual shift — skip quietly
@@ -281,7 +444,10 @@ export async function materialiseRecurrences(horizonDays: number, now = new Date
   return created;
 }
 
-export const STATUS_META: Record<ShiftStatus, { label: string; tone: "neutral" | "ok" | "warn" | "critical" | "muted" }> = {
+export const STATUS_META: Record<
+  ShiftStatus,
+  { label: string; tone: "neutral" | "ok" | "warn" | "critical" | "muted" }
+> = {
   SCHEDULED: { label: "Scheduled", tone: "neutral" },
   AWAITING_ARRIVAL: { label: "Awaiting arrival", tone: "neutral" },
   ON_DUTY: { label: "On duty", tone: "ok" },

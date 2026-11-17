@@ -1,6 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { toLngLat, fromLngLat, isValidLatLng, accuracyVerdict, fixFreshness, deviceFixIsFresh, geolocationAvailability, geolocationErrorState, keepWatching, distanceM } from "../src/lib/geo-position";
+import {
+  toLngLat,
+  fromLngLat,
+  isValidLatLng,
+  accuracyVerdict,
+  fixFreshness,
+  deviceFixIsFresh,
+  geolocationAvailability,
+  geolocationErrorState,
+  keepWatching,
+  distanceM,
+} from "../src/lib/geo-position";
 
 test("lng/lat order is converted both ways without swapping", () => {
   const harare = { latitude: -17.8292, longitude: 31.0522 };
@@ -43,12 +54,27 @@ test("a guard phone fix counts as fresh for three minutes", () => {
 });
 
 test("secure-context guidance names the LAN origin and the fix", () => {
-  assert.equal(geolocationAvailability({ secureContext: true, hasGeolocation: true, origin: "https://omega.example" }).ok, true);
-  const lan = geolocationAvailability({ secureContext: false, hasGeolocation: true, origin: "http://172.20.10.3:3000" });
+  assert.equal(
+    geolocationAvailability({
+      secureContext: true,
+      hasGeolocation: true,
+      origin: "https://omega.example",
+    }).ok,
+    true,
+  );
+  const lan = geolocationAvailability({
+    secureContext: false,
+    hasGeolocation: true,
+    origin: "http://172.20.10.3:3000",
+  });
   assert.equal(lan.reason, "insecure_context");
   assert.match(lan.message!, /172\.20\.10\.3:3000/);
   assert.match(lan.message!, /https/);
-  assert.equal(geolocationAvailability({ secureContext: true, hasGeolocation: false, origin: "https://x" }).reason, "unsupported");
+  assert.equal(
+    geolocationAvailability({ secureContext: true, hasGeolocation: false, origin: "https://x" })
+      .reason,
+    "unsupported",
+  );
 });
 
 test("error codes map to states", () => {
@@ -65,6 +91,9 @@ test("watch stops on a good fix or when the budget is spent", () => {
 });
 
 test("distance between two fixes", () => {
-  const d = distanceM({ latitude: -17.8292, longitude: 31.0522 }, { latitude: -17.8292 + 0.001, longitude: 31.0522 });
+  const d = distanceM(
+    { latitude: -17.8292, longitude: 31.0522 },
+    { latitude: -17.8292 + 0.001, longitude: 31.0522 },
+  );
   assert.ok(d > 110 && d < 112);
 });

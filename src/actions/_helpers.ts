@@ -12,13 +12,29 @@ export async function actor(minimum: Role = "ADMIN"): Promise<SessionUser> {
   return user;
 }
 
-export async function auditAs(user: SessionUser, action: string, entity: string, entityId?: string, details?: Record<string, unknown>) {
+export async function auditAs(
+  user: SessionUser,
+  action: string,
+  entity: string,
+  entityId?: string,
+  details?: Record<string, unknown>,
+) {
   const h = await headers();
-  await writeAudit({ userId: user.id, actor: user.name, action, entity, entityId, details: details as never, ip: h.get("x-forwarded-for") ?? h.get("x-real-ip"), userAgent: h.get("user-agent") });
+  await writeAudit({
+    userId: user.id,
+    actor: user.name,
+    action,
+    entity,
+    entityId,
+    details: details as never,
+    ip: h.get("x-forwarded-for") ?? h.get("x-real-ip"),
+    userAgent: h.get("user-agent"),
+  });
 }
 
 export function fail(e: unknown): ActionState {
   const msg = e instanceof Error ? e.message : "Something went wrong.";
-  if (/Unique constraint/.test(msg)) return { error: "A record with that phone number, ID or code already exists." };
+  if (/Unique constraint/.test(msg))
+    return { error: "A record with that phone number, ID or code already exists." };
   return { error: msg };
 }

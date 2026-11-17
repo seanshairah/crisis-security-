@@ -1,9 +1,25 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { initialCallState, reduceCall, saneTimestamp, fmtCallDuration, type IncomingGatewayEvent } from "../src/lib/gateway/call-state";
+import {
+  initialCallState,
+  reduceCall,
+  saneTimestamp,
+  fmtCallDuration,
+  type IncomingGatewayEvent,
+} from "../src/lib/gateway/call-state";
 
 const t0 = new Date("2026-10-15T20:14:00Z");
-const ev = (eventType: IncomingGatewayEvent["eventType"], extra: Partial<IncomingGatewayEvent> = {}): IncomingGatewayEvent => ({ eventId: Math.random().toString(36), eventType, callId: "c1", phoneNumber: "+263771234567", timestamp: t0, ...extra });
+const ev = (
+  eventType: IncomingGatewayEvent["eventType"],
+  extra: Partial<IncomingGatewayEvent> = {},
+): IncomingGatewayEvent => ({
+  eventId: Math.random().toString(36),
+  eventType,
+  callId: "c1",
+  phoneNumber: "+263771234567",
+  timestamp: t0,
+  ...extra,
+});
 const sec = (n: number) => new Date(t0.getTime() + n * 1000);
 
 test("incoming call: ringing → answered → ended with duration", () => {
@@ -47,7 +63,11 @@ test("duplicate and out-of-order events are idempotent", () => {
   assert.equal(s.status, "ENDED");
   const late = reduceCall(s, ev("CALL_STARTED"), t0);
   assert.equal(late.status, "ENDED");
-  assert.equal(late.startedAt.getTime(), sec(40).getTime(), "a late STARTED must not reopen a finished call");
+  assert.equal(
+    late.startedAt.getTime(),
+    sec(40).getTime(),
+    "a late STARTED must not reopen a finished call",
+  );
   const dup = reduceCall(late, ev("CALL_ENDED", { answered: true, durationSeconds: 30 }), sec(40));
   assert.equal(dup, late, "same object back when nothing changes");
 });
@@ -62,6 +82,12 @@ test("outgoing call not answered ends as FAILED", () => {
 test("device clocks are clamped to a sane window", () => {
   const now = new Date("2026-10-15T12:00:00Z");
   assert.equal(saneTimestamp("garbage", now).getTime(), now.getTime());
-  assert.equal(saneTimestamp(new Date("2030-01-01T00:00:00Z"), now).getTime(), now.getTime() + 5 * 60_000);
-  assert.equal(saneTimestamp(new Date("2020-01-01T00:00:00Z"), now).getTime(), now.getTime() - 7 * 86400_000);
+  assert.equal(
+    saneTimestamp(new Date("2030-01-01T00:00:00Z"), now).getTime(),
+    now.getTime() + 5 * 60_000,
+  );
+  assert.equal(
+    saneTimestamp(new Date("2020-01-01T00:00:00Z"), now).getTime(),
+    now.getTime() - 7 * 86400_000,
+  );
 });

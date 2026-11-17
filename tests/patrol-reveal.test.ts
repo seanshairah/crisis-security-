@@ -16,7 +16,10 @@ test("by default the whole plan is sent (unchanged behaviour)", () => {
 
 test("with a look-ahead, past and open windows stay and later ones are withheld", () => {
   const plan = [at(-30), at(-1), at(10), at(25), at(300)];
-  assert.deepEqual(revealWindows(plan, now, 15).map((a) => a.id), ["-30", "-1", "10"]);
+  assert.deepEqual(
+    revealWindows(plan, now, 15).map((a) => a.id),
+    ["-30", "-1", "10"],
+  );
   assert.deepEqual(revealWindows(plan, now, 15).length, 3);
 });
 

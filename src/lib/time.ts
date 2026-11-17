@@ -18,9 +18,14 @@ export const TZ = process.env.TIMEZONE || "Africa/Harare";
 /** Milliseconds that `tz` is ahead of UTC at this instant (DST included). */
 function offsetMs(at: Date, tz: string): number {
   const f = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    timeZone: tz,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
   const p: Record<string, string> = {};
   for (const part of f.formatToParts(at)) p[part.type] = part.value;
@@ -30,7 +35,14 @@ function offsetMs(at: Date, tz: string): number {
 }
 
 /** The instant at which the clock in `TZ` reads this wall-clock time. */
-export function zonedWallClockToInstant(y: number, mo: number, d: number, h: number, mi: number, tz: string = TZ): Date {
+export function zonedWallClockToInstant(
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
+  tz: string = TZ,
+): Date {
   const naive = Date.UTC(y, mo - 1, d, h, mi, 0, 0);
   // Two passes: the first offset is read at the wrong instant near a DST edge, the second corrects it.
   let ts = naive - offsetMs(new Date(naive), tz);
@@ -41,9 +53,13 @@ export function zonedWallClockToInstant(y: number, mo: number, d: number, h: num
 /** The wall-clock fields an instant shows on a clock in `TZ`. */
 export function instantToZonedParts(d: Date, tz: string = TZ) {
   const f = new Intl.DateTimeFormat("en-GB", {
-    timeZone: tz, hour12: false,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
+    timeZone: tz,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
   const p: Record<string, string> = {};
   for (const part of f.formatToParts(d)) p[part.type] = part.value;

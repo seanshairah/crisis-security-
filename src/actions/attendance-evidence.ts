@@ -9,6 +9,12 @@ import { db } from "@/lib/db";
 export async function decideAttendanceEvidence(id: string, approve: boolean, note?: string) {
   const user = await actor("ADMIN");
   await decideEvidence(id, approve, { id: user.id, name: user.name }, note);
-  const e = await db.attendanceEvidence.findUnique({ where: { id }, select: { shiftId: true, guardId: true } });
-  if (e) { revalidatePath(`/shifts/${e.shiftId}`); revalidatePath(`/guards/${e.guardId}`); }
+  const e = await db.attendanceEvidence.findUnique({
+    where: { id },
+    select: { shiftId: true, guardId: true },
+  });
+  if (e) {
+    revalidatePath(`/shifts/${e.shiftId}`);
+    revalidatePath(`/guards/${e.guardId}`);
+  }
 }

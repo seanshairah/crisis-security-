@@ -13,17 +13,64 @@ import { pushConfigured } from "@/lib/push";
 
 export const metadata = { title: "Settings" };
 const GROUPS: { key: string; title: string; description: string }[] = [
-  { key: "arrival", title: "Arrival check", description: "When the arrival SMS goes out and how long the system waits before reminding and escalating." },
-  { key: "welfare", title: "Welfare check", description: "Where in the shift the welfare check fires and how long before a missed check is recorded." },
-  { key: "completion", title: "End of shift", description: "How long to wait for a completion reply before closing the shift as unconfirmed." },
-  { key: "handover", title: "Handover", description: "When both guards are told about the handover." },
-  { key: "recurrence", title: "Recurring shifts", description: "How far ahead recurring patterns are turned into shifts." },
+  {
+    key: "arrival",
+    title: "Arrival check",
+    description:
+      "When the arrival SMS goes out and how long the system waits before reminding and escalating.",
+  },
+  {
+    key: "welfare",
+    title: "Welfare check",
+    description:
+      "Where in the shift the welfare check fires and how long before a missed check is recorded.",
+  },
+  {
+    key: "completion",
+    title: "End of shift",
+    description: "How long to wait for a completion reply before closing the shift as unconfirmed.",
+  },
+  {
+    key: "handover",
+    title: "Handover",
+    description: "When both guards are told about the handover.",
+  },
+  {
+    key: "recurrence",
+    title: "Recurring shifts",
+    description: "How far ahead recurring patterns are turned into shifts.",
+  },
   { key: "general", title: "Company", description: "Names used in the portal and in messages." },
-  { key: "checkin", title: "Check-in with the guard app", description: "For guards with the guard app: at the start of a shift the system asks their phone for a fresh GPS fix, and records presence only when the fix places them on site." },
-  { key: "callattendance", title: "Call attendance (basic phones)", description: "For guards without the guard app: calling an operations gateway phone clocks them in and out. It is recorded as a call, not as location; a missed call is held for review unless you choose otherwise." },
-  { key: "networklocation", title: "Network location (mobile operator)", description: "Optional, and off. A separate check from GPS, with its own duty area per site. Every result is stored as network evidence, never as GPS, and attendance by call or SMS never waits for it." },
-  { key: "geofence", title: "GPS and geofencing", description: "Guard devices check their position on this schedule during shifts. The phone applies the same rules offline; changes reach it with the next heartbeat." },
-  { key: "gateway", title: "Call gateway", description: "Android gateway phones: how often they report in, when they count as offline, how long calls are kept, and which call alerts are raised." },
+  {
+    key: "checkin",
+    title: "Check-in with the guard app",
+    description:
+      "For guards with the guard app: at the start of a shift the system asks their phone for a fresh GPS fix, and records presence only when the fix places them on site.",
+  },
+  {
+    key: "callattendance",
+    title: "Call attendance (basic phones)",
+    description:
+      "For guards without the guard app: calling an operations gateway phone clocks them in and out. It is recorded as a call, not as location; a missed call is held for review unless you choose otherwise.",
+  },
+  {
+    key: "networklocation",
+    title: "Network location (mobile operator)",
+    description:
+      "Optional, and off. A separate check from GPS, with its own duty area per site. Every result is stored as network evidence, never as GPS, and attendance by call or SMS never waits for it.",
+  },
+  {
+    key: "geofence",
+    title: "GPS and geofencing",
+    description:
+      "Guard devices check their position on this schedule during shifts. The phone applies the same rules offline; changes reach it with the next heartbeat.",
+  },
+  {
+    key: "gateway",
+    title: "Call gateway",
+    description:
+      "Android gateway phones: how often they report in, when they count as offline, how long calls are kept, and which call alerts are raised.",
+  },
 ];
 
 export default async function SettingsPage() {
@@ -33,18 +80,49 @@ export default async function SettingsPage() {
   const sendai = provider === "sendai" ? await sendaiAccountStatus() : null;
   const editable = can.configureSystem(user);
   const senderId = process.env.SMS_SENDER_ID ?? "";
-  const usable = sendai?.senderIds.find((s) => s.address === senderId && s.status === "active" && s.verification === "verified");
+  const usable = sendai?.senderIds.find(
+    (s) => s.address === senderId && s.status === "active" && s.verification === "verified",
+  );
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Settings" description="Automation timings and SMS gateway. Timings apply to every shift from the next tick." />
+      <PageHeader
+        title="Settings"
+        description="Automation timings and SMS gateway. Timings apply to every shift from the next tick."
+      />
       <Card>
-        <CardHeader title="SMS gateway" description="Set through environment variables so secrets never live in the database." action={<Status tone={provider === "simulated" ? "neutral" : sendai?.ok && usable ? "ok" : sendai?.ok ? "warn" : "critical"}>{provider === "simulated" ? "Simulated" : sendai?.ok ? (usable ? "Connected" : "Connected · not ready to send") : "Not connected"}</Status>} />
+        <CardHeader
+          title="SMS gateway"
+          description="Set through environment variables so secrets never live in the database."
+          action={
+            <Status
+              tone={
+                provider === "simulated"
+                  ? "neutral"
+                  : sendai?.ok && usable
+                    ? "ok"
+                    : sendai?.ok
+                      ? "warn"
+                      : "critical"
+              }
+            >
+              {provider === "simulated"
+                ? "Simulated"
+                : sendai?.ok
+                  ? usable
+                    ? "Connected"
+                    : "Connected · not ready to send"
+                  : "Not connected"}
+            </Status>
+          }
+        />
         <CardBody>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Meta label="Provider">{provider}</Meta>
             <Meta label="Sender ID">{senderId || "—"}</Meta>
-            <Meta label="Webhook URL"><code className="break-all text-[12px]">/api/sms/webhook/{provider}</code></Meta>
+            <Meta label="Webhook URL">
+              <code className="break-all text-[12px]">/api/sms/webhook/{provider}</code>
+            </Meta>
             <Meta label="Supported">{PROVIDER_NAMES.join(", ")}</Meta>
           </div>
           {sendai && (
@@ -53,58 +131,209 @@ export default async function SettingsPage() {
               {sendai.ok && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Balances</div>
-                    <ul className="mt-1 text-[13px]">{sendai.balances.map((b) => <li key={b.currency} className="tnum">{b.currency} {b.amount.toFixed(2)}{b.amount <= 0 && <span className="ml-2 text-critical">top up to send</span>}</li>)}</ul>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                      Balances
+                    </div>
+                    <ul className="mt-1 text-[13px]">
+                      {sendai.balances.map((b) => (
+                        <li key={b.currency} className="tnum">
+                          {b.currency} {b.amount.toFixed(2)}
+                          {b.amount <= 0 && (
+                            <span className="ml-2 text-critical">top up to send</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Sender identities</div>
-                    {sendai.senderIds.length === 0 ? <p className="mt-1 text-[13px] text-critical">None registered. Register a sender ID (e.g. {senderId || "CRISIS"}) in the Sendai dashboard; approval takes about 30 minutes.</p> : <ul className="mt-1 text-[13px]">{sendai.senderIds.map((s) => <li key={s.address}><Status tone={s.status === "active" && s.verification === "verified" ? "ok" : "warn"}>{s.address} · {s.verification}</Status></li>)}</ul>}
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                      Sender identities
+                    </div>
+                    {sendai.senderIds.length === 0 ? (
+                      <p className="mt-1 text-[13px] text-critical">
+                        None registered. Register a sender ID (e.g. {senderId || "CRISIS"}) in the
+                        Sendai dashboard; approval takes about 30 minutes.
+                      </p>
+                    ) : (
+                      <ul className="mt-1 text-[13px]">
+                        {sendai.senderIds.map((s) => (
+                          <li key={s.address}>
+                            <Status
+                              tone={
+                                s.status === "active" && s.verification === "verified"
+                                  ? "ok"
+                                  : "warn"
+                              }
+                            >
+                              {s.address} · {s.verification}
+                            </Status>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               )}
               {sendai.ok && (
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div><div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">WhatsApp sender</div>{sendai.identities.filter((i) => i.channel === "whatsapp").length === 0 ? <p className="mt-1 text-[13px] text-ink-2">None. Register a WhatsApp number in the Sendai dashboard to send WhatsApp from Compose.</p> : <ul className="mt-1 text-[13px]">{sendai.identities.filter((i) => i.channel === "whatsapp").map((i) => <li key={i.id}><Status tone={i.verification === "verified" ? "ok" : "warn"}>{i.address} · {i.verification}</Status></li>)}</ul>}</div>
-                  <div><div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Email sender</div>{sendai.identities.filter((i) => i.channel === "email").length === 0 ? <p className="mt-1 text-[13px] text-ink-2">None. Register a sender email in the Sendai dashboard to send email from Compose.</p> : <ul className="mt-1 text-[13px]">{sendai.identities.filter((i) => i.channel === "email").map((i) => <li key={i.id}><Status tone={i.verification === "verified" ? "ok" : "warn"}>{i.address} · {i.verification}</Status></li>)}</ul>}</div>
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                      WhatsApp sender
+                    </div>
+                    {sendai.identities.filter((i) => i.channel === "whatsapp").length === 0 ? (
+                      <p className="mt-1 text-[13px] text-ink-2">
+                        None. Register a WhatsApp number in the Sendai dashboard to send WhatsApp
+                        from Compose.
+                      </p>
+                    ) : (
+                      <ul className="mt-1 text-[13px]">
+                        {sendai.identities
+                          .filter((i) => i.channel === "whatsapp")
+                          .map((i) => (
+                            <li key={i.id}>
+                              <Status tone={i.verification === "verified" ? "ok" : "warn"}>
+                                {i.address} · {i.verification}
+                              </Status>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                      Email sender
+                    </div>
+                    {sendai.identities.filter((i) => i.channel === "email").length === 0 ? (
+                      <p className="mt-1 text-[13px] text-ink-2">
+                        None. Register a sender email in the Sendai dashboard to send email from
+                        Compose.
+                      </p>
+                    ) : (
+                      <ul className="mt-1 text-[13px]">
+                        {sendai.identities
+                          .filter((i) => i.channel === "email")
+                          .map((i) => (
+                            <li key={i.id}>
+                              <Status tone={i.verification === "verified" ? "ok" : "warn"}>
+                                {i.address} · {i.verification}
+                              </Status>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
-              <p className="mt-3 text-[12px] text-ink-3">Inbound SMS must be enabled on the Sendai account; point its callback and delivery webhook at the URL above with the signing secret in SMS_WEBHOOK_SECRET.</p>
+              <p className="mt-3 text-[12px] text-ink-3">
+                Inbound SMS must be enabled on the Sendai account; point its callback and delivery
+                webhook at the URL above with the signing secret in SMS_WEBHOOK_SECRET.
+              </p>
             </div>
           )}
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Push notifications" description="Warnings, emergencies and anything about a watched guard are pushed to every browser that has turned this on." action={<Status tone={pushConfigured() ? "ok" : "neutral"}>{pushConfigured() ? "Configured" : "Not configured"}</Status>} />
-        <CardBody><PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? process.env.VAPID_PUBLIC_KEY ?? null} /><p className="mt-2 text-[12px] text-ink-3">Each person enables it on each device they use. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and NEXT_PUBLIC_VAPID_PUBLIC_KEY on the server to turn the feature on.</p></CardBody>
+        <CardHeader
+          title="Push notifications"
+          description="Warnings, emergencies and anything about a watched guard are pushed to every browser that has turned this on."
+          action={
+            <Status tone={pushConfigured() ? "ok" : "neutral"}>
+              {pushConfigured() ? "Configured" : "Not configured"}
+            </Status>
+          }
+        />
+        <CardBody>
+          <PushToggle
+            publicKey={
+              process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? process.env.VAPID_PUBLIC_KEY ?? null
+            }
+          />
+          <p className="mt-2 text-[12px] text-ink-3">
+            Each person enables it on each device they use. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
+            and NEXT_PUBLIC_VAPID_PUBLIC_KEY on the server to turn the feature on.
+          </p>
+        </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Automation" description="Change a value and save. The engine reads settings every minute." />
+        <CardHeader
+          title="Automation"
+          description="Change a value and save. The engine reads settings every minute."
+        />
         <CardBody>
           {editable ? (
-            <ActionForm action={updateSettings} submitLabel="Save settings" successMessage="Settings saved.">
+            <ActionForm
+              action={updateSettings}
+              submitLabel="Save settings"
+              successMessage="Settings saved."
+            >
               {/* Thirty-odd fields in one form is about 12,000px on a phone. The form has to stay
                   one form so Save submits every value together, so the groups get an index and
                   anchors instead of being split across pages or tabs. */}
-              <nav aria-label="Settings sections" className="-mt-1 mb-1 flex flex-wrap gap-1.5 border-b border-dashed border-line pb-4">
+              <nav
+                aria-label="Settings sections"
+                className="-mt-1 mb-1 flex flex-wrap gap-1.5 border-b border-dashed border-line pb-4"
+              >
                 {GROUPS.map((g) => (
-                  <a key={g.key} href={`#set-${g.key}`} className="inline-flex h-8 items-center rounded-[8px] border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 hover:bg-surface-2 hover:text-ink">{g.title}</a>
+                  <a
+                    key={g.key}
+                    href={`#set-${g.key}`}
+                    className="inline-flex h-8 items-center rounded-[8px] border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 hover:bg-surface-2 hover:text-ink"
+                  >
+                    {g.title}
+                  </a>
                 ))}
               </nav>
               {GROUPS.map((g) => (
-                <div key={g.key} id={`set-${g.key}`} className="scroll-mt-20 grid gap-4 border-t border-dashed border-line py-6 first:border-t-0 md:grid-cols-[220px_1fr]">
-                  <div><h3 className="text-[14px] font-semibold text-ink">{g.title}</h3><p className="mt-1 text-[13px] text-ink-2">{g.description}</p></div>
+                <div
+                  key={g.key}
+                  id={`set-${g.key}`}
+                  className="scroll-mt-20 grid gap-4 border-t border-dashed border-line py-6 first:border-t-0 md:grid-cols-[220px_1fr]"
+                >
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-ink">{g.title}</h3>
+                    <p className="mt-1 text-[13px] text-ink-2">{g.description}</p>
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {SETTING_DEFS.filter((d) => d.group === g.key).map((d) => (
-                      <Field key={d.key} label={d.label} hint={d.description}>{d.type === "boolean" ? <Select name={d.key} defaultValue={values[d.key]}><option value="true">Yes</option><option value="false">No</option></Select> : <Input name={d.key} type={d.type === "number" ? "number" : "text"} min={0} defaultValue={values[d.key]} />}</Field>
+                      <Field key={d.key} label={d.label} hint={d.description}>
+                        {d.type === "boolean" ? (
+                          <Select name={d.key} defaultValue={values[d.key]}>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </Select>
+                        ) : (
+                          <Input
+                            name={d.key}
+                            type={d.type === "number" ? "number" : "text"}
+                            min={0}
+                            defaultValue={values[d.key]}
+                          />
+                        )}
+                      </Field>
                     ))}
                   </div>
                 </div>
               ))}
             </ActionForm>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{SETTING_DEFS.map((d) => <Meta key={d.key} label={d.label}>{d.type === "boolean" ? (values[d.key] === "true" ? "Yes" : "No") : values[d.key]}{d.type === "number" && d.key.includes("Minutes") ? " min" : d.key.includes("Seconds") ? " s" : d.key.includes("Percent") ? "%" : d.key.includes("Days") ? " days" : ""}</Meta>)}</div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {SETTING_DEFS.map((d) => (
+                <Meta key={d.key} label={d.label}>
+                  {d.type === "boolean" ? (values[d.key] === "true" ? "Yes" : "No") : values[d.key]}
+                  {d.type === "number" && d.key.includes("Minutes")
+                    ? " min"
+                    : d.key.includes("Seconds")
+                      ? " s"
+                      : d.key.includes("Percent")
+                        ? "%"
+                        : d.key.includes("Days")
+                          ? " days"
+                          : ""}
+                </Meta>
+              ))}
+            </div>
           )}
         </CardBody>
       </Card>

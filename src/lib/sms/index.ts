@@ -16,7 +16,8 @@ const registry: Record<string, () => SmsProvider> = {
 export function getProvider(name?: string): SmsProvider {
   const key = (name ?? process.env.SMS_PROVIDER ?? "simulated").toLowerCase();
   const factory = registry[key];
-  if (!factory) throw new Error(`Unknown SMS provider "${key}". Known: ${Object.keys(registry).join(", ")}`);
+  if (!factory)
+    throw new Error(`Unknown SMS provider "${key}". Known: ${Object.keys(registry).join(", ")}`);
   return factory();
 }
 

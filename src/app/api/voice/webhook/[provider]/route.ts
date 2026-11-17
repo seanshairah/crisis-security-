@@ -14,13 +14,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
   const provider = voiceProviderByName(name);
   if (!provider) return NextResponse.json({ error: "unknown provider" }, { status: 404 });
   const rawBody = await req.text();
-  const check = verifyVoiceWebhook(process.env.VOICE_WEBHOOK_SECRET, req.headers.get("x-voice-signature"), req.headers.get("x-voice-timestamp"), rawBody);
+  const check = verifyVoiceWebhook(
+    process.env.VOICE_WEBHOOK_SECRET,
+    req.headers.get("x-voice-signature"),
+    req.headers.get("x-voice-timestamp"),
+    rawBody,
+  );
   if (!check.ok) {
-    await audit({ actor: "voice provider", action: "VOICE_WEBHOOK_REJECTED", details: { provider: name, reason: check.reason } });
+    await audit({
+      actor: "voice provider",
+      action: "VOICE_WEBHOOK_REJECTED",
+      details: { provider: name, reason: check.reason },
+    });
     return NextResponse.json({ error: check.reason }, { status: 401 });
   }
   let body: unknown;
-  try { body = JSON.parse(rawBody); } catch { return NextResponse.json({ error: "not JSON" }, { status: 400 }); }
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "not JSON" }, { status: 400 });
+  }
   const report = provider.parseReport(body);
   if (!report) return NextResponse.json({ error: "not a call report" }, { status: 400 });
   try {
@@ -29,8 +42,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
   } catch (e) {
     // Forget the event id and answer 500, so the provider's retry is applied rather than dropped as a duplicate.
     console.error("voice webhook failed", (e as Error).message);
-    await db.voiceWebhookEvent.deleteMany({ where: { provider: provider.name, eventId: report.eventId } }).catch(() => undefined);
-    await audit({ actor: "voice provider", action: "VOICE_WEBHOOK_ERROR", details: { provider: name, eventId: report.eventId, error: (e as Error).message } });
+    await db.voiceWebhookEvent
+      .deleteMany({ where: { provider: provider.name, eventId: report.eventId } })
+      .catch(() => undefined);
+    await audit({
+      actor: "voice provider",
+      action: "VOICE_WEBHOOK_ERROR",
+      details: { provider: name, eventId: report.eventId, error: (e as Error).message },
+    });
     return NextResponse.json({ error: "processing failed" }, { status: 500 });
   }
 }

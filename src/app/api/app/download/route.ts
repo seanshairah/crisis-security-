@@ -37,11 +37,15 @@ export async function GET(req: Request) {
   try {
     bytes = await releaseBytes(d.release.file);
   } catch {
-    return NextResponse.json({
-      error: "The release APK is not present in this deployment",
-      detail: `${d.release.file} is described by artifacts/android/release.json but was not bundled. ` +
-        "Check outputFileTracingIncludes in next.config.ts, and that the APK is committed.",
-    }, { status: 503 });
+    return NextResponse.json(
+      {
+        error: "The release APK is not present in this deployment",
+        detail:
+          `${d.release.file} is described by artifacts/android/release.json but was not bundled. ` +
+          "Check outputFileTracingIncludes in next.config.ts, and that the APK is committed.",
+      },
+      { status: 503 },
+    );
   }
   return new NextResponse(new Uint8Array(bytes), {
     headers: {

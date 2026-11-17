@@ -1,8 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  combineDateTime, dateInputValue, timeInputValue, fmtTime, fmtDate, fmtShort,
-  startOfToday, endOfToday, zonedWallClockToInstant, instantToZonedParts,
+  combineDateTime,
+  dateInputValue,
+  timeInputValue,
+  fmtTime,
+  fmtDate,
+  fmtShort,
+  startOfToday,
+  endOfToday,
+  zonedWallClockToInstant,
+  instantToZonedParts,
 } from "../src/lib/time";
 
 // These run under whatever TZ the test host has. That is the point: the results below must not
@@ -31,10 +39,19 @@ test("midnight and the end of the day are Harare boundaries", () => {
 });
 
 test("round trip: wall clock -> instant -> wall clock", () => {
-  for (const [h, mi] of [[0, 0], [6, 30], [12, 0], [18, 0], [23, 59]] as const) {
+  for (const [h, mi] of [
+    [0, 0],
+    [6, 30],
+    [12, 0],
+    [18, 0],
+    [23, 59],
+  ] as const) {
     const inst = zonedWallClockToInstant(2026, 10, 21, h, mi, HARARE);
     const back = instantToZonedParts(inst, HARARE);
-    assert.deepEqual([back.year, back.month, back.day, back.hour, back.minute], [2026, 10, 21, h, mi]);
+    assert.deepEqual(
+      [back.year, back.month, back.day, back.hour, back.minute],
+      [2026, 10, 21, h, mi],
+    );
   }
 });
 
@@ -61,13 +78,19 @@ test("date and time inputs round trip through combineDateTime", () => {
   const original = combineDateTime("2026-03-09", "07:45");
   assert.equal(dateInputValue(original), "2026-03-09");
   assert.equal(timeInputValue(original), "07:45");
-  assert.equal(combineDateTime(dateInputValue(original), timeInputValue(original)).getTime(), original.getTime());
+  assert.equal(
+    combineDateTime(dateInputValue(original), timeInputValue(original)).getTime(),
+    original.getTime(),
+  );
 });
 
 test("today's boundaries are 24 hours apart and bracket now", () => {
   const a = startOfToday();
   const b = endOfToday();
-  assert.ok(b.getTime() - a.getTime() === 24 * 60 * 60 * 1000 - 1, `got ${b.getTime() - a.getTime()}`);
+  assert.ok(
+    b.getTime() - a.getTime() === 24 * 60 * 60 * 1000 - 1,
+    `got ${b.getTime() - a.getTime()}`,
+  );
   const now = Date.now();
   assert.ok(a.getTime() <= now && now <= b.getTime());
 });

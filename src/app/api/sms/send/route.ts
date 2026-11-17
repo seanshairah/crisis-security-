@@ -7,6 +7,13 @@ export const POST = guarded("ADMIN", async (req, _ctx, user) => {
   if (!b.guardId || !b.body?.trim()) return error("guardId and body are required");
   const guard = await db.guard.findUnique({ where: { id: b.guardId } });
   if (!guard) return error("Guard not found", 404);
-  const msg = await sendSms({ to: guard.phone, body: b.body.trim(), type: "GENERAL", guardId: guard.id, actor: user.name, userId: user.id });
+  const msg = await sendSms({
+    to: guard.phone,
+    body: b.body.trim(),
+    type: "GENERAL",
+    guardId: guard.id,
+    actor: user.name,
+    userId: user.id,
+  });
   return json(msg, msg.status === "FAILED" ? 502 : 201);
 });

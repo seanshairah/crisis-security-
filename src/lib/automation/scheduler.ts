@@ -39,19 +39,24 @@ export const MIN_INTERVAL_MS: Record<TickSource, number> = {
 };
 
 export type ScheduledResult =
-  | { ran: true; report: TickReport }
-  | { ran: false; reason: "recent" | "busy" };
+  { ran: true; report: TickReport } | { ran: false; reason: "recent" | "busy" };
 
 async function ensureRow() {
   // skipDuplicates: the row usually exists, and a concurrent request may create it first.
-  await db.schedulerLease.createMany({ data: [{ name: JOB, leaseUntil: new Date(0), lastRunAt: null }], skipDuplicates: true });
+  await db.schedulerLease.createMany({
+    data: [{ name: JOB, leaseUntil: new Date(0), lastRunAt: null }],
+    skipDuplicates: true,
+  });
 }
 
 /**
  * Run the engine if this source is allowed to now. Never throws: the heartbeat that called it has
  * already answered the phone, and a scheduling problem must not turn into a device error.
  */
-export async function runScheduledTick(source: TickSource, now = new Date()): Promise<ScheduledResult> {
+export async function runScheduledTick(
+  source: TickSource,
+  now = new Date(),
+): Promise<ScheduledResult> {
   await ensureRow();
   const holder = `${source}:${randomUUID()}`;
   const notBefore = new Date(now.getTime() - MIN_INTERVAL_MS[source]);
@@ -61,7 +66,9 @@ export async function runScheduledTick(source: TickSource, now = new Date()): Pr
     where: {
       name: JOB,
       leaseUntil: { lt: now },
-      ...(MIN_INTERVAL_MS[source] > 0 ? { OR: [{ lastRunAt: null }, { lastRunAt: { lte: notBefore } }] } : {}),
+      ...(MIN_INTERVAL_MS[source] > 0
+        ? { OR: [{ lastRunAt: null }, { lastRunAt: { lte: notBefore } }] }
+        : {}),
     },
     data: { holder, leaseUntil: new Date(now.getTime() + LEASE_MS) },
   });
@@ -95,7 +102,8 @@ export async function maybeTickFromHeartbeat(now = new Date()): Promise<void> {
   if (process.env.AUTOMATION_HEARTBEAT_TICK === "false") return;
   try {
     const row = await db.schedulerLease.findUnique({ where: { name: JOB } });
-    if (row?.lastRunAt && now.getTime() - row.lastRunAt.getTime() < MIN_INTERVAL_MS.heartbeat) return;
+    if (row?.lastRunAt && now.getTime() - row.lastRunAt.getTime() < MIN_INTERVAL_MS.heartbeat)
+      return;
     if (row && row.leaseUntil >= now) return;
     await runScheduledTick("heartbeat", now);
   } catch {
@@ -106,7 +114,9 @@ export async function maybeTickFromHeartbeat(now = new Date()): Promise<void> {
 /** For /api/health and the portal: when the engine last ran, by what, and whether it is falling behind. */
 export async function schedulerStatus(now = new Date()) {
   const row = await db.schedulerLease.findUnique({ where: { name: JOB } }).catch(() => null);
-  const ageSeconds = row?.lastRunAt ? Math.round((now.getTime() - row.lastRunAt.getTime()) / 1000) : null;
+  const ageSeconds = row?.lastRunAt
+    ? Math.round((now.getTime() - row.lastRunAt.getTime()) / 1000)
+    : null;
   return {
     lastRunAt: row?.lastRunAt?.toISOString() ?? null,
     lastSource: row?.lastSource ?? null,

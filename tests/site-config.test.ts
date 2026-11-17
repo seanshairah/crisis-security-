@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { coordinatePairError, radiusError, geofenceChanged, effectiveGeofence, configVersionString, configApplied } from "../src/lib/site-config";
+import {
+  coordinatePairError,
+  radiusError,
+  geofenceChanged,
+  effectiveGeofence,
+  configVersionString,
+  configApplied,
+} from "../src/lib/site-config";
 
 test("coordinates must come as a pair", () => {
   assert.equal(coordinatePairError(null, null), null);
@@ -30,13 +37,37 @@ test("config version only moves when the fence moves or resizes", () => {
 
 test("effective geofence prefers the shift override, falls back to the site, else null", () => {
   const site = { latitude: -17.8292, longitude: 31.0522, geofenceRadiusM: 150 };
-  assert.deepEqual(effectiveGeofence(null, site), { fence: { latitude: -17.8292, longitude: 31.0522, radiusM: 150 }, source: "SITE" });
-  assert.deepEqual(effectiveGeofence({ geofenceLatitude: -17.83, geofenceLongitude: 31.05, geofenceRadiusM: 60 }, site), { fence: { latitude: -17.83, longitude: 31.05, radiusM: 60 }, source: "SHIFT_OVERRIDE" });
+  assert.deepEqual(effectiveGeofence(null, site), {
+    fence: { latitude: -17.8292, longitude: 31.0522, radiusM: 150 },
+    source: "SITE",
+  });
+  assert.deepEqual(
+    effectiveGeofence(
+      { geofenceLatitude: -17.83, geofenceLongitude: 31.05, geofenceRadiusM: 60 },
+      site,
+    ),
+    { fence: { latitude: -17.83, longitude: 31.05, radiusM: 60 }, source: "SHIFT_OVERRIDE" },
+  );
   // Override without its own radius inherits the site's
-  assert.equal(effectiveGeofence({ geofenceLatitude: -17.83, geofenceLongitude: 31.05, geofenceRadiusM: null }, site)!.fence.radiusM, 150);
+  assert.equal(
+    effectiveGeofence(
+      { geofenceLatitude: -17.83, geofenceLongitude: 31.05, geofenceRadiusM: null },
+      site,
+    )!.fence.radiusM,
+    150,
+  );
   // Half an override is ignored
-  assert.equal(effectiveGeofence({ geofenceLatitude: -17.83, geofenceLongitude: null, geofenceRadiusM: null }, site)!.source, "SITE");
-  assert.equal(effectiveGeofence(null, { latitude: null, longitude: null, geofenceRadiusM: 150 }), null);
+  assert.equal(
+    effectiveGeofence(
+      { geofenceLatitude: -17.83, geofenceLongitude: null, geofenceRadiusM: null },
+      site,
+    )!.source,
+    "SITE",
+  );
+  assert.equal(
+    effectiveGeofence(null, { latitude: null, longitude: null, geofenceRadiusM: 150 }),
+    null,
+  );
 });
 
 test("config version string and applied check", () => {

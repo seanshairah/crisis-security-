@@ -20,7 +20,8 @@ export const config = {
   matcher: [
     {
       // Pages only: API routes, static files and the service worker have their own headers.
-      source: "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|brand|sw.js|crisis-preview).*)",
+      source:
+        "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|brand|sw.js|crisis-preview).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

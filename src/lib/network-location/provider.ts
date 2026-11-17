@@ -17,7 +17,12 @@ import type { MobileOperator, NetworkLocationResult } from "@prisma/client";
 
 export type VerifyArea = { latitude: number; longitude: number; radiusM: number };
 
-export type VerifyRequest = { phone: string; area: VerifyArea; maxAgeSeconds: number; reference: string };
+export type VerifyRequest = {
+  phone: string;
+  area: VerifyArea;
+  maxAgeSeconds: number;
+  reference: string;
+};
 
 export type VerifyAnswer = {
   result: NetworkLocationResult;
@@ -42,19 +47,35 @@ export interface NetworkLocationProvider {
 }
 
 /** The answer of a CAMARA-style verifyLocation call, as published in the CAMARA specification. */
-export type CamaraVerification = { verificationResult: "TRUE" | "FALSE" | "PARTIAL" | "UNKNOWN"; matchRate?: number; lastLocationTime?: string };
+export type CamaraVerification = {
+  verificationResult: "TRUE" | "FALSE" | "PARTIAL" | "UNKNOWN";
+  matchRate?: number;
+  lastLocationTime?: string;
+};
 
 /** Maps a CAMARA-style answer to our result. A position older than the allowed age is stale, whatever it says. */
-export function mapCamaraVerification(r: CamaraVerification, maxAgeSeconds: number, now: Date): Pick<VerifyAnswer, "result" | "observedAt" | "matchRate"> {
+export function mapCamaraVerification(
+  r: CamaraVerification,
+  maxAgeSeconds: number,
+  now: Date,
+): Pick<VerifyAnswer, "result" | "observedAt" | "matchRate"> {
   const observedAt = r.lastLocationTime ? new Date(r.lastLocationTime) : null;
   const valid = observedAt && !Number.isNaN(observedAt.getTime()) ? observedAt : null;
-  if (valid && now.getTime() - valid.getTime() > maxAgeSeconds * 1000) return { result: "NETWORK_LOCATION_STALE", observedAt: valid, matchRate: r.matchRate ?? null };
+  if (valid && now.getTime() - valid.getTime() > maxAgeSeconds * 1000)
+    return { result: "NETWORK_LOCATION_STALE", observedAt: valid, matchRate: r.matchRate ?? null };
   const result: NetworkLocationResult =
-    r.verificationResult === "TRUE" ? "NETWORK_VERIFIED_INSIDE"
-      : r.verificationResult === "FALSE" ? "NETWORK_VERIFIED_OUTSIDE"
-        : r.verificationResult === "PARTIAL" ? "NETWORK_PARTIAL_MATCH"
+    r.verificationResult === "TRUE"
+      ? "NETWORK_VERIFIED_INSIDE"
+      : r.verificationResult === "FALSE"
+        ? "NETWORK_VERIFIED_OUTSIDE"
+        : r.verificationResult === "PARTIAL"
+          ? "NETWORK_PARTIAL_MATCH"
           : "NETWORK_LOCATION_UNAVAILABLE";
-  return { result, observedAt: valid, matchRate: r.verificationResult === "PARTIAL" ? r.matchRate ?? null : null };
+  return {
+    result,
+    observedAt: valid,
+    matchRate: r.verificationResult === "PARTIAL" ? (r.matchRate ?? null) : null,
+  };
 }
 
 /**
@@ -64,11 +85,21 @@ export function mapCamaraVerification(r: CamaraVerification, maxAgeSeconds: numb
  */
 class UnconfiguredOperatorAdapter implements NetworkLocationProvider {
   readonly simulated = false;
-  constructor(readonly name: string, readonly operator: MobileOperator) {}
-  configured() { return false; }
-  authorisationRef() { return null; }
+  constructor(
+    readonly name: string,
+    readonly operator: MobileOperator,
+  ) {}
+  configured() {
+    return false;
+  }
+  authorisationRef() {
+    return null;
+  }
   async verify(): Promise<VerifyAnswer> {
-    return { result: "NETWORK_PROVIDER_UNAVAILABLE", error: `No authorised ${this.name} integration is configured.` };
+    return {
+      result: "NETWORK_PROVIDER_UNAVAILABLE",
+      error: `No authorised ${this.name} integration is configured.`,
+    };
   }
 }
 
@@ -78,21 +109,43 @@ export const TelecelLocationAdapter = () => new UnconfiguredOperatorAdapter("tel
 
 /** Scripted answers for tests and demonstrations, by phone number. Default: inside. */
 const scripted = new Map<string, CamaraVerification | "ERROR" | "TIMEOUT">();
-export function setSimulatedNetworkAnswer(phone: string, answer: CamaraVerification | "ERROR" | "TIMEOUT" | null) {
-  if (answer) scripted.set(phone, answer); else scripted.delete(phone);
+export function setSimulatedNetworkAnswer(
+  phone: string,
+  answer: CamaraVerification | "ERROR" | "TIMEOUT" | null,
+) {
+  if (answer) scripted.set(phone, answer);
+  else scripted.delete(phone);
 }
 
 class SimulationLocationAdapter implements NetworkLocationProvider {
   readonly name = "simulation";
   readonly operator = "ANY" as const;
   readonly simulated = true;
-  configured() { return process.env.NODE_ENV !== "production" || process.env.ALLOW_SIMULATED_NETWORK_LOCATION === "1"; }
-  authorisationRef() { return "simulation"; }
+  configured() {
+    return (
+      process.env.NODE_ENV !== "production" || process.env.ALLOW_SIMULATED_NETWORK_LOCATION === "1"
+    );
+  }
+  authorisationRef() {
+    return "simulation";
+  }
   async verify(req: VerifyRequest): Promise<VerifyAnswer> {
-    const a = scripted.get(req.phone) ?? { verificationResult: "TRUE", lastLocationTime: new Date().toISOString() };
+    const a = scripted.get(req.phone) ?? {
+      verificationResult: "TRUE",
+      lastLocationTime: new Date().toISOString(),
+    };
     if (a === "TIMEOUT") throw new Error("simulated provider timeout");
-    if (a === "ERROR") return { result: "NETWORK_ERROR", error: "simulated provider error", providerRef: `sim_${req.reference}` };
-    return { ...mapCamaraVerification(a, req.maxAgeSeconds, new Date()), providerRef: `sim_${req.reference}`, costUnits: 0 };
+    if (a === "ERROR")
+      return {
+        result: "NETWORK_ERROR",
+        error: "simulated provider error",
+        providerRef: `sim_${req.reference}`,
+      };
+    return {
+      ...mapCamaraVerification(a, req.maxAgeSeconds, new Date()),
+      providerRef: `sim_${req.reference}`,
+      costUnits: 0,
+    };
   }
 }
 

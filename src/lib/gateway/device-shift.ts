@@ -24,7 +24,9 @@ export function selectDeviceShift<T extends ShiftTimes>(shifts: T[], now: Date):
   const after = DEVICE_SHIFT_WINDOW.afterMinutes * 60_000;
   const inProgress = shifts.filter((s) => s.startAt.getTime() <= t && t <= s.endAt.getTime());
   if (inProgress.length) return inProgress.reduce((a, b) => (b.startAt > a.startAt ? b : a));
-  const starting = shifts.filter((s) => s.startAt.getTime() > t && s.startAt.getTime() - before <= t);
+  const starting = shifts.filter(
+    (s) => s.startAt.getTime() > t && s.startAt.getTime() - before <= t,
+  );
   if (starting.length) return starting.reduce((a, b) => (b.startAt < a.startAt ? b : a));
   const ended = shifts.filter((s) => s.endAt.getTime() < t && t <= s.endAt.getTime() + after);
   if (ended.length) return ended.reduce((a, b) => (b.endAt > a.endAt ? b : a));

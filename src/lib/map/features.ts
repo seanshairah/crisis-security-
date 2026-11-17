@@ -11,13 +11,31 @@ export type GeofenceState = "INSIDE" | "OUTSIDE" | "UNKNOWN";
 export type Freshness = "LIVE" | "RECENT" | "STALE";
 
 /** A duty site and its geofence. */
-export type MapSite = { id: string; name: string; lat: number; lng: number; radiusM: number; detail?: string; href?: string };
+export type MapSite = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  radiusM: number;
+  detail?: string;
+  href?: string;
+};
 
 /**
  * One dated position. Every point on every portal map is one of these: a measurement with a time
  * and an uncertainty, never a live cursor.
  */
-export type MapPointKind = "guard" | "latest" | "request" | "exit" | "return" | "check" | "call" | "unavailable" | "candidate" | "pin";
+export type MapPointKind =
+  | "guard"
+  | "latest"
+  | "request"
+  | "exit"
+  | "return"
+  | "check"
+  | "call"
+  | "unavailable"
+  | "candidate"
+  | "pin";
 export type MapPoint = {
   id: string;
   lat: number;
@@ -81,34 +99,53 @@ export const pointHollow = (p: MapPoint) => p.freshness === "STALE";
 /** Glyph in the marker, from the same icon set as the rest of the interface. */
 export function pointIcon(p: MapPoint): IconName {
   switch (p.kind) {
-    case "guard": return "shield_person";
-    case "request": case "candidate": return "my_location";
-    case "call": return "call";
-    case "exit": return "directions_run";
-    case "return": return "where_to_vote";
-    case "unavailable": return "location_off";
-    case "pin": return "pin_drop";
-    case "check": return "check";
-    default: return "location_on";
+    case "guard":
+      return "shield_person";
+    case "request":
+    case "candidate":
+      return "my_location";
+    case "call":
+      return "call";
+    case "exit":
+      return "directions_run";
+    case "return":
+      return "where_to_vote";
+    case "unavailable":
+      return "location_off";
+    case "pin":
+      return "pin_drop";
+    case "check":
+      return "check";
+    default:
+      return "location_on";
   }
 }
 
-export const pointRadius = (p: MapPoint) => (p.emphasis ? 11 : p.kind === "check" || p.kind === "call" ? 6 : 8);
+export const pointRadius = (p: MapPoint) =>
+  p.emphasis ? 11 : p.kind === "check" || p.kind === "call" ? 6 : 8;
 
 /** Legend rows for a map, built from the points actually drawn so nothing unused is explained. */
-export function mapLegend(points: MapPoint[], hasSite: boolean): { label: string; colour: string; hollow?: boolean; ring?: boolean }[] {
+export function mapLegend(
+  points: MapPoint[],
+  hasSite: boolean,
+): { label: string; colour: string; hollow?: boolean; ring?: boolean }[] {
   const rows: { label: string; colour: string; hollow?: boolean; ring?: boolean }[] = [];
   const kinds = new Set(points.map((p) => p.kind));
   const states = new Set(points.map((p) => p.state).filter(Boolean));
   const fresh = new Set(points.map((p) => p.freshness).filter(Boolean));
   if (hasSite) rows.push({ label: "Site and fence", colour: MAP_COLOUR.site });
-  if (states.has("INSIDE") || fresh.has("LIVE")) rows.push({ label: "On site", colour: MAP_COLOUR.inside });
-  if (states.has("OUTSIDE") || kinds.has("exit")) rows.push({ label: "Off site", colour: MAP_COLOUR.outside });
+  if (states.has("INSIDE") || fresh.has("LIVE"))
+    rows.push({ label: "On site", colour: MAP_COLOUR.inside });
+  if (states.has("OUTSIDE") || kinds.has("exit"))
+    rows.push({ label: "Off site", colour: MAP_COLOUR.outside });
   if (fresh.has("RECENT")) rows.push({ label: "Recent fix", colour: MAP_COLOUR.recent });
-  if (fresh.has("STALE") || states.has("UNKNOWN")) rows.push({ label: "Stale or unknown", colour: MAP_COLOUR.stale, hollow: true });
-  if (kinds.has("request") || kinds.has("candidate")) rows.push({ label: "Requested fix", colour: MAP_COLOUR.request });
+  if (fresh.has("STALE") || states.has("UNKNOWN"))
+    rows.push({ label: "Stale or unknown", colour: MAP_COLOUR.stale, hollow: true });
+  if (kinds.has("request") || kinds.has("candidate"))
+    rows.push({ label: "Requested fix", colour: MAP_COLOUR.request });
   if (kinds.has("call")) rows.push({ label: "Call", colour: MAP_COLOUR.call });
-  if (points.some((p) => p.alert)) rows.push({ label: "Open alert", colour: MAP_COLOUR.alert, ring: true });
+  if (points.some((p) => p.alert))
+    rows.push({ label: "Open alert", colour: MAP_COLOUR.alert, ring: true });
   return rows;
 }
 
@@ -121,9 +158,14 @@ const DEG = Math.PI / 180;
  * Ring of [lng, lat] approximating a circle of `radiusM` on the ground. Longitude degrees shrink
  * with latitude, so the ring is computed per vertex rather than as a square in degrees.
  */
-export function circleRing(lat: number, lng: number, radiusM: number, steps = 64): [number, number][] {
+export function circleRing(
+  lat: number,
+  lng: number,
+  radiusM: number,
+  steps = 64,
+): [number, number][] {
   const ring: [number, number][] = [];
-  const dLat = (radiusM / EARTH_M) / DEG;
+  const dLat = radiusM / EARTH_M / DEG;
   const dLng = dLat / Math.max(Math.cos(lat * DEG), 1e-6);
   for (let i = 0; i <= steps; i++) {
     const t = (i / steps) * 2 * Math.PI;
@@ -132,27 +174,87 @@ export function circleRing(lat: number, lng: number, radiusM: number, steps = 64
   return ring;
 }
 
-export type FC<G, P> = { type: "FeatureCollection"; features: { type: "Feature"; id?: number; geometry: G; properties: P }[] };
+export type FC<G, P> = {
+  type: "FeatureCollection";
+  features: { type: "Feature"; id?: number; geometry: G; properties: P }[];
+};
 type Poly = { type: "Polygon"; coordinates: [number, number][][] };
 type Pt = { type: "Point"; coordinates: [number, number] };
 type Line = { type: "LineString"; coordinates: [number, number][] };
 
-export const hasCoords = (p: { lat: number; lng: number }) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180;
+export const hasCoords = (p: { lat: number; lng: number }) =>
+  Number.isFinite(p.lat) &&
+  Number.isFinite(p.lng) &&
+  Math.abs(p.lat) <= 90 &&
+  Math.abs(p.lng) <= 180;
 
 export function fenceFC(sites: MapSite[]): FC<Poly, { id: string; name: string; radiusM: number }> {
-  return { type: "FeatureCollection", features: sites.filter(hasCoords).map((s) => ({ type: "Feature" as const, geometry: { type: "Polygon" as const, coordinates: [circleRing(s.lat, s.lng, Math.max(s.radiusM, 1))] }, properties: { id: s.id, name: s.name, radiusM: s.radiusM } })) };
+  return {
+    type: "FeatureCollection",
+    features: sites.filter(hasCoords).map((s) => ({
+      type: "Feature" as const,
+      geometry: {
+        type: "Polygon" as const,
+        coordinates: [circleRing(s.lat, s.lng, Math.max(s.radiusM, 1))],
+      },
+      properties: { id: s.id, name: s.name, radiusM: s.radiusM },
+    })),
+  };
 }
 
-export function siteFC(sites: MapSite[]): FC<Pt, { id: string; name: string; label: string; detail: string; href: string }> {
-  return { type: "FeatureCollection", features: sites.filter(hasCoords).map((s) => ({ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] }, properties: { id: s.id, name: s.name, label: s.name, detail: s.detail ?? `${s.radiusM} m fence`, href: s.href ?? "" } })) };
+export function siteFC(
+  sites: MapSite[],
+): FC<Pt, { id: string; name: string; label: string; detail: string; href: string }> {
+  return {
+    type: "FeatureCollection",
+    features: sites.filter(hasCoords).map((s) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
+      properties: {
+        id: s.id,
+        name: s.name,
+        label: s.name,
+        detail: s.detail ?? `${s.radiusM} m fence`,
+        href: s.href ?? "",
+      },
+    })),
+  };
 }
 
 /** Accuracy rings, for the points that reported an uncertainty. Separate from the markers so they can be hidden without touching them. */
-export function accuracyFC(points: MapPoint[]): FC<Poly, { id: string; colour: string; accuracyM: number }> {
-  return { type: "FeatureCollection", features: points.filter((p) => hasCoords(p) && p.accuracyM != null && p.accuracyM > 0).map((p) => ({ type: "Feature" as const, geometry: { type: "Polygon" as const, coordinates: [circleRing(p.lat, p.lng, p.accuracyM!)] }, properties: { id: p.id, colour: pointColour(p), accuracyM: Math.round(p.accuracyM!) } })) };
+export function accuracyFC(
+  points: MapPoint[],
+): FC<Poly, { id: string; colour: string; accuracyM: number }> {
+  return {
+    type: "FeatureCollection",
+    features: points
+      .filter((p) => hasCoords(p) && p.accuracyM != null && p.accuracyM > 0)
+      .map((p) => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "Polygon" as const,
+          coordinates: [circleRing(p.lat, p.lng, p.accuracyM!)],
+        },
+        properties: { id: p.id, colour: pointColour(p), accuracyM: Math.round(p.accuracyM!) },
+      })),
+  };
 }
 
-export type PointProps = { id: string; label: string; detail: string; at: string; colour: string; icon: IconName; radius: number; hollow: boolean; alert: string; href: string; hrefLabel: string; emphasis: boolean; kind: MapPointKind };
+export type PointProps = {
+  id: string;
+  label: string;
+  detail: string;
+  at: string;
+  colour: string;
+  icon: IconName;
+  radius: number;
+  hollow: boolean;
+  alert: string;
+  href: string;
+  hrefLabel: string;
+  emphasis: boolean;
+  kind: MapPointKind;
+};
 
 export function pointFC(points: MapPoint[]): FC<Pt, PointProps> {
   return {
@@ -162,15 +264,38 @@ export function pointFC(points: MapPoint[]): FC<Pt, PointProps> {
       id: i,
       geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
       properties: {
-        id: p.id, label: p.label, detail: p.detail ?? "", at: p.at ?? "", colour: pointColour(p), icon: pointIcon(p), radius: pointRadius(p),
-        hollow: pointHollow(p), alert: p.alert ?? "", href: p.href ?? "", hrefLabel: p.hrefLabel ?? "Open", emphasis: !!p.emphasis, kind: p.kind,
+        id: p.id,
+        label: p.label,
+        detail: p.detail ?? "",
+        at: p.at ?? "",
+        colour: pointColour(p),
+        icon: pointIcon(p),
+        radius: pointRadius(p),
+        hollow: pointHollow(p),
+        alert: p.alert ?? "",
+        href: p.href ?? "",
+        hrefLabel: p.hrefLabel ?? "Open",
+        emphasis: !!p.emphasis,
+        kind: p.kind,
       },
     })),
   };
 }
 
 export function trailFC(trails: MapTrail[]): FC<Line, { id: string }> {
-  return { type: "FeatureCollection", features: trails.map((t) => ({ type: "Feature" as const, geometry: { type: "LineString" as const, coordinates: t.points.filter(hasCoords).map((p) => [p.lng, p.lat] as [number, number]) }, properties: { id: t.id } })).filter((f) => f.geometry.coordinates.length > 1) };
+  return {
+    type: "FeatureCollection",
+    features: trails
+      .map((t) => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "LineString" as const,
+          coordinates: t.points.filter(hasCoords).map((p) => [p.lng, p.lat] as [number, number]),
+        },
+        properties: { id: t.id },
+      }))
+      .filter((f) => f.geometry.coordinates.length > 1),
+  };
 }
 
 export type Bounds = { west: number; south: number; east: number; north: number };
@@ -179,12 +304,26 @@ export type Bounds = { west: number; south: number; east: number; north: number 
  * Smallest box holding everything drawn, including each fence and accuracy ring, so fitting the
  * view never clips the uncertainty an operator is being asked to judge.
  */
-export function boundsOf(sites: MapSite[], points: MapPoint[], trails: MapTrail[] = []): Bounds | null {
-  let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
-  const take = (lng: number, lat: number) => { west = Math.min(west, lng); east = Math.max(east, lng); south = Math.min(south, lat); north = Math.max(north, lat); };
-  for (const s of sites.filter(hasCoords)) for (const [lng, lat] of circleRing(s.lat, s.lng, Math.max(s.radiusM, 1), 8)) take(lng, lat);
+export function boundsOf(
+  sites: MapSite[],
+  points: MapPoint[],
+  trails: MapTrail[] = [],
+): Bounds | null {
+  let west = Infinity,
+    south = Infinity,
+    east = -Infinity,
+    north = -Infinity;
+  const take = (lng: number, lat: number) => {
+    west = Math.min(west, lng);
+    east = Math.max(east, lng);
+    south = Math.min(south, lat);
+    north = Math.max(north, lat);
+  };
+  for (const s of sites.filter(hasCoords))
+    for (const [lng, lat] of circleRing(s.lat, s.lng, Math.max(s.radiusM, 1), 8)) take(lng, lat);
   for (const p of points.filter(hasCoords)) {
-    if (p.accuracyM != null && p.accuracyM > 0) for (const [lng, lat] of circleRing(p.lat, p.lng, p.accuracyM, 8)) take(lng, lat);
+    if (p.accuracyM != null && p.accuracyM > 0)
+      for (const [lng, lat] of circleRing(p.lat, p.lng, p.accuracyM, 8)) take(lng, lat);
     else take(p.lng, p.lat);
   }
   for (const t of trails) for (const p of t.points.filter(hasCoords)) take(p.lng, p.lat);

@@ -55,7 +55,9 @@ export type NotifyInput = {
 
 export async function notify(input: NotifyInput) {
   // A watched guard's events are never quiet: at least WARNING, and labelled.
-  const watched = input.guardId ? await db.guard.findUnique({ where: { id: input.guardId }, select: { watched: true } }) : null;
+  const watched = input.guardId
+    ? await db.guard.findUnique({ where: { id: input.guardId }, select: { watched: true } })
+    : null;
   let severity: NotificationSeverity = input.severity ?? "INFO";
   let title = input.title;
   if (watched?.watched) {
@@ -63,11 +65,29 @@ export async function notify(input: NotifyInput) {
     title = `Watched · ${title}`;
   }
   const n = await db.notification.create({
-    data: { type: input.type, severity, title, body: input.body, guardId: input.guardId ?? null, shiftId: input.shiftId ?? null, incidentId: input.incidentId ?? null },
+    data: {
+      type: input.type,
+      severity,
+      title,
+      body: input.body,
+      guardId: input.guardId ?? null,
+      shiftId: input.shiftId ?? null,
+      incidentId: input.incidentId ?? null,
+    },
   });
-  const url = input.url ?? (input.incidentId ? `/incidents/${input.incidentId}` : input.shiftId ? `/shifts/${input.shiftId}` : input.guardId ? `/guards/${input.guardId}` : "/notifications");
+  const url =
+    input.url ??
+    (input.incidentId
+      ? `/incidents/${input.incidentId}`
+      : input.shiftId
+        ? `/shifts/${input.shiftId}`
+        : input.guardId
+          ? `/guards/${input.guardId}`
+          : "/notifications");
   if (severity !== "INFO" || watched?.watched) {
-    pushToAll({ title, body: input.body, url, tag: n.id, critical: severity === "CRITICAL" }).catch(() => undefined);
+    pushToAll({ title, body: input.body, url, tag: n.id, critical: severity === "CRITICAL" }).catch(
+      () => undefined,
+    );
   }
   return n;
 }

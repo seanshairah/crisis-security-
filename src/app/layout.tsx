@@ -12,10 +12,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Crisis Security", template: "%s · Crisis Security" },
-  description: "Crisis Security operations portal: guards, sites, shifts, attendance and incidents, run over two-way SMS.",
+  description:
+    "Crisis Security operations portal: guards, sites, shifts, attendance and incidents, run over two-way SMS.",
 };
 
-export const viewport: Viewport = { themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f6f2ec" }, { media: "(prefers-color-scheme: dark)", color: "#141311" }] };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f2ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#141311" },
+  ],
+};
 
 /** Applies the saved theme before first paint so a light-theme viewer never sees a dark flash.
  *  No saved choice means the CSS follows the system preference. Runs from our own origin's markup only. */
@@ -26,7 +32,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" className={GeistMono.variable} suppressHydrationWarning>
-      <head><script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      </head>
       <body className="min-h-screen">{children}</body>
     </html>
   );

@@ -8,7 +8,21 @@ import type { ActionState } from "@/actions/_helpers";
 type Action = (state: ActionState, fd: FormData) => Promise<ActionState>;
 
 /** A form bound to a server action, showing the first error and a pending state on submit. */
-export function ActionForm({ action, children, submitLabel = "Save", className, successMessage, secondary }: { action: Action; children: React.ReactNode; submitLabel?: string; className?: string; successMessage?: string; secondary?: React.ReactNode }) {
+export function ActionForm({
+  action,
+  children,
+  submitLabel = "Save",
+  className,
+  successMessage,
+  secondary,
+}: {
+  action: Action;
+  children: React.ReactNode;
+  submitLabel?: string;
+  className?: string;
+  successMessage?: string;
+  secondary?: React.ReactNode;
+}) {
   const [state, formAction, pending] = useActionState(action, undefined);
   return (
     <form action={formAction} className={className}>
@@ -20,7 +34,9 @@ export function ActionForm({ action, children, submitLabel = "Save", className, 
         </div>
         <div className="flex items-center gap-2">
           {secondary}
-          <Button type="submit" variant="primary" disabled={pending}>{pending ? "Saving…" : submitLabel}</Button>
+          <Button type="submit" variant="primary" disabled={pending}>
+            {pending ? "Saving…" : submitLabel}
+          </Button>
         </div>
       </div>
     </form>

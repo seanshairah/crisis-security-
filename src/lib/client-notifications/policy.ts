@@ -16,42 +16,141 @@
  *   FAILED            the provider refused it, or reported it undelivered.
  *   DISCARDED         a draft someone chose not to send.
  */
-import type { ClientNotificationStatus, ClientNotificationType, MessageChannel, Role } from "@prisma/client";
+import type {
+  ClientNotificationStatus,
+  ClientNotificationType,
+  MessageChannel,
+  Role,
+} from "@prisma/client";
 
 export type NotifyTone = "ok" | "warn" | "critical" | "info" | "neutral" | "muted";
 
-export const NOTIFY_TYPES: Record<ClientNotificationType, { label: string; template: string; sensitive: boolean; subject: string }> = {
-  GUARD_ARRIVED:          { label: "Guard arrived",            template: "CLIENT_ARRIVAL",          sensitive: false, subject: "Guard on site" },
-  GUARD_VERIFIED:         { label: "Guard verified on site",   template: "CLIENT_VERIFIED",         sensitive: false, subject: "Guard verified on site" },
-  GUARD_LATE:             { label: "Guard running late",       template: "CLIENT_LATE",             sensitive: false, subject: "Guard running late" },
-  MISSED_CHECK_IN:        { label: "Missed check-in",          template: "CLIENT_MISSED_CHECK_IN",  sensitive: false, subject: "Check-in not confirmed" },
-  GUARD_ABSENT:           { label: "Guard absent",             template: "CLIENT_ABSENT",           sensitive: true,  subject: "Guard absent" },
-  GUARD_OUTSIDE:          { label: "Guard outside the site",   template: "CLIENT_OUTSIDE",          sensitive: true,  subject: "Guard away from the post" },
-  EMERGENCY:              { label: "Emergency or incident",    template: "CLIENT_EMERGENCY",        sensitive: true,  subject: "Urgent: emergency reported" },
-  ASSISTANCE:             { label: "Assistance requested",     template: "CLIENT_ASSISTANCE",       sensitive: true,  subject: "Assistance requested" },
-  SHIFT_COMPLETED:        { label: "Shift completed",          template: "CLIENT_SHIFT_ENDED",      sensitive: false, subject: "Shift completed" },
-  REPLACEMENT_DISPATCHED: { label: "Replacement dispatched",   template: "CLIENT_REPLACEMENT",      sensitive: false, subject: "Replacement guard on the way" },
-  SITE_STATUS:            { label: "Site status update",       template: "CLIENT_SITE_STATUS",      sensitive: false, subject: "Site status update" },
-  WELFARE_OK:             { label: "All well",                 template: "CLIENT_WELFARE_OK",       sensitive: false, subject: "All well on site" },
-  CUSTOM:                 { label: "Custom message",           template: "CLIENT_CUSTOM",           sensitive: false, subject: "Update from the control room" },
+export const NOTIFY_TYPES: Record<
+  ClientNotificationType,
+  { label: string; template: string; sensitive: boolean; subject: string }
+> = {
+  GUARD_ARRIVED: {
+    label: "Guard arrived",
+    template: "CLIENT_ARRIVAL",
+    sensitive: false,
+    subject: "Guard on site",
+  },
+  GUARD_VERIFIED: {
+    label: "Guard verified on site",
+    template: "CLIENT_VERIFIED",
+    sensitive: false,
+    subject: "Guard verified on site",
+  },
+  GUARD_LATE: {
+    label: "Guard running late",
+    template: "CLIENT_LATE",
+    sensitive: false,
+    subject: "Guard running late",
+  },
+  MISSED_CHECK_IN: {
+    label: "Missed check-in",
+    template: "CLIENT_MISSED_CHECK_IN",
+    sensitive: false,
+    subject: "Check-in not confirmed",
+  },
+  GUARD_ABSENT: {
+    label: "Guard absent",
+    template: "CLIENT_ABSENT",
+    sensitive: true,
+    subject: "Guard absent",
+  },
+  GUARD_OUTSIDE: {
+    label: "Guard outside the site",
+    template: "CLIENT_OUTSIDE",
+    sensitive: true,
+    subject: "Guard away from the post",
+  },
+  EMERGENCY: {
+    label: "Emergency or incident",
+    template: "CLIENT_EMERGENCY",
+    sensitive: true,
+    subject: "Urgent: emergency reported",
+  },
+  ASSISTANCE: {
+    label: "Assistance requested",
+    template: "CLIENT_ASSISTANCE",
+    sensitive: true,
+    subject: "Assistance requested",
+  },
+  SHIFT_COMPLETED: {
+    label: "Shift completed",
+    template: "CLIENT_SHIFT_ENDED",
+    sensitive: false,
+    subject: "Shift completed",
+  },
+  REPLACEMENT_DISPATCHED: {
+    label: "Replacement dispatched",
+    template: "CLIENT_REPLACEMENT",
+    sensitive: false,
+    subject: "Replacement guard on the way",
+  },
+  SITE_STATUS: {
+    label: "Site status update",
+    template: "CLIENT_SITE_STATUS",
+    sensitive: false,
+    subject: "Site status update",
+  },
+  WELFARE_OK: {
+    label: "All well",
+    template: "CLIENT_WELFARE_OK",
+    sensitive: false,
+    subject: "All well on site",
+  },
+  CUSTOM: {
+    label: "Custom message",
+    template: "CLIENT_CUSTOM",
+    sensitive: false,
+    subject: "Update from the control room",
+  },
 };
 
 /** The order the composer lists them in: the common ones first. */
 export const NOTIFY_TYPE_ORDER: ClientNotificationType[] = [
-  "GUARD_VERIFIED", "GUARD_ARRIVED", "GUARD_LATE", "MISSED_CHECK_IN", "GUARD_ABSENT", "GUARD_OUTSIDE",
-  "EMERGENCY", "ASSISTANCE", "REPLACEMENT_DISPATCHED", "SHIFT_COMPLETED", "WELFARE_OK", "SITE_STATUS", "CUSTOM",
+  "GUARD_VERIFIED",
+  "GUARD_ARRIVED",
+  "GUARD_LATE",
+  "MISSED_CHECK_IN",
+  "GUARD_ABSENT",
+  "GUARD_OUTSIDE",
+  "EMERGENCY",
+  "ASSISTANCE",
+  "REPLACEMENT_DISPATCHED",
+  "SHIFT_COMPLETED",
+  "WELFARE_OK",
+  "SITE_STATUS",
+  "CUSTOM",
 ];
 
-export const NOTIFY_STATUS: Record<ClientNotificationStatus, { label: string; tone: NotifyTone; detail: string }> = {
-  PENDING_APPROVAL: { label: "Awaiting approval", tone: "warn",     detail: "Drafted. Nothing has been sent." },
-  QUEUED:           { label: "Sending",           tone: "neutral",  detail: "Being handed to the provider." },
-  SENT:             { label: "Sent",              tone: "info",     detail: "The provider accepted it. Delivery not yet confirmed." },
-  DELIVERED:        { label: "Delivered",         tone: "ok",       detail: "The provider reported delivery." },
-  FAILED:           { label: "Failed",            tone: "critical", detail: "Not delivered." },
-  DISCARDED:        { label: "Discarded",         tone: "muted",    detail: "Draft not sent." },
+export const NOTIFY_STATUS: Record<
+  ClientNotificationStatus,
+  { label: string; tone: NotifyTone; detail: string }
+> = {
+  PENDING_APPROVAL: {
+    label: "Awaiting approval",
+    tone: "warn",
+    detail: "Drafted. Nothing has been sent.",
+  },
+  QUEUED: { label: "Sending", tone: "neutral", detail: "Being handed to the provider." },
+  SENT: {
+    label: "Sent",
+    tone: "info",
+    detail: "The provider accepted it. Delivery not yet confirmed.",
+  },
+  DELIVERED: { label: "Delivered", tone: "ok", detail: "The provider reported delivery." },
+  FAILED: { label: "Failed", tone: "critical", detail: "Not delivered." },
+  DISCARDED: { label: "Discarded", tone: "muted", detail: "Draft not sent." },
 };
 
-export const CHANNEL_NAME: Record<MessageChannel, string> = { SMS: "SMS", WHATSAPP: "WhatsApp", EMAIL: "Email" };
+export const CHANNEL_NAME: Record<MessageChannel, string> = {
+  SMS: "SMS",
+  WHATSAPP: "WhatsApp",
+  EMAIL: "Email",
+};
 
 const RANK: Record<Role, number> = { SUPERVISOR: 1, ADMIN: 2, SUPER_ADMIN: 3 };
 
@@ -65,7 +164,8 @@ export function sendMode(role: Role, type: ClientNotificationType): "SEND" | "DR
   return RANK[role] >= RANK[sendRoleFor(type)] ? "SEND" : "DRAFT";
 }
 
-export const canApprove = (role: Role, type: ClientNotificationType) => sendMode(role, type) === "SEND";
+export const canApprove = (role: Role, type: ClientNotificationType) =>
+  sendMode(role, type) === "SEND";
 
 /**
  * Something that reads like a map position: two decimals of at least four places, or a "lat"/"lng"
@@ -82,11 +182,17 @@ export function containsCoordinates(text: string): boolean {
  * ARRIVAL is shared by "guard arrived" (SMS YES) and "guard verified" (GPS) so a guard who does
  * both produces one message.
  */
-export function ruleKey(rule: "ARRIVAL" | "LATE" | "OUTSIDE" | "EMERGENCY" | "SHIFT_ENDED" | "WELFARE_OK", ref: string, channel: MessageChannel): string {
+export function ruleKey(
+  rule: "ARRIVAL" | "LATE" | "OUTSIDE" | "EMERGENCY" | "SHIFT_ENDED" | "WELFARE_OK",
+  ref: string,
+  channel: MessageChannel,
+): string {
   return `auto:${rule}:${ref}:${channel}`;
 }
 
-export const manualKey = (idempotencyKey: string, channel: MessageChannel, recipient: string) => `manual:${idempotencyKey}:${channel}:${recipient}`;
+export const manualKey = (idempotencyKey: string, channel: MessageChannel, recipient: string) =>
+  `manual:${idempotencyKey}:${channel}:${recipient}`;
 
 /** A terminal state: nothing further will change it. SENT can still become DELIVERED or FAILED. */
-export const isSettled = (s: ClientNotificationStatus) => s === "DELIVERED" || s === "FAILED" || s === "DISCARDED";
+export const isSettled = (s: ClientNotificationStatus) =>
+  s === "DELIVERED" || s === "FAILED" || s === "DISCARDED";

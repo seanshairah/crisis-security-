@@ -13,18 +13,21 @@ export const maxDuration = 60;
 async function authorised(req: Request) {
   const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const secrets = [process.env.AUTOMATION_SECRET, process.env.CRON_SECRET].filter(Boolean);
-  if (secrets.some(secret => secretMatches(secret, bearer))) return true;
+  if (secrets.some((secret) => secretMatches(secret, bearer))) return true;
   if (req.method === "GET") return false;
   const { status } = await apiUser("ADMIN");
   return status === 200;
 }
 
 async function handle(req: Request) {
-  if (!(await authorised(req))) return NextResponse.json({ error: "unauthorised" }, { status: 401 });
+  if (!(await authorised(req)))
+    return NextResponse.json({ error: "unauthorised" }, { status: 401 });
   // Through the shared lease, so a cron call landing on top of a heartbeat-driven run does not run
   // the engine twice. A skipped call is still a success: the engine ran, just not because of it.
   const result = await runScheduledTick(req.headers.get("authorization") ? "cron" : "manual");
-  return NextResponse.json(result.ran ? { ran: true, ...result.report } : { ran: false, skipped: result.reason });
+  return NextResponse.json(
+    result.ran ? { ran: true, ...result.report } : { ran: false, skipped: result.reason },
+  );
 }
 
 export const GET = handle;
