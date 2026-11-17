@@ -88,12 +88,43 @@ class PatrolActivity : AppCompatActivity() {
             isEnabled = !busy; setOnClickListener { if(!busy) action() }
         })
     }
+    /** Title in the display serif, then where and when. Night shifts read "Tonight's patrol". */
+    private fun header(session: JSONObject?) {
+        label("CRISIS SECURITY", 12f)
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val title = if (session == null) "Field operations" else if (hour >= 18 || hour < 6) "Tonight's patrol" else "Today's patrol"
+        label(title, 36f).apply { typeface = ResourcesCompat.getFont(this@PatrolActivity, R.font.display) }
+        label(session?.let { "${it.getString("siteName")} · ${localTime(it.getString("startedAt"))}–${localTime(it.getString("expiresAt"))}" } ?: "Scan the checkpoint when this phone prompts you.", 13f)
+    }
+
+    /** Shift, Location, Synced: three tiles, each a word and a colour, never colour alone. Unknown is amber, never red. */
+    private fun statusTiles(session: JSONObject?) {
+        val pending = store.pendingCount()
+        val loc = prefs.lastFixState
+        val tiles = listOf(
+            Triple("Shift", if (session == null) "Not signed in" else "Ends ${localTime(session.getString("expiresAt"))}", if (session == null) R.color.warn_soft else R.color.ok_soft),
+            Triple("Location", when (loc) { "INSIDE" -> "Inside site"; "OUTSIDE" -> "Outside site"; else -> "Checking" }, when (loc) { "INSIDE" -> R.color.ok_soft; "OUTSIDE" -> R.color.critical_soft; else -> R.color.warn_soft }),
+            Triple("Synced", if (pending == 0) "Up to date" else "$pending saved", if (pending == 0) R.color.ok_soft else R.color.warn_soft),
+        )
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        tiles.forEachIndexed { i, (name, value, tint) ->
+            row.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; background = panel(getColor(tint)); setPadding(dp(12), dp(12), dp(12), dp(12))
+                addView(TextView(this@PatrolActivity).apply { text = name; textSize = 12f; setTextColor(muted) })
+                addView(TextView(this@PatrolActivity).apply { text = value; textSize = 15f; setTextColor(ink); setTypeface(typeface, Typeface.BOLD) })
+                contentDescription = "$name: $value"
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { if (i > 0) marginStart = dp(8) }
+            })
+        }
+        column.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8); bottomMargin = dp(8) })
+    }
+
     private fun render(message: String = feedbackMessage, error: Boolean = feedbackError) {
         feedbackMessage = message; feedbackError = error
         column.removeAllViews()
-        label("◈  CRISIS SECURITY", 12f)
-        label("Field operations", 36f).apply { typeface = ResourcesCompat.getFont(this@PatrolActivity, R.font.display) }
-        label("Scan the checkpoint when this phone prompts you.", 12f)
+        val live = store.config()?.optJSONObject("session")?.takeIf { System.currentTimeMillis() < PatrolStore.time(it.getString("expiresAt")) }
+        header(live)
+        statusTiles(live)
         status = label(message).apply {
             accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE
             if(error) { background=panel(getColor(R.color.critical_soft)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
@@ -129,8 +160,8 @@ class PatrolActivity : AppCompatActivity() {
                 if (a.optString("status") == "COMPLETED" || store.hasScan(a.getString("id"))) continue
                 val due = PatrolStore.time(a.getString("dueAt")); val end = PatrolStore.time(a.getString("expiresAt"))
                 if (PatrolWindows.isOpen(now, due, end, PatrolStore.time(s.getString("expiresAt")))) {
-                    open++; label("DUE NOW / ${a.getString("checkpointName")}", 19f)
-                    label("Scan by ${localTime(a.getString("expiresAt"))}", 12f)
+                    open++
+                    label("Next up · ${a.getString("checkpointName")}\nScan by ${localTime(a.getString("expiresAt"))}", 19f).apply { background = panel(getColor(R.color.warn_soft)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
                     button("Scan checkpoint QR") {
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) { ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 71); status.text = "Grant precise location, then tap Scan again"; return@button }
                         selected = a; selectedSession = s
@@ -146,6 +177,7 @@ class PatrolActivity : AppCompatActivity() {
         recent.drop(1).forEach { label("${it.checkpointName} · ${PatrolMessages.result(it.state, it.decision, it.localDecision)}",12f) }
         button("Emergency / SOS") { AlertFlow.confirmEmergency(this, AlertFlow.Feedback { text, _ -> render(text) }) }
         button("Help & messages") { startActivity(Intent(this, AlertsActivity::class.java)) }
+        button("Me") { startActivity(Intent(this, MeActivity::class.java)) }
         button("Phone settings") { startActivity(Intent(this, SettingsActivity::class.java)) }
         if(zw.co.crisis.security.util.DeviceInfo.locationPermission(this) == "denied") button("Enable precise location") { startActivity(Intent(this, PermissionsActivity::class.java)) }
         if(!androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()) button("Enable patrol notifications") { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,packageName)) }

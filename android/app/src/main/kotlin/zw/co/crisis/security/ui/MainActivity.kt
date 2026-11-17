@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         Insets.applySystemBars(b.screen, top = true, bottom = false)
         Insets.applySystemBars(b.syncBar, top = false, bottom = true)
         (b.root as? android.view.ViewGroup)?.let { root ->
-            val patrol = android.widget.Button(this).apply { text = "CRISIS / PATROL COMMAND"; setOnClickListener { startActivity(Intent(this@MainActivity, PatrolActivity::class.java)) } }
+            val patrol = com.google.android.material.button.MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply { text = "Patrol command"; isAllCaps = false; setOnClickListener { startActivity(Intent(this@MainActivity, PatrolActivity::class.java)) } }
             // Existing home layout is scrollable; insert within its content column.
             val content = b.screen as? android.view.ViewGroup
             if (content is android.widget.LinearLayout) content.addView(patrol, 1)

@@ -1,11 +1,11 @@
 # Re-records the Android layout snapshots after a visual change. Run by hand (Actions -> Record Android
-# screenshots), download the artifact, and commit the images from it into android/app/src/test/snapshots/images.
-# It uploads instead of committing, so a snapshot only changes when a person has looked at the new pictures.
+# screenshots, choose the branch). It commits the new images to that branch, so they show up in the pull
+# request's diff for a person to look at before merging, and uploads them as an artifact too.
 name: Record Android screenshots
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   record:
     runs-on: ubuntu-latest
@@ -22,3 +22,11 @@ jobs:
           name: android-snapshots
           path: android/app/src/test/snapshots/images
           if-no-files-found: error
+      - name: Commit the new images to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/app/src/test/snapshots/images
+          if git diff --cached --quiet; then echo "Snapshots unchanged."; exit 0; fi
+          git commit -m "Re-record Android layout snapshots"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
