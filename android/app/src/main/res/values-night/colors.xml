@@ -25,4 +25,21 @@
     <color name="ok_soft">#1D2A1B</color>
     <color name="white">#FFFFFF</color>
     <color name="shadow">#66000000</color>
+    <!-- Guard app (handoff v3): tints, lines and glows. -->
+    <color name="tab_bar">#EE0F0E0C</color>
+    <color name="tab_inactive">#A89F92</color>
+    <color name="chip">#26231F</color>
+    <color name="card2">#1F1C18</color>
+    <color name="card2_line">#33302B</color>
+    <color name="ring_track">#1CFFFFFF</color>
+    <color name="ok_line">#31452D</color>
+    <color name="ok_text">#9FC79A</color>
+    <color name="warn_line">#5B4420</color>
+    <color name="warn_text">#D9CBB4</color>
+    <color name="glow_accent">#4A2E12</color>
+    <color name="glow_ok">#233A22</color>
+    <color name="glow_critical">#4A1D14</color>
+    <color name="accent_bright">#F0A35A</color>
+    <color name="on_strong">#161412</color>
+    <color name="strong_surface">#F4EFE8</color>
 </resources>

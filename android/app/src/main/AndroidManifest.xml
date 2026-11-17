@@ -52,6 +52,8 @@
         <activity android:name=".ui.EmergencySentActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".ui.ScanResultActivity" android:exported="false" />
         <activity android:name=".ui.MeActivity" android:exported="false" />
+        <activity android:name=".ui.PatrolSessionActivity" android:exported="false" />
+        <activity android:name=".ui.ShiftLogActivity" android:exported="false" />
         <activity android:name=".ui.MainActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".ui.PermissionsActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" android:parentActivityName=".ui.MainActivity" />

@@ -88,6 +88,11 @@ class Prefs(context: Context) {
         get() = plain.getString("guardName", "") ?: ""
         set(v) = plain.edit().putString("guardName", v).apply()
 
+    /** "dark" (default: guards work at night), "light" or "system". Applied by GatewayApp. */
+    var themeMode: String
+        get() = plain.getString("themeMode", "dark") ?: "dark"
+        set(v) = plain.edit().putString("themeMode", v).apply()
+
     var monitoringState: String
         get() = plain.getString("monitoringState", "NOT_ON_SHIFT") ?: "NOT_ON_SHIFT"
         set(v) = plain.edit().putString("monitoringState", v).apply()

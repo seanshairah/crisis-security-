@@ -5,61 +5,73 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
+import androidx.core.content.ContextCompat
 import zw.co.crisis.security.R
 
 /**
- * A big round button that must be held for two seconds. A ring fills while the finger is down;
- * lifting early cancels, and nothing is sent. This replaces tap-then-confirm for emergencies: it is
- * one deliberate gesture, it cannot be triggered by a pocket tap, and it works with gloves on.
- * Touch-exploration (TalkBack) users get the confirm dialog instead, because holding is not possible there.
+ * The emergency control (handoff v2 "Emergency — holding"): a red disc that must be held for two seconds while a
+ * white ring fills around it. Lifting early drains the ring and sends nothing. TalkBack users cannot hold, so a
+ * click (double-tap) goes to the click listener, which shows the confirm dialog instead.
  */
 class HoldRingView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
     var holdMs: Long = HoldMath.HOLD_MS
     var label: String = ""
+        set(v) { field = v; invalidate() }
     var onComplete: (() -> Unit)? = null
+    var onProgress: ((Float) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
-    private val stroke = 10f * density
-    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = context.getColor(R.color.critical_solid) }
-    private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = stroke; color = context.getColor(R.color.line_strong) }
-    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = stroke; strokeCap = Paint.Cap.ROUND; color = context.getColor(R.color.critical) }
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.white); textAlign = Paint.Align.CENTER; textSize = 26f * density; isFakeBoldText = true; letterSpacing = 0.1f }
+    private val ringWidth = 12f * density
+    private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = ringWidth; color = 0x22FFFFFF }
+    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = ringWidth; color = 0xFFFFFFFF.toInt() }
+    private val discPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); textAlign = Paint.Align.CENTER; textSize = 20f * density; typeface = Ui.font(context, 700) }
+    private val icon = ContextCompat.getDrawable(context, R.drawable.ms_emergency)?.mutate()?.apply { setTint(0xFFFFFFFF.toInt()) }
     private val oval = RectF()
     private var progress = 0f
     private var animator: ValueAnimator? = null
     private var cancelled = false
 
-    init { isClickable = true }
+    init { isClickable = true; isFocusable = true }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val size = (240 * density).toInt()
+        val size = (210 * density).toInt()
         setMeasuredDimension(resolveSize(size, widthMeasureSpec), resolveSize(size, heightMeasureSpec))
     }
 
     override fun onDraw(canvas: Canvas) {
         val cx = width / 2f; val cy = height / 2f
-        val radius = minOf(width, height) / 2f - stroke
-        canvas.drawCircle(cx, cy, radius - stroke * 0.9f, fillPaint)
-        oval.set(cx - radius, cy - radius, cx + radius, cy + radius)
+        val outer = minOf(width, height) / 2f - ringWidth / 2f
+        oval.set(cx - outer, cy - outer, cx + outer, cy + outer)
         canvas.drawArc(oval, 0f, 360f, false, trackPaint)
         if (progress > 0f) canvas.drawArc(oval, -90f, HoldMath.sweepDegrees(progress), false, arcPaint)
-        canvas.drawText(label, cx, cy - (textPaint.descent() + textPaint.ascent()) / 2f, textPaint)
+        val disc = outer - ringWidth / 2f
+        discPaint.shader = LinearGradient(cx - disc, cy - disc, cx + disc, cy + disc, 0xFFE5452F.toInt(), 0xFF9C1F12.toInt(), Shader.TileMode.CLAMP)
+        canvas.drawCircle(cx, cy, disc, discPaint)
+        val iconSize = (54 * density).toInt()
+        icon?.setBounds((cx - iconSize / 2).toInt(), (cy - iconSize * 0.85f).toInt(), (cx + iconSize / 2).toInt(), (cy + iconSize * 0.15f).toInt())
+        icon?.draw(canvas)
+        canvas.drawText(label, cx, cy + 34f * density, textPaint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { parent?.requestDisallowInterceptTouchEvent(true); begin(); return true }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { abort(); return true }
+            MotionEvent.ACTION_DOWN -> { parent?.requestDisallowInterceptTouchEvent(true); begin() }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> abort()
         }
         return true
     }
+
+    private fun setProgress(p: Float) { progress = p; invalidate(); onProgress?.invoke(p) }
 
     private fun begin() {
         cancelled = false
@@ -68,13 +80,14 @@ class HoldRingView @JvmOverloads constructor(context: Context, attrs: AttributeS
         animator = ValueAnimator.ofFloat(progress, 1f).apply {
             duration = HoldMath.remainingMs(progress, holdMs)
             interpolator = LinearInterpolator()
-            addUpdateListener { progress = it.animatedValue as Float; invalidate() }
+            addUpdateListener { setProgress(it.animatedValue as Float) }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationCancel(animation: Animator) { cancelled = true }
                 override fun onAnimationEnd(animation: Animator) {
                     if (cancelled) return
                     performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     onComplete?.invoke()
+                    setProgress(0f)
                 }
             })
             start()
@@ -82,13 +95,9 @@ class HoldRingView @JvmOverloads constructor(context: Context, attrs: AttributeS
     }
 
     private fun abort() {
+        if (progress >= 1f) return
         animator?.cancel()
-        // The ring drains back instead of snapping, so a guard can see that it did not send.
-        animator = ValueAnimator.ofFloat(progress, 0f).apply {
-            duration = 250
-            addUpdateListener { progress = it.animatedValue as Float; invalidate() }
-            start()
-        }
+        animator = ValueAnimator.ofFloat(progress, 0f).apply { duration = 250; addUpdateListener { setProgress(it.animatedValue as Float) }; start() }
     }
 
     override fun onDetachedFromWindow() { animator?.cancel(); super.onDetachedFromWindow() }

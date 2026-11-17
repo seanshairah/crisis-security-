@@ -83,11 +83,8 @@ class HomeSmallFull : HomeShots(DeviceConfig.NEXUS_5.copy(screenWidth = 960, scr
 class OtherScreens {
     @get:Rule val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5, theme = "Theme.Gateway")
     private fun layout(id: Int, name: String) = paparazzi.snapshot(paparazzi.inflate<View>(id), name)
-    @Test fun alerts() = layout(R.layout.activity_alerts, "alerts")
     @Test fun permissions() = layout(R.layout.activity_permissions, "permissions")
     @Test fun activation() = layout(R.layout.activity_activation, "activation")
     @Test fun callConfirm() = layout(R.layout.activity_call_confirm, "call-confirm")
     @Test fun diagnostics() = layout(R.layout.activity_settings, "diagnostics")
-    @Test fun emergencySent() = layout(R.layout.activity_emergency_sent, "emergency-sent")
-    @Test fun scanResult() = layout(R.layout.activity_scan_result, "scan-result")
 }

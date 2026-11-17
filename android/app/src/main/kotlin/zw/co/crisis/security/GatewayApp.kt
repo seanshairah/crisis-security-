@@ -10,6 +10,7 @@ import zw.co.crisis.security.service.GatewayService
 class GatewayApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        applyTheme(Prefs(this).themeMode)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(NotificationChannel(CHANNEL_STATUS, "Gateway status", NotificationManager.IMPORTANCE_LOW).apply {
@@ -26,6 +27,14 @@ class GatewayApp : Application() {
     }
 
     companion object {
+        /** Dark is the default on shift (handoff v3); a guard can switch to light or follow the phone in Me. */
+        fun applyTheme(mode: String) = androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+            when (mode) {
+                "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+                "system" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            }
+        )
         const val CHANNEL_STATUS = "gateway_status"
         const val CHANNEL_CALLS = "call_requests"
     }
