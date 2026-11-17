@@ -46,6 +46,14 @@ node scripts/generate-secrets.mjs
 Set the same `DATABASE_URL` for **Preview** only if previews should see production data; otherwise give previews their
 own Supabase project (a Supabase branch) or leave it unset there.
 
+## Using the Supabase integration's variables
+
+If you added Supabase through Vercel's **Integrations**, Vercel already created `POSTGRES_URL` (transaction pooler) and
+`POSTGRES_PRISMA_URL`. The app and the build use them automatically whenever `DATABASE_URL` or `MIGRATION_DATABASE_URL` is
+missing or still holds a template placeholder such as `►PROJECT_REF►` or `<DB_PASSWORD>`: migrations run on the same
+database through the session pooler (port 5432), and the build log says which variable it used. Setting the two variables
+explicitly (as in the table above) always wins.
+
 ## 3. Deploy
 
 Redeploy production (Deployments → … → Redeploy, or push to `main`). The build log shows:
