@@ -45,3 +45,12 @@ Release tasks fail if release signing configuration is absent. The release APK m
 ## Verification
 
 Run `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run docs:api:check`, the isolated patrol/setup/security integration scripts, and the HTTP session revocation regression. CI supplies disposable PostgreSQL on loopback port 55439 and also runs Android JVM tests and a debug build. Physical device tests and deployment credentials are separate from CI; reports identify simulated/emulator evidence explicitly.
+
+
+## Content Security Policy
+
+Pages get a fresh nonce on every request (`src/middleware.ts`, policy in `src/lib/security/csp.ts`). Scripts run only with that nonce
+(`'strict-dynamic'` lets a trusted script load the map libraries), so `'unsafe-inline'` is no longer allowed for scripts. Styles keep
+`'unsafe-inline'`, because React style props and the map libraries set inline styles and a style cannot run code. API responses get
+`default-src 'none'`. Leaflet's stylesheet is bundled from npm rather than loaded from a CDN. When adding a third-party script or an
+external host, add it to `csp.ts` and check the browser console for "Refused to" on the affected page.

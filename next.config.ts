@@ -19,7 +19,6 @@ const nextConfig: NextConfig = {
   // Security headers for every response. HSTS only in production (local http must keep working).
   async headers() {
     const common = [
-      { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://api.mapbox.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.mapbox.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.mapbox.com https://events.mapbox.com https://*.tiles.mapbox.com https://maps.googleapis.com https://api.maptiler.com https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "X-Frame-Options", value: "DENY" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -28,7 +27,12 @@ const nextConfig: NextConfig = {
       { key: "X-DNS-Prefetch-Control", value: "off" },
     ];
     const hsts = process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }] : [];
-    return [{ source: "/(.*)", headers: [...common, ...hsts] }];
+    // Pages get a per-request nonce CSP from src/middleware.ts. API responses are JSON or files and never run
+    // script, so they get a fixed, strict policy here.
+    return [
+      { source: "/(.*)", headers: [...common, ...hsts] },
+      { source: "/api/(.*)", headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; frame-ancestors 'none'" }] },
+    ];
   },
 };
 

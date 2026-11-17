@@ -1,8 +1,9 @@
 import { requireUser, can } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { templatesSummary } from "@/lib/list-summaries";
 import { TEMPLATE_DEFS, renderTemplate } from "@/lib/sms/templates";
 import { updateTemplate, resetTemplate } from "@/actions/admin";
-import { PageHeader } from "@/components/ui/page";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { ActionForm } from "@/components/ui/action-form";
 import { Textarea } from "@/components/ui/form";
@@ -19,6 +20,7 @@ export default async function TemplatesPage() {
   return (
     <div className="w-full">
       <PageHeader title="Message templates" description="What guards receive at each step. Variables in double braces are filled in from the shift." />
+      <SummaryTiles items={await templatesSummary()} />
       <div className="mb-4 rounded-[12px] border border-line bg-surface px-4 py-3 text-[13px] text-ink-2">Variables: {["guard_name", "location", "start_time", "end_time", "supervisor_name", "date", "company", "other_guard"].map((v) => <code key={v} className="mr-2 rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] text-ink">{`{{${v}}}`}</code>)}</div>
       <div className="min-w-0 space-y-4">
         {TEMPLATE_DEFS.map((t) => {

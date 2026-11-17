@@ -176,3 +176,58 @@ export function callsSummary(m: { total: number; missed: number; unknown: number
     { label: "From unknown numbers", value: m.unknown, tone: m.unknown > 0 ? "warn" : "neutral" },
   ];
 }
+
+export async function auditSummary(): Promise<SummaryTile[]> {
+  const day = subDays(new Date(), 1);
+  const [events, logins, failed, security] = await Promise.all([
+    db.auditLog.count({ where: { createdAt: { gte: day } } }),
+    db.auditLog.count({ where: { action: "USER_LOGIN", createdAt: { gte: day } } }),
+    db.auditLog.count({
+      where: { action: { in: ["LOGIN_FAILED", "LOGIN_THROTTLED"] }, createdAt: { gte: day } },
+    }),
+    db.auditLog.count({
+      where: {
+        action: { in: ["SMS_WEBHOOK_REJECTED", "VOICE_WEBHOOK_REJECTED"] },
+        createdAt: { gte: day },
+      },
+    }),
+  ]);
+  return [
+    { label: "Events, last 24 hours", value: events },
+    { label: "Sign-ins", value: logins },
+    {
+      label: "Failed or throttled sign-ins",
+      value: failed,
+      tone: failed > 9 ? "critical" : failed > 0 ? "warn" : "neutral",
+    },
+    {
+      label: "Rejected webhooks",
+      value: security,
+      tone: security > 0 ? "warn" : "neutral",
+      note: "Unsigned or wrong-secret calls",
+    },
+  ];
+}
+
+export async function templatesSummary(): Promise<SummaryTile[]> {
+  const [total, active, sentToday, failed] = await Promise.all([
+    db.messageTemplate.count(),
+    db.messageTemplate.count({ where: { active: true } }),
+    db.smsMessage.count({
+      where: { direction: "OUTBOUND", createdAt: { gte: startOfDay(new Date()) } },
+    }),
+    db.smsMessage.count({
+      where: {
+        direction: "OUTBOUND",
+        status: "FAILED",
+        createdAt: { gte: subDays(new Date(), 1) },
+      },
+    }),
+  ]);
+  return [
+    { label: "Templates", value: total },
+    { label: "In use", value: active, tone: "ok" },
+    { label: "Messages sent today", value: sentToday },
+    { label: "Failed, last 24 hours", value: failed, tone: failed > 0 ? "critical" : "neutral" },
+  ];
+}

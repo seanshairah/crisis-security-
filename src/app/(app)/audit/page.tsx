@@ -1,7 +1,8 @@
 import { requireUser } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
+import { auditSummary } from "@/lib/list-summaries";
 import type { Prisma } from "@prisma/client";
-import { PageHeader } from "@/components/ui/page";
+import { PageHeader, SummaryTiles } from "@/components/ui/page";
 import { Card } from "@/components/ui/card";
 import { Table, THead, TBody, Empty } from "@/components/ui/table";
 import { Select, Input } from "@/components/ui/form";
@@ -21,6 +22,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   return (
     <div>
       <PageHeader title="Audit log" description="Who did what, when, and from where. System actions are attributed to the automation engine or the SMS gateway." />
+      <SummaryTiles items={await auditSummary()} />
       <form className="mb-4 flex flex-wrap items-center gap-2">
         <Select name="action" defaultValue={sp.action ?? ""} className="w-full sm:w-56"><option value="">Any action</option>{actions.map((a) => <option key={a.action} value={a.action}>{a.action.toLowerCase().replace(/_/g, " ")}</option>)}</Select>
         <Input name="actor" defaultValue={sp.actor ?? ""} placeholder="Actor" className="w-full sm:w-48" />

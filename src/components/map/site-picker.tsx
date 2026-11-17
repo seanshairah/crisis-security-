@@ -281,7 +281,6 @@ export function SitePicker({ names, initial, mapsKey, height = 340, showSource =
           {results.map((r, i) => <li key={i}><button type="button" className="w-full px-3 py-2 text-left hover:bg-surface-2" onClick={() => { place(r.lat, r.lng, "MAP", r.placeId ?? ""); setResults([]); setQuery(r.label); engineRef.current?.setPin(r.lat, r.lng, true); }}>{r.label}</button></li>)}
         </ul>
       )}
-      {engine !== "google" && <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />}
       <div ref={mapEl} style={{ height }} className="w-full overflow-hidden rounded-[12px] border border-line bg-surface-2" />
       <p className="text-[12px] text-ink-3">{status || `Click the map or drag the pin to the exact centre of the site. The green circle is the geofence; a dashed purple circle is a measured position's accuracy, waiting for your confirmation. Map by ${engine === "google" ? "Google" : engine === "mapbox" ? "Mapbox" : mapProviderName("leaflet")}.`}</p>
 

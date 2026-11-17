@@ -48,20 +48,26 @@ no window to prompt from until it syncs again. It is off by default; enable it p
 - **Shift handover**: tables `AttentionClaim`, `Handover`, `HandoverNote`; `/handover` page; "Take it / Release" on the queue. First claim wins, only the
   owner or an admin releases, a handover moves the outgoing operator's claims in one transaction and freezes what was open. Guard alerts keep their owner
   in `acknowledgedBy`. Covered by `npm run test:handover`.
-- **List pages**: four summary tiles (`SummaryTiles`, figures in `src/lib/list-summaries.ts`) above Guards, Shifts, Incidents, Guard alerts, Devices, Clients, Sites, Users, Message logs and Calls.
+- **List pages**: four summary tiles (`SummaryTiles`, figures in `src/lib/list-summaries.ts`) above Guards, Shifts, Incidents, Guard alerts, Devices, Clients, Sites, Users, Message logs, Calls, Templates and Audit log.
 - **Android emergency**: hold-to-send ring (`HoldRingView`, 2 s, drains back if released; TalkBack users keep the confirm dialog), then an "Emergency sent"
   screen with the delivery trail Saved / Received / Acknowledged driven by the outbox status. The alert is **never delayed**; the handoff's 5 s "undo" is
   implemented as "Sent by mistake? Tell operations", which sends a message and does not retract the alert, because there is no server-side cancel and a
   delayed emergency is the wrong trade.
 - **Android scan result**: verified / saved / problem screen with distance (inside or outside the fence) and GPS accuracy against the 50 m limit. It does
   not show the next check time, by the randomised-check rule.
-- **Screenshots**: `Record Android screenshots` workflow (run by hand) uploads freshly rendered snapshots to commit after a visual change.
+- **Android Alerts**: 130 dp emergency button, the four most-sent messages as 2 x 2 tiles (Need assistance highlighted), the rest under "More messages".
+- **Android patrol home**: "Tonight's / Today's patrol" serif title with site and hours; Shift / Location / Synced tiles (unknown is amber, never red);
+  an amber "Next up" card only while a window is open.
+- **Android Me**: signed-in guard, shift hours, patrols verified, duty site, phone and device; read-only and offline.
+- **Operations phone**: a gateway handset, not an operator's tool, so it keeps its call-monitoring layout. The handoff's "Operations (mobile)" view is
+  the portal dashboard, which is responsive and gets the same design on a phone browser.
+- **Screenshots**: `Record Android screenshots` workflow (run by hand on a branch) re-renders the snapshots, including the new emergency-sent and
+  scan-result layouts, and commits them to that branch so they appear in the pull request diff.
 
 ## Not done
 
-- Templates, Reports and Audit log have the new tokens and titles but no summary tiles; their content is not a list of records with a status to count.
-- Android screens other than patrol, scan result and emergency keep their layouts and pick up the palette, shapes and serif title.
-- The snapshot images in `android/app/src/test/snapshots` are still the old look until someone runs the workflow above and commits its output.
+- Reports keeps its own charts and figures instead of summary tiles.
+- The snapshot images in `android/app/src/test/snapshots` change only when the workflow above is run.
 - Map components are untouched (handoff: restyle chrome only).
 
 See `docs/DECISIONS.md` for why the emergency undo, window look-ahead, logout scope and handover ownership are the way they are.

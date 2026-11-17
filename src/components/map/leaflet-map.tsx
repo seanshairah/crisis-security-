@@ -91,7 +91,6 @@ export function LeafletMap({ sites, points, trails = [], scrollZoom = true, onPi
 
   return (
     <>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={host} className={className} data-testid="leaflet-map" />
     </>
   );
