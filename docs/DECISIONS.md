@@ -12,15 +12,23 @@ Short records of choices made while applying the design handoff and closing the 
 - **Would change if.** Operations wants true cancellation. That needs a guard-cancel endpoint, a `CANCELLED_BY_GUARD` alert status, an audit trail and a
   rule for what operations sees; do it as a server change first, then add the button.
 
-## 2. Patrol window look-ahead ships off
+## 2. Patrol window look-ahead: per site, automatic recommended
 
-- **Context.** The guard app hides future patrol windows, but the phone still receives the whole session plan, so a rooted phone could read it.
-- **Decision.** `PATROL_WINDOW_LOOKAHEAD_MINUTES` exists (5 to 240, `src/lib/patrol/reveal.ts`) and is **unset by default**. Unset keeps today's behaviour.
-- **Why.** Withholding windows costs offline resilience: a phone offline for longer than the look-ahead has nothing to prompt from until it syncs. That
-  trade-off depends on real coverage at each site, which has not been measured, and the guard app has not been field-tested with it on.
-- **Rollout recommendation.** Turn it on for one site first. Set it comfortably above that site's longest usual coverage gap (for example 60), watch the
-  Patrol command "Missed" and delayed-review counts for a week, then widen. If a site has long gaps, leave it off there and accept that the UI-only
-  hiding is the control.
+- **Context.** The guard app hides future patrol windows, but by default the phone receives the whole session plan, so a
+  rooted phone could read it.
+- **Decision.** Each site chooses how much of the schedule its phones hold (Sites → the site → QR checkpoints & patrol
+  timing): *Deployment default*, *Automatic*, *Whole shift* or *Custom minutes*. *Automatic* sends the next check plus
+  30 minutes for lost signal (the site's longest gap + 30, kept between 45 and 120 minutes). The deployment default comes
+  from `PATROL_WINDOW_LOOKAHEAD_MINUTES` (`auto`, a number, or unset for whole shift). Recommended production setting:
+  `auto`, with sites that have long dead zones switched to *Whole shift*.
+- **Why automatic, and why those numbers.** The phone syncs about every 5 minutes online, so it only needs the next
+  window to prompt on time; anything beyond that only helps while offline. "Next gap + 30 minutes" means a phone that
+  loses signal for half an hour still prompts for the next check, while a tampered phone shows at most the next one or
+  two checks instead of the whole night. A floor of 45 minutes covers sync delays on very frequent patrols; a cap of 120
+  keeps a relaxed site from exposing most of a shift.
+- **Cost.** A phone offline for longer than its look-ahead has no window to prompt from until it syncs; those checks
+  show as missed in Patrol command. That is why dead-zone sites stay on *Whole shift*.
+- **Watch.** After turning it on, compare Patrol command's missed and delayed-review counts with the week before, per site.
 
 ## 3. Logging out ends every session for that account
 

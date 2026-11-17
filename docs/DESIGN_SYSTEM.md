@@ -38,10 +38,7 @@ buttons and pills fully rounded. Touch targets are at least 44 px (48 dp on Andr
 
 Guards must not see the patrol schedule in advance. The guard app shows a check only while its window is open (countdown to close) and otherwise
 says "Next check: at a random time. We will alert you." Operations see the assigned windows in Patrol command.
-By default the phone still *receives* every window in its session config (it needs them to prompt and to check scans while offline); the UI hides
-them, but a rooted phone could read them. Set `PATROL_WINDOW_LOOKAHEAD_MINUTES` (5-240) to stop the server sending windows that open further
-ahead than that (`src/lib/patrol/reveal.ts`). The cost is offline resilience: a phone that loses its connection for longer than the look-ahead has
-no window to prompt from until it syncs again. It is off by default; enable it per deployment once your coverage gaps are known.
+Each site chooses how much of the schedule its phones hold (Deployment default, Automatic, Whole shift, Custom); the server withholds windows beyond that (`src/lib/patrol/reveal.ts`). Recommended: `PATROL_WINDOW_LOOKAHEAD_MINUTES=auto`, with dead-zone sites on Whole shift. Reasoning in `docs/DECISIONS.md` §2.
 
 ## Added after the first pass
 

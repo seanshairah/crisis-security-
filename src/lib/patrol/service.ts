@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { classifyFix } from "@/lib/geofence";
 import { hashGuardPin, verifyGuardPin } from "./shared-device";
 import { createPatrolPlan } from "./plan";
-import { revealWindows } from "./reveal";
+import { revealWindows, siteLookahead } from "./reveal";
 import { scanSchema, type Scan } from "./validation";
 
 export const qrHash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -54,7 +54,7 @@ export async function setPatrolPin(guardId: string, pin: string, actorId: string
   });
 }
 const sessionInclude = {
-  shift: { include: { guard: true, location: true } },
+  shift: { include: { guard: true, location: { include: { patrolPolicy: true } } } },
   assignments: { include: { checkpoint: true }, orderBy: { dueAt: "asc" as const } },
 };
 async function lockCompanyDevice(tx: Prisma.TransactionClient, deviceId: string) {
@@ -213,7 +213,11 @@ export async function patrolConfig(deviceId: string) {
       startedAt: session.startedAt,
       expiresAt: session.expiresAt,
       policyVersion: session.policyVersion,
-      assignments: revealWindows(session.assignments, now).map((a) => ({
+      assignments: revealWindows(
+        session.assignments,
+        now,
+        siteLookahead(session.shift.location.patrolPolicy),
+      ).map((a) => ({
         id: a.id,
         checkpointId: a.checkpointId,
         checkpointName: a.checkpoint.name,

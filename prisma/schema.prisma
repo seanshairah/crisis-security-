@@ -1507,6 +1507,10 @@ model PatrolPolicy {
   minIntervalMinutes Int @default(15)
   maxIntervalMinutes Int @default(40)
   responseMinutes Int @default(10)
+  /// How far ahead the guard phone is sent patrol windows (src/lib/patrol/reveal.ts). DEFAULT follows the deployment
+  /// setting PATROL_WINDOW_LOOKAHEAD_MINUTES; lookaheadMinutes is used only with CUSTOM.
+  lookaheadMode PatrolLookahead @default(DEFAULT)
+  lookaheadMinutes Int?
   version Int @default(1)
   updatedAt DateTime @updatedAt
 }
@@ -1644,4 +1648,11 @@ model HandoverNote {
   resolvedBy   User?     @relation("HandoverNoteResolver", fields: [resolvedById], references: [id])
 
   @@index([resolvedAt, createdAt])
+}
+
+enum PatrolLookahead {
+  DEFAULT
+  OFF
+  AUTO
+  CUSTOM
 }

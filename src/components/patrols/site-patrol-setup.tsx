@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { SitePicker } from "@/components/map/site-picker";
+import { autoLookahead } from "@/lib/patrol/reveal";
 type Checkpoint = {
   id: string;
   name: string;
@@ -19,7 +20,11 @@ type Policy = {
   minIntervalMinutes: number;
   maxIntervalMinutes: number;
   responseMinutes: number;
+  lookaheadMode: LookaheadMode;
+  lookaheadMinutes: number | null;
 };
+type LookaheadMode = "DEFAULT" | "OFF" | "AUTO" | "CUSTOM";
+type LookaheadDefault = { mode: "OFF" | "AUTO" | "CUSTOM"; minutes: number };
 const presets = [
   { id: "standard", name: "Standard · every 15–40 minutes", min: 15, max: 40, response: 10 },
   { id: "frequent", name: "Frequent · every 10–20 minutes", min: 10, max: 20, response: 10 },
@@ -46,6 +51,12 @@ export function SitePatrolSetup({
     minIntervalMinutes: 15,
     maxIntervalMinutes: 40,
     responseMinutes: 10,
+    lookaheadMode: "DEFAULT",
+    lookaheadMinutes: null,
+  });
+  const [lookaheadDefault, setLookaheadDefault] = useState<LookaheadDefault>({
+    mode: "OFF",
+    minutes: 0,
   });
   const [points, setPoints] = useState<Checkpoint[]>([]),
     [message, setMessage] = useState(""),
@@ -61,6 +72,7 @@ export function SitePatrolSetup({
     if (!r.ok) throw Error(d.error);
     setPoints(d.checkpoints);
     if (d.patrolPolicy) setPolicy(d.patrolPolicy);
+    if (d.lookaheadDefault) setLookaheadDefault(d.lookaheadDefault);
   }, [siteId]);
   useEffect(() => {
     load().catch((e) => setError(e.message));
@@ -351,9 +363,59 @@ export function SitePatrolSetup({
                     )}
                   </div>
                 )}
+                <label className="block text-sm">
+                  How much of the schedule does the guard phone hold?
+                  <select
+                    aria-label="How much of the schedule does the guard phone hold?"
+                    className={field}
+                    value={policy.lookaheadMode}
+                    onChange={(e) =>
+                      setPolicy({
+                        ...policy,
+                        lookaheadMode: e.target.value as LookaheadMode,
+                        lookaheadMinutes:
+                          e.target.value === "CUSTOM" ? (policy.lookaheadMinutes ?? 60) : null,
+                      })
+                    }
+                  >
+                    <option value="DEFAULT">
+                      Deployment default ·{" "}
+                      {describe(
+                        lookaheadDefault.mode,
+                        lookaheadDefault.minutes,
+                        policy.maxIntervalMinutes,
+                      )}
+                    </option>
+                    <option value="AUTO">
+                      Automatic (recommended) · {autoLookahead(policy.maxIntervalMinutes)} minutes
+                      ahead
+                    </option>
+                    <option value="OFF">Whole shift · best where signal drops for long</option>
+                    <option value="CUSTOM">Custom number of minutes</option>
+                  </select>
+                </label>
+                {policy.lookaheadMode === "CUSTOM" && (
+                  <label className="block text-sm">
+                    Minutes ahead (5–240)
+                    <input
+                      type="number"
+                      className={field}
+                      min={5}
+                      max={240}
+                      required
+                      value={policy.lookaheadMinutes ?? 60}
+                      onChange={(e) =>
+                        setPolicy({ ...policy, lookaheadMinutes: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                )}
                 <p className="text-xs text-ink-3">
-                  The exact prompt time varies within your chosen range. Updated timing applies when
-                  a guard next starts a patrol session.
+                  The exact prompt time varies within your chosen range. A shorter schedule on the
+                  phone means a guard cannot read the night&rsquo;s checks off a tampered phone, but
+                  a phone without signal for longer than that stops prompting until it reconnects.
+                  Automatic keeps the next check on the phone plus 30 minutes for lost signal.
+                  Updated settings apply when a guard next starts a patrol session.
                 </p>
                 <Button type="submit" disabled={busy || !active.length}>
                   Save patrol timing
@@ -371,4 +433,10 @@ export function SitePatrolSetup({
       </CardBody>
     </Card>
   );
+}
+
+function describe(mode: "OFF" | "AUTO" | "CUSTOM", minutes: number, maxInterval: number): string {
+  if (mode === "AUTO") return `automatic, ${autoLookahead(maxInterval)} minutes ahead`;
+  if (mode === "CUSTOM") return `${minutes} minutes ahead`;
+  return "whole shift";
 }

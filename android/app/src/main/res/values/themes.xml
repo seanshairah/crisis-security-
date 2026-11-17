@@ -27,6 +27,9 @@
         <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/light_system_bars</item>
         <item name="android:textColorPrimary">@color/ink</item>
+        <!-- Figtree everywhere (handoff v3); programmatic screens use Ui.font() so old Android versions get it too. -->
+        <item name="android:fontFamily">@font/figtree</item>
+        <item name="fontFamily">@font/figtree</item>
         <item name="materialCardViewStyle">@style/Card</item>
         <item name="materialButtonStyle">@style/Button.Filled</item>
         <item name="materialAlertDialogTheme">@style/Dialog</item>

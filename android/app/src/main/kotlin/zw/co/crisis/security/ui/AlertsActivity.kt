@@ -4,49 +4,35 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
-import android.widget.TextView
+import android.view.accessibility.AccessibilityManager
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import zw.co.crisis.security.R
 import zw.co.crisis.security.alerts.AlertSender
 import zw.co.crisis.security.data.EventQueue
-import zw.co.crisis.security.databinding.ActivityAlertsBinding
+import zw.co.crisis.security.data.Prefs
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Guard communication: the emergency button, every status message, and the history of what was
- * sent with its delivery and acknowledgement state. All sending goes through AlertFlow/AlertSender.
+ * Guard communication (handoff v2 "Alerts"): the emergency hold ring, the messages a guard sends most as tiles, the
+ * rest in a list, and what was sent with its delivery state. All sending goes through AlertFlow/AlertSender.
  */
 class AlertsActivity : AppCompatActivity() {
-    private lateinit var b: ActivityAlertsBinding
     private val handler = Handler(Looper.getMainLooper())
-    private val refresh = object : Runnable { override fun run() { renderHistory(); handler.postDelayed(this, 4000) } }
-    private val fb = AlertFlow.Feedback { text, emergency ->
-        b.feedback.text = text
-        b.feedback.setBackgroundResource(if (emergency) R.drawable.bg_banner_red else R.drawable.bg_banner_green)
-        b.feedback.visibility = View.VISIBLE
-        renderHistory()
-    }
+    private val refresh = object : Runnable { override fun run() { render(); handler.postDelayed(this, 4000) } }
+    private lateinit var chrome: GuardChrome
+    private lateinit var holder: FrameLayout
+    private var lastTap = 0L
+    private val fb = AlertFlow.Feedback { text, _ -> android.widget.Toast.makeText(this, text, android.widget.Toast.LENGTH_LONG).show(); render() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        b = ActivityAlertsBinding.inflate(layoutInflater)
-        setContentView(b.root)
-        Insets.applySystemBars(b.root)
-        b.back.setOnClickListener { finish() }
-        b.emergency.setOnClickListener { guard(it) { AlertFlow.confirmEmergency(this, fb) } }
-        b.assistance.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.NEED_ASSISTANCE, R.string.alert_assistance, R.string.alert_msg_hint_optional, false, fb) } }
-        b.incident.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.INCIDENT_REPORT, R.string.alert_incident, R.string.alert_msg_hint_required, true, fb) } }
-        b.security.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.SECURITY_ALERT, R.string.alert_security, R.string.alert_msg_hint_required, true, fb) } }
-        b.late.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.RUNNING_LATE, R.string.alert_late, R.string.alert_msg_hint_optional, false, fb) } }
-        b.status.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.STATUS_UPDATE, R.string.alert_status, R.string.alert_msg_hint_required, true, fb) } }
-        b.ok.setOnClickListener { guard(it) { AlertFlow.send(this, AlertSender.Type.SHIFT_OK, null, fb) } }
-        b.handover.setOnClickListener { guard(it) { AlertFlow.askMessage(this, AlertSender.Type.HANDOVER, R.string.alert_handover, R.string.alert_msg_hint_optional, false, fb) } }
-        b.callOps.setOnClickListener { AlertFlow.callOps(this, fb) }
-        renderHistory()
-        // Opened from a dashboard quick action: go straight to that action.
+        holder = FrameLayout(this)
+        chrome = GuardChrome.install(this, holder, if (Prefs(this).isGuardMode) GuardChrome.Tab.ALERTS else null, GuardChrome.Glow.CRITICAL)
+        render()
+        // Opened from a quick action: go straight to that action.
         when (intent.getStringExtra(EXTRA_ACTION)) {
             ACTION_EMERGENCY -> AlertFlow.confirmEmergency(this, fb)
             ACTION_ASSISTANCE -> AlertFlow.askMessage(this, AlertSender.Type.NEED_ASSISTANCE, R.string.alert_assistance, R.string.alert_msg_hint_optional, false, fb)
@@ -58,23 +44,31 @@ class AlertsActivity : AppCompatActivity() {
     override fun onResume() { super.onResume(); handler.post(refresh) }
     override fun onPause() { super.onPause(); handler.removeCallbacks(refresh) }
 
-    /** A nervous double-tap must not send twice: the row is disabled for 2.5 s after a tap. */
-    private fun guard(v: View, action: () -> Unit) { v.isEnabled = false; handler.postDelayed({ v.isEnabled = true }, 2500); action() }
+    /** A nervous double-tap must not send twice: a second tap within 2.5 s is ignored. */
+    private fun guard(action: () -> Unit) { val now = System.currentTimeMillis(); if (now - lastTap < 2500) return; lastTap = now; action() }
 
-    private fun renderHistory() {
-        if (!::b.isInitialized) return
-        val rows = EventQueue.get(this).recentComm(30, kind = "ALERT")
-        val f = SimpleDateFormat("dd MMM HH:mm", Locale.getDefault())
-        b.history.removeAllViews()
-        if (rows.isEmpty()) { b.history.addView(TextView(this).apply { text = getString(R.string.alert_history_none); setTextColor(getColor(R.color.ink3)); textSize = 14f; setPadding(0, 8, 0, 0) }); return }
-        for (r in rows) {
-            val title = TextView(this).apply { text = "${f.format(Date(r.at))} · ${labelFor(r.type)}${r.summary?.let { " · $it" } ?: ""}"; setTextColor(getColor(if (r.type == "EMERGENCY") R.color.critical else R.color.ink)); textSize = 15f; setPadding(0, 14, 0, 0); setTypeface(typeface, android.graphics.Typeface.BOLD) }
-            val state = TextView(this).apply {
-                text = commStateText(this@AlertsActivity, r)
-                setTextColor(getColor(commStateColour(r))); textSize = 13f; setPadding(0, 2, 0, 0)
-            }
-            b.history.addView(title); b.history.addView(state)
+    private val actions = object : GuardScreens.AlertActions {
+        override fun emergency() = AlertFlow.sendEmergency(this@AlertsActivity, fb)
+        override fun emergencyAccessible() {
+            val am = getSystemService(ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            if (am?.isTouchExplorationEnabled == true) AlertFlow.confirmEmergency(this@AlertsActivity, fb)
         }
+        override fun assistance() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.NEED_ASSISTANCE, R.string.alert_assistance, R.string.alert_msg_hint_optional, false, fb) }
+        override fun ok() = guard { AlertFlow.send(this@AlertsActivity, AlertSender.Type.SHIFT_OK, null, fb) }
+        override fun incident() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.INCIDENT_REPORT, R.string.alert_incident, R.string.alert_msg_hint_required, true, fb) }
+        override fun late() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.RUNNING_LATE, R.string.alert_late, R.string.alert_msg_hint_optional, false, fb) }
+        override fun security() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.SECURITY_ALERT, R.string.alert_security, R.string.alert_msg_hint_required, true, fb) }
+        override fun status() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.STATUS_UPDATE, R.string.alert_status, R.string.alert_msg_hint_required, true, fb) }
+        override fun handover() = guard { AlertFlow.askMessage(this@AlertsActivity, AlertSender.Type.HANDOVER, R.string.alert_handover, R.string.alert_msg_hint_optional, false, fb) }
+        override fun callOps() = AlertFlow.callOps(this@AlertsActivity, fb)
+    }
+
+    private fun render() {
+        val f = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val history = EventQueue.get(this).recentComm(30, kind = "ALERT").map { r -> LogMapper.alert(r.type, labelFor(r.type), r.status, commStateText(this, r), f.format(Date(r.at)), r.at) }
+        holder.removeAllViews()
+        holder.addView(GuardScreens.alerts(this, history, Prefs(this).opsPhone.isNotBlank(), actions))
+        chrome.refreshSync()
     }
 
     companion object {
