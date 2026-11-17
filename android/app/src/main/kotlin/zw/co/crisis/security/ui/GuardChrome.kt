@@ -42,6 +42,9 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
     class Frame(val root: FrameLayout, val body: View, val footer: LinearLayout, val sync: LinearLayout)
 
     companion object {
+        /** Sync line (40) + hairline (1) + tab row (10 + 52 + 10), plus a little air. */
+        const val FOOTER_DP = 121
+
         fun install(a: Activity, content: View, tab: Tab?, glow: Glow = Glow.ACCENT, scroll: Boolean = true): GuardChrome {
             val f = frame(a, content, tab, glow, scroll) { open(a, it) }
             a.setContentView(f.root)
@@ -49,7 +52,7 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
             ViewCompat.setOnApplyWindowInsetsListener(f.root) { _, insets ->
                 val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
                 f.footer.updatePadding(bottom = bars.bottom)
-                f.body.updatePadding(top = bars.top, bottom = if (tab == null) bars.bottom else f.body.paddingBottom)
+                f.body.updatePadding(top = bars.top, bottom = bars.bottom + if (tab == null) 0 else Ui.dp(a, FOOTER_DP))
                 insets
             }
             ViewCompat.requestApplyInsets(f.root)
@@ -65,8 +68,8 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
             if (tab != null) {
                 footer.addView(sync, LinearLayout.LayoutParams(-1, Ui.dp(c, 40)))
                 footer.addView(tabBar(c, tab, onTab), LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT))
-                // Content always clears the footer, whatever height the navigation bar gives it.
-                footer.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> if (body.paddingBottom != v.height) body.updatePadding(bottom = v.height) }
+                // Content clears the footer from the first frame; the navigation-bar inset is added on top by install().
+                body.updatePadding(bottom = FOOTER_DP.let { Ui.dp(c, it) })
             }
             root.addView(footer, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
             return Frame(root, body, footer, sync)
@@ -102,7 +105,7 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
                 bar.addView(Ui.column(c).apply {
                     gravity = Gravity.CENTER_HORIZONTAL; minimumHeight = Ui.dp(c, 52)
                     addView(Ui.icon(c, t.icon, 26, tone))
-                    addView(Ui.text(c, t.label, 11f, tone, if (on) 600 else 500).apply { setPadding(0, Ui.dp(c, 3), 0, 0) })
+                    addView(Ui.text(c, t.label, 11f, tone, if (on) 600 else 500).apply { gravity = Gravity.CENTER; setPadding(0, Ui.dp(c, 3), 0, 0) })
                     isClickable = true; isFocusable = true; isSelected = on; contentDescription = t.label
                     setOnClickListener { if (!on) onTab(t) }
                 }, LinearLayout.LayoutParams(0, -2, 1f))

@@ -71,5 +71,6 @@ object Ui {
     fun lp(w: Int, h: Int, top: Int = 0, side: Int = 0) = LinearLayout.LayoutParams(w, h).apply { topMargin = top; marginStart = side; marginEnd = side }
     const val MATCH = LinearLayout.LayoutParams.MATCH_PARENT
     const val WRAP = LinearLayout.LayoutParams.WRAP_CONTENT
-    fun center(v: View) = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER).also { v.layoutParams = it }
+    /** Centres [v] in a FrameLayout, keeping any size it already has (an icon's dp size). */
+    fun center(v: View) = FrameLayout.LayoutParams(v.layoutParams?.width ?: FrameLayout.LayoutParams.WRAP_CONTENT, v.layoutParams?.height ?: FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER).also { v.layoutParams = it }
 }

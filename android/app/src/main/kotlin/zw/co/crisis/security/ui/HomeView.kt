@@ -62,7 +62,7 @@ object HomeView {
                     gravity = Gravity.CENTER
                     background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFFF0A35A.toInt(), 0xFFB8661A.toInt())).apply { shape = GradientDrawable.OVAL }
                     addView(Ui.icon(c, R.drawable.ms_qr_code_scanner, 64, R.color.on_accent))
-                    addView(Ui.text(c, "Scan now", 26f, R.color.on_accent, 700).apply { setPadding(0, dp(2), 0, 0) })
+                    addView(Ui.text(c, "Scan now", 26f, R.color.on_accent, 700).apply { gravity = Gravity.CENTER; setPadding(0, dp(2), 0, 0) })
                     isClickable = true; isFocusable = true; contentDescription = "Scan now, ${s.window.checkpoint}"
                     setOnClickListener { actions.scan(s.window) }
                 }
@@ -91,7 +91,7 @@ object HomeView {
                 val disc = Ui.column(c).apply {
                     gravity = Gravity.CENTER; background = Ui.oval(c.getColor(R.color.ok_soft), c.getColor(R.color.ok_line), dp(1))
                     addView(Ui.icon(c, R.drawable.ms_verified_user, 64, R.color.ok))
-                    addView(Ui.text(c, "All clear", 22f, R.color.ink, 600).apply { setPadding(0, dp(4), 0, 0) })
+                    addView(Ui.text(c, "All clear", 22f, R.color.ink, 600).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, 0) })
                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES; contentDescription = "All clear. No check is open."
                 }
                 col.addView(ringFrame(c, ring, disc), Ui.lp(MATCH, WRAP, dp(22)))
