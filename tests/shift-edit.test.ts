@@ -2,7 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { editPolicy, deletePolicy, type ShiftTraceCounts } from "../src/lib/shift-edit";
 
-const noTrace: ShiftTraceCounts = { checkIns: 0, welfareChecks: 0, incidents: 0, smsMessages: 0, callLogs: 0, locationEvents: 0, alerts: 0, notifications: 0, evidence: 0, networkChecks: 0 };
+const noTrace: ShiftTraceCounts = {
+  checkIns: 0,
+  welfareChecks: 0,
+  incidents: 0,
+  smsMessages: 0,
+  callLogs: 0,
+  locationEvents: 0,
+  alerts: 0,
+  notifications: 0,
+  evidence: 0,
+  networkChecks: 0,
+};
 
 test("a scheduled shift that nothing has touched is fully editable", () => {
   const p = editPolicy({ status: "SCHEDULED" });
@@ -23,7 +34,11 @@ test("a closed shift is a record of what happened and is never edited", () => {
 test("once the guard is on post the paperwork stays editable but the schedule is fixed", () => {
   const p = editPolicy({ status: "ON_DUTY", arrivalConfirmedAt: new Date() });
   assert.equal(p.canEdit, true, "instructions and the geofence can still be corrected");
-  assert.equal(p.canMoveSchedule, false, "guard, site and times are anchored to the attendance record");
+  assert.equal(
+    p.canMoveSchedule,
+    false,
+    "guard, site and times are anchored to the attendance record",
+  );
   assert.match(p.reason!, /on post/);
 });
 
@@ -65,9 +80,14 @@ test("an attendance record blocks deletion outright", () => {
 
 test("every kind of operational trace blocks deletion and is named in the reason", () => {
   const cases: [keyof ShiftTraceCounts, RegExp][] = [
-    ["checkIns", /1 check-in/], ["welfareChecks", /1 welfare check/], ["incidents", /1 incident/],
-    ["smsMessages", /1 message/], ["callLogs", /1 call/], ["locationEvents", /1 location event/],
-    ["alerts", /1 alert/], ["notifications", /1 notification/],
+    ["checkIns", /1 check-in/],
+    ["welfareChecks", /1 welfare check/],
+    ["incidents", /1 incident/],
+    ["smsMessages", /1 message/],
+    ["callLogs", /1 call/],
+    ["locationEvents", /1 location event/],
+    ["alerts", /1 alert/],
+    ["notifications", /1 notification/],
   ];
   for (const [key, pattern] of cases) {
     const d = deletePolicy({ status: "SCHEDULED" }, { ...noTrace, [key]: 1 });

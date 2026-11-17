@@ -47,10 +47,12 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run docs:api:check
+      - run: node scripts/dev/android-strings-check.mjs --strict
       - run: npm test
       - run: npm run test:patrol-integration
       - run: npm run test:setup-integration
       - run: npx tsx scripts/dev/security-hardening-integration.ts
+      - run: npm run test:handover
       - run: npm run build
       - name: Start isolated portal
         run: |

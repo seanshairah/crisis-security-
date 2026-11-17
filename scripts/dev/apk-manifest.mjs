@@ -23,7 +23,8 @@ const SDK = process.env.ANDROID_SDK_ROOT || process.env.ANDROID_HOME || "/opt/an
 
 function tool(name) {
   const dir = path.join(SDK, "build-tools");
-  if (!existsSync(dir)) throw new Error(`no Android build-tools under ${dir}; set ANDROID_SDK_ROOT`);
+  if (!existsSync(dir))
+    throw new Error(`no Android build-tools under ${dir}; set ANDROID_SDK_ROOT`);
   const version = readdirSync(dir).sort().pop();
   const p = path.join(dir, version, name);
   if (!existsSync(p)) throw new Error(`${name} not found in ${dir}/${version}`);
@@ -42,7 +43,9 @@ const versionCode = Number(pick(/versionCode='(\d+)'/));
 const applicationId = pick(/package: name='([^']+)'/);
 const minSdk = Number(pick(/minSdkVersion:'(\d+)'/));
 
-const certs = execFileSync(tool("apksigner"), ["verify", "--print-certs", APK], { encoding: "utf8" });
+const certs = execFileSync(tool("apksigner"), ["verify", "--print-certs", APK], {
+  encoding: "utf8",
+});
 const signer = (certs.match(/Signer #1 certificate DN: (.+)/) ?? [])[1]?.trim() ?? "unknown";
 // The debug key's DN is fixed and well known.
 const debugSigned = /CN=Android Debug/i.test(signer);

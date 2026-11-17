@@ -49,12 +49,13 @@
     "apk:manifest": "node scripts/dev/apk-manifest.mjs",
     "test:app-release": "node scripts/dev/app-release-e2e.mjs",
     "test:patrol-integration": "tsx scripts/dev/crisis-patrol-integration.ts",
+    "test:handover": "tsx scripts/dev/handover-integration.ts",
     "test:setup-integration": "tsx scripts/dev/crisis-setup-integration.ts",
     "local:dev": "next dev -H 127.0.0.1 -p 3139",
     "local:start": "next start -H 127.0.0.1 -p 3139",
     "local:usb": "node scripts/dev/usb-test.mjs",
-    "format:security": "prettier --write \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
-    "format:check": "prettier --check \"src/lib/patrol/**/*.ts\" \"src/app/api/patrols/**/*.ts\" \"src/lib/security/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
     "docs:api": "tsx scripts/dev/generate-patrol-api-docs.ts",
     "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check"
   },
@@ -62,6 +63,8 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@fontsource/figtree": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@neondatabase/serverless": "^1.2.0",
     "@prisma/adapter-neon": "^6.19.3",
     "@prisma/client": "^6.19.3",

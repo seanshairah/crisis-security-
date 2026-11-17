@@ -38,7 +38,14 @@ export async function createIncident(input: CreateIncidentInput) {
       occurredAt: input.occurredAt ?? new Date(),
     },
   });
-  await audit({ userId: input.actorUserId, actor: input.actorName ?? "system", action: "INCIDENT_CREATED", entity: "Incident", entityId: incident.id, details: { incidentNo, category: input.category, severity: input.severity } });
+  await audit({
+    userId: input.actorUserId,
+    actor: input.actorName ?? "system",
+    action: "INCIDENT_CREATED",
+    entity: "Incident",
+    entityId: incident.id,
+    details: { incidentNo, category: input.category, severity: input.severity },
+  });
   // A site that asks for it gets a draft client message for the super admin to approve. Nothing is sent from here.
   if (input.category === "EMERGENCY" || input.severity === "CRITICAL") {
     const { onEmergencyReported } = await import("@/lib/client-notifications/rules");
@@ -60,5 +67,8 @@ export const CATEGORY_LABEL: Record<IncidentCategory, string> = {
   OTHER: "Other",
 };
 
-export const sevTone = (s: string) => (s === "CRITICAL" || s === "HIGH" ? "critical" : s === "MEDIUM" ? "warn" : "neutral") as "critical" | "warn" | "neutral";
-export const statusTone = (s: string) => (s === "OPEN" ? "critical" : s === "ACKNOWLEDGED" ? "warn" : "ok") as "critical" | "warn" | "ok";
+export const sevTone = (s: string) =>
+  (s === "CRITICAL" || s === "HIGH" ? "critical" : s === "MEDIUM" ? "warn" : "neutral") as
+    "critical" | "warn" | "neutral";
+export const statusTone = (s: string) =>
+  (s === "OPEN" ? "critical" : s === "ACKNOWLEDGED" ? "warn" : "ok") as "critical" | "warn" | "ok";

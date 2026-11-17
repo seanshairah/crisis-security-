@@ -1,59 +1,227 @@
-import assert from 'node:assert/strict';
-import { chromium } from 'playwright-core';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import { randomUUID, createHash } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
-const target = new URL(process.env.DATABASE_URL || 'http://missing');
-if (target.hostname !== '127.0.0.1' || target.port !== '55439' || target.pathname !== '/crisis_test') throw Error('Isolated test DB required');
-const base = 'http://localhost:3139';
+import assert from "node:assert/strict";
+import { chromium } from "playwright-core";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import { randomUUID, createHash } from "node:crypto";
+import { mkdir } from "node:fs/promises";
+const target = new URL(process.env.DATABASE_URL || "http://missing");
+if (
+  target.hostname !== "127.0.0.1" ||
+  target.port !== "55439" ||
+  target.pathname !== "/crisis_test"
+)
+  throw Error("Isolated test DB required");
+const base = "http://localhost:3139";
 const db = new PrismaClient();
 const tag = randomUUID();
-const email = `ui-${tag}@test.invalid`; const password = `Test-${tag}`;
-const user = await db.user.create({ data: { name: 'Crisis verifier', email, passwordHash: await bcrypt.hash(password, 10), role: 'ADMIN' } });
-const supervisor = await db.user.create({ data: { name: 'Supervisor', email: `supervisor-${tag}@test.invalid`, passwordHash: await bcrypt.hash(password, 10), role: 'SUPERVISOR' } });
-const client = await db.client.create({ data: { code: `ui-${tag}`, name: 'Field verification company' } });
-const site = await db.location.create({ data: { code: `ui-${tag}`, clientId: client.id, name: 'North perimeter verification', address: 'Isolated test site', latitude: -17.8, longitude: 31 } });
-const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
-await mkdir('artifacts/verification', { recursive: true });
+const email = `ui-${tag}@test.invalid`;
+const password = `Test-${tag}`;
+const user = await db.user.create({
+  data: {
+    name: "Crisis verifier",
+    email,
+    passwordHash: await bcrypt.hash(password, 10),
+    role: "ADMIN",
+  },
+});
+const supervisor = await db.user.create({
+  data: {
+    name: "Supervisor",
+    email: `supervisor-${tag}@test.invalid`,
+    passwordHash: await bcrypt.hash(password, 10),
+    role: "SUPERVISOR",
+  },
+});
+const client = await db.client.create({
+  data: { code: `ui-${tag}`, name: "Field verification company" },
+});
+const site = await db.location.create({
+  data: {
+    code: `ui-${tag}`,
+    clientId: client.id,
+    name: "North perimeter verification",
+    address: "Isolated test site",
+    latitude: -17.8,
+    longitude: 31,
+  },
+});
+const browser = await chromium.launch({
+  executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  headless: true,
+});
+await mkdir("artifacts/verification", { recursive: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const api = context.request;
-  assert.equal((await api.post(`${base}/api/patrols/credentials`, { data: { guardId: 'x', pin: '123456' } })).status(), 401);
-  const login = await api.post(`${base}/api/auth/login`, { data: { email, password } }); assert.equal(login.status(), 200, await login.text());
-  const config = await api.post(`${base}/api/patrols/sites/${site.id}`, { data: { name: 'North gate', latitude: -17.8, longitude: 31, radiusM: 50, priority: 2, minimumVisits: 2 } });
-  assert.equal(config.status(), 201, await config.text()); const qr = await config.json(); assert.match(qr.qrImage, /^data:image\/png;base64,/);
-  const policy = await api.put(`${base}/api/patrols/sites/${site.id}`, { data: { enabled: true, minIntervalMinutes: 10, maxIntervalMinutes: 30, responseMinutes: 5 } }); assert.equal(policy.status(), 200, await policy.text());
-  const report = await api.get(`${base}/api/patrols/report?siteId=${site.id}`); assert.equal(report.status(), 200); assert.match(report.headers()['content-type'], /text\/csv/);
-  const guard = await db.guard.create({ data: { guardNo: `ui-${tag}`, firstName: 'Tendai', lastName: 'Verification', phone: `ui-${tag}`, nationalId: `ui-${tag}` } });
+  assert.equal(
+    (
+      await api.post(`${base}/api/patrols/credentials`, { data: { guardId: "x", pin: "123456" } })
+    ).status(),
+    401,
+  );
+  const login = await api.post(`${base}/api/auth/login`, { data: { email, password } });
+  assert.equal(login.status(), 200, await login.text());
+  const config = await api.post(`${base}/api/patrols/sites/${site.id}`, {
+    data: {
+      name: "North gate",
+      latitude: -17.8,
+      longitude: 31,
+      radiusM: 50,
+      priority: 2,
+      minimumVisits: 2,
+    },
+  });
+  assert.equal(config.status(), 201, await config.text());
+  const qr = await config.json();
+  assert.match(qr.qrImage, /^data:image\/png;base64,/);
+  const policy = await api.put(`${base}/api/patrols/sites/${site.id}`, {
+    data: { enabled: true, minIntervalMinutes: 10, maxIntervalMinutes: 30, responseMinutes: 5 },
+  });
+  assert.equal(policy.status(), 200, await policy.text());
+  const report = await api.get(`${base}/api/patrols/report?siteId=${site.id}`);
+  assert.equal(report.status(), 200);
+  assert.match(report.headers()["content-type"], /text\/csv/);
+  const guard = await db.guard.create({
+    data: {
+      guardNo: `ui-${tag}`,
+      firstName: "Tendai",
+      lastName: "Verification",
+      phone: `ui-${tag}`,
+      nationalId: `ui-${tag}`,
+    },
+  });
   const deviceToken = `test-${tag}`;
-  const device = await db.gatewayDevice.create({ data: { deviceName: 'Crisis / company handset 01', phoneNumber: `ui-${tag}`, mode: 'GUARD', activationStatus: 'ACTIVE', status: 'ONLINE', tokenHash: createHash('sha256').update(deviceToken).digest('hex') } });
-  assert.equal((await api.post(`${base}/api/patrols/credentials`, { data: { guardId: guard.id, pin: '654321' } })).status(), 200);
-  assert.equal((await api.post(`${base}/api/patrols/devices`, { data: { deviceId: device.id, locationId: site.id } })).status(), 200);
-  await db.shift.create({ data: { guardId: guard.id, locationId: site.id, startAt: new Date(Date.now() - 60000), endAt: new Date(Date.now() + 3600000), durationMinutes: 61, status: 'ON_DUTY' } });
+  const device = await db.gatewayDevice.create({
+    data: {
+      deviceName: "Crisis / company handset 01",
+      phoneNumber: `ui-${tag}`,
+      mode: "GUARD",
+      activationStatus: "ACTIVE",
+      status: "ONLINE",
+      tokenHash: createHash("sha256").update(deviceToken).digest("hex"),
+    },
+  });
+  assert.equal(
+    (
+      await api.post(`${base}/api/patrols/credentials`, {
+        data: { guardId: guard.id, pin: "654321" },
+      })
+    ).status(),
+    200,
+  );
+  assert.equal(
+    (
+      await api.post(`${base}/api/patrols/devices`, {
+        data: { deviceId: device.id, locationId: site.id },
+      })
+    ).status(),
+    200,
+  );
+  await db.shift.create({
+    data: {
+      guardId: guard.id,
+      locationId: site.id,
+      startAt: new Date(Date.now() - 60000),
+      endAt: new Date(Date.now() + 3600000),
+      durationMinutes: 61,
+      status: "ON_DUTY",
+    },
+  });
   const headers = { Authorization: `Bearer ${deviceToken}` };
-  const signIn = await api.post(`${base}/api/patrols/session`, { headers, data: { guardNo: guard.guardNo, pin: '654321' } }); assert.equal(signIn.status(), 200, await signIn.text());
-  const session = (await signIn.json()).session; assert.equal(session.guardId, guard.id);
-  const assignment = session.assignments[0]; const rawQr = `crisis:checkpoint:${tag}`;
-  await db.patrolCheckpoint.update({ where: { id: qr.checkpoint.id }, data: { qrHash: createHash('sha256').update(rawQr).digest('hex') } });
-  await db.patrolAssignment.update({ where: { id: assignment.id }, data: { dueAt: new Date(Date.now() - 1000), expiresAt: new Date(Date.now() + 300000) } });
-  const event = { eventId: randomUUID(), sessionId: session.id, assignmentId: assignment.id, qr: rawQr, capturedAt: new Date().toISOString(), latitude: -17.8, longitude: 31, accuracyM: 5, mock: false };
-  const sent = await api.post(`${base}/api/patrols/events`, { headers, data: { events: [event] } }); assert.equal(sent.status(), 200); assert.equal((await sent.json()).acks[0].decision, 'ACCEPTED');
-  const replay = await api.post(`${base}/api/patrols/events`, { headers, data: { events: [event] } }); assert.equal((await replay.json()).acks[0].status, 'duplicate');
+  const signIn = await api.post(`${base}/api/patrols/session`, {
+    headers,
+    data: { guardNo: guard.guardNo, pin: "654321" },
+  });
+  assert.equal(signIn.status(), 200, await signIn.text());
+  const session = (await signIn.json()).session;
+  assert.equal(session.guardId, guard.id);
+  const assignment = session.assignments[0];
+  const rawQr = `crisis:checkpoint:${tag}`;
+  await db.patrolCheckpoint.update({
+    where: { id: qr.checkpoint.id },
+    data: { qrHash: createHash("sha256").update(rawQr).digest("hex") },
+  });
+  await db.patrolAssignment.update({
+    where: { id: assignment.id },
+    data: { dueAt: new Date(Date.now() - 1000), expiresAt: new Date(Date.now() + 300000) },
+  });
+  const event = {
+    eventId: randomUUID(),
+    sessionId: session.id,
+    assignmentId: assignment.id,
+    qr: rawQr,
+    capturedAt: new Date().toISOString(),
+    latitude: -17.8,
+    longitude: 31,
+    accuracyM: 5,
+    mock: false,
+  };
+  const sent = await api.post(`${base}/api/patrols/events`, { headers, data: { events: [event] } });
+  assert.equal(sent.status(), 200);
+  assert.equal((await sent.json()).acks[0].decision, "ACCEPTED");
+  const replay = await api.post(`${base}/api/patrols/events`, {
+    headers,
+    data: { events: [event] },
+  });
+  assert.equal((await replay.json()).acks[0].status, "duplicate");
   assert.equal((await api.get(`${base}/api/patrols/session`, { headers })).status(), 200);
-  const page = await context.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
-  for (const [path, filename] of [['/patrols', 'patrol-command-desktop.png'], [`/patrols?siteId=${site.id}`, 'patrol-site-setup.png'], ['/dashboard', 'dashboard-desktop.png'], [`/locations/${site.id}`, 'location-integration.png']]) {
-    const response = await page.goto(`${base}${path}`, { waitUntil: 'domcontentloaded' }); assert.equal(response.status(), 200); await page.locator('h1').first().waitFor({ state: 'visible' }); await page.screenshot({ path: `artifacts/verification/${filename}`, fullPage: true });
-    assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth + 2), false, `horizontal overflow at ${path}`);
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  for (const [path, filename] of [
+    ["/patrols", "patrol-command-desktop.png"],
+    [`/patrols?siteId=${site.id}`, "patrol-site-setup.png"],
+    ["/dashboard", "dashboard-desktop.png"],
+    [`/locations/${site.id}`, "location-integration.png"],
+  ]) {
+    const response = await page.goto(`${base}${path}`, { waitUntil: "domcontentloaded" });
+    assert.equal(response.status(), 200);
+    await page.locator("h1").first().waitFor({ state: "visible" });
+    await page.screenshot({ path: `artifacts/verification/${filename}`, fullPage: true });
+    assert.equal(
+      await page.locator("body").evaluate((el) => el.scrollWidth > innerWidth + 2),
+      false,
+      `horizontal overflow at ${path}`,
+    );
   }
-  await page.setViewportSize({ width: 390, height: 844 }); await page.goto(`${base}/patrols`, { waitUntil: 'domcontentloaded' }); await page.screenshot({ path: 'artifacts/verification/patrol-command-mobile.png', fullPage: true });
-  assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth + 2), false, 'mobile overflow');
-  assert.deepEqual(errors, [], 'browser errors');
-  const sup = await browser.newContext(); await sup.request.post(`${base}/api/auth/login`, { data: { email: supervisor.email, password } });
-  assert.equal((await sup.request.put(`${base}/api/patrols/sites/${site.id}`, { data: { enabled: false, minIntervalMinutes: 1, maxIntervalMinutes: 2, responseMinutes: 1 } })).status(), 403);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/patrols`, { waitUntil: "domcontentloaded" });
+  await page.screenshot({
+    path: "artifacts/verification/patrol-command-mobile.png",
+    fullPage: true,
+  });
+  assert.equal(
+    await page.locator("body").evaluate((el) => el.scrollWidth > innerWidth + 2),
+    false,
+    "mobile overflow",
+  );
+  assert.deepEqual(errors, [], "browser errors");
+  const sup = await browser.newContext();
+  await sup.request.post(`${base}/api/auth/login`, { data: { email: supervisor.email, password } });
+  assert.equal(
+    (
+      await sup.request.put(`${base}/api/patrols/sites/${site.id}`, {
+        data: { enabled: false, minIntervalMinutes: 1, maxIntervalMinutes: 2, responseMinutes: 1 },
+      })
+    ).status(),
+    403,
+  );
   assert.equal((await sup.request.get(`${base}/api/patrols/report`)).status(), 200);
-  assert.equal((await api.post(`${base}/api/patrols/events`, { data: { events: [] } })).status(), 401);
-  assert.equal((await api.post(`${base}/api/patrols/logout`, { headers, data: { sessionId: session.id } })).status(), 200);
+  assert.equal(
+    (await api.post(`${base}/api/patrols/events`, { data: { events: [] } })).status(),
+    401,
+  );
+  assert.equal(
+    (
+      await api.post(`${base}/api/patrols/logout`, { headers, data: { sessionId: session.id } })
+    ).status(),
+    200,
+  );
   assert.equal((await api.get(`${base}/api/patrols/session`, { headers })).status(), 200);
-  console.log('PASS: real HTTP auth/RBAC, checkpoint QR creation, policy persistence, CSV, dashboard/location integration, desktop/mobile browser render with no errors or page overflow');
-} finally { await browser.close(); await db.$disconnect(); }
+  console.log(
+    "PASS: real HTTP auth/RBAC, checkpoint QR creation, policy persistence, CSV, dashboard/location integration, desktop/mobile browser render with no errors or page overflow",
+  );
+} finally {
+  await browser.close();
+  await db.$disconnect();
+}

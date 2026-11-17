@@ -305,8 +305,8 @@ object HomeScreen {
         if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
     }
 
-    fun strong(t: Tone): Int = when (t) { Tone.OK -> R.color.accent_strong; Tone.INFO -> R.color.info; Tone.WARN -> R.color.warn_strong; Tone.CRITICAL -> R.color.critical; Tone.NEUTRAL -> R.color.ink2 }
-    fun soft(t: Tone): Int = when (t) { Tone.OK -> R.color.accent_soft; Tone.INFO -> R.color.info_soft; Tone.WARN -> R.color.warn_soft; Tone.CRITICAL -> R.color.critical_soft; Tone.NEUTRAL -> R.color.surface3 }
+    fun strong(t: Tone): Int = when (t) { Tone.OK -> R.color.ok; Tone.INFO -> R.color.info; Tone.WARN -> R.color.warn_strong; Tone.CRITICAL -> R.color.critical; Tone.NEUTRAL -> R.color.ink2 }
+    fun soft(t: Tone): Int = when (t) { Tone.OK -> R.color.ok_soft; Tone.INFO -> R.color.info_soft; Tone.WARN -> R.color.warn_soft; Tone.CRITICAL -> R.color.critical_soft; Tone.NEUTRAL -> R.color.surface3 }
 
     private fun time(ms: Long): String = if (ms <= 0) "—" else SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(ms))
 

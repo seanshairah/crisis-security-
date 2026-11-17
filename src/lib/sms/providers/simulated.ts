@@ -11,7 +11,10 @@ export class SimulatedProvider implements SmsProvider {
   readonly name = "simulated";
 
   async sendSMS(): Promise<SendResult> {
-    return { ok: true, providerMessageId: `sim_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}` };
+    return {
+      ok: true,
+      providerMessageId: `sim_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+    };
   }
 
   async sendWhatsApp(): Promise<SendResult> {

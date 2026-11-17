@@ -4,9 +4,17 @@ import { selectDeviceShift } from "../src/lib/gateway/device-shift";
 
 const at = (iso: string) => new Date(iso);
 // Zimbabwe is UTC+2: an 18:00–06:00 local night shift is 16:00Z–04:00Z the next day.
-const night = { id: "night", startAt: at("2026-10-20T16:00:00Z"), endAt: at("2026-10-21T04:00:00Z") };
+const night = {
+  id: "night",
+  startAt: at("2026-10-20T16:00:00Z"),
+  endAt: at("2026-10-21T04:00:00Z"),
+};
 const day = { id: "day", startAt: at("2026-10-21T04:00:00Z"), endAt: at("2026-10-21T16:00:00Z") };
-const tomorrowNight = { id: "next", startAt: at("2026-10-21T16:00:00Z"), endAt: at("2026-10-22T04:00:00Z") };
+const tomorrowNight = {
+  id: "next",
+  startAt: at("2026-10-21T16:00:00Z"),
+  endAt: at("2026-10-22T04:00:00Z"),
+};
 
 test("a shift in progress is the one, across midnight", () => {
   assert.equal(selectDeviceShift([night, day], at("2026-10-20T23:30:00Z"))?.id, "night"); // 01:30 local
@@ -28,7 +36,13 @@ test("just ended, with nothing about to start: still the ended shift for 30 minu
 
 test("about to start beats just ended", () => {
   assert.equal(selectDeviceShift([day, tomorrowNight], at("2026-10-21T16:00:00Z"))?.id, "next"); // in progress from 16:00
-  assert.equal(selectDeviceShift([day, { ...tomorrowNight, startAt: at("2026-10-21T16:05:00Z") }], at("2026-10-21T16:01:00Z"))?.id, "next");
+  assert.equal(
+    selectDeviceShift(
+      [day, { ...tomorrowNight, startAt: at("2026-10-21T16:05:00Z") }],
+      at("2026-10-21T16:01:00Z"),
+    )?.id,
+    "next",
+  );
 });
 
 test("otherwise the next shift, and nothing when there is none", () => {

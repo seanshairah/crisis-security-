@@ -16,7 +16,16 @@ export async function sendManualSms(input: { guardId: string; body: string }) {
   const guard = await db.guard.findUnique({ where: { id: input.guardId } });
   if (!guard) return { ok: false, error: "Guard not found." };
   const shift = await findLiveShiftForGuard(guard.id);
-  const msg = await sendSms({ to: guard.phone, body: input.body.trim(), type: "GENERAL", guardId: guard.id, shiftId: shift?.id, locationId: shift?.locationId, actor: user!.name, userId: user!.id });
+  const msg = await sendSms({
+    to: guard.phone,
+    body: input.body.trim(),
+    type: "GENERAL",
+    guardId: guard.id,
+    shiftId: shift?.id,
+    locationId: shift?.locationId,
+    actor: user!.name,
+    userId: user!.id,
+  });
   revalidatePath("/sms");
   return { ok: msg.status !== "FAILED", error: msg.error ?? undefined };
 }
@@ -27,8 +36,19 @@ export async function simulateInbound(input: { guardId: string; body: string }) 
   if (!can.simulate(user)) return { ok: false as const, error: "Not permitted." };
   const guard = await db.guard.findUnique({ where: { id: input.guardId } });
   if (!guard) return { ok: false as const, error: "Guard not found." };
-  await audit({ userId: user!.id, actor: user!.name, action: "SMS_SIMULATED", entity: "Guard", entityId: guard.id, details: { body: input.body } });
-  const result = await processIncomingMessage({ from: guard.phone, body: input.body, provider: "simulated" });
+  await audit({
+    userId: user!.id,
+    actor: user!.name,
+    action: "SMS_SIMULATED",
+    entity: "Guard",
+    entityId: guard.id,
+    details: { body: input.body },
+  });
+  const result = await processIncomingMessage({
+    from: guard.phone,
+    body: input.body,
+    provider: "simulated",
+  });
   revalidatePath("/", "layout");
   return { ok: true as const, result };
 }
@@ -38,7 +58,12 @@ export async function runTickNow(offsetMinutes = 0) {
   const user = await getSessionUser();
   if (!can.simulate(user)) return { ok: false as const, error: "Not permitted." };
   const at = new Date(Date.now() + offsetMinutes * 60000);
-  await audit({ userId: user!.id, actor: user!.name, action: "AUTOMATION_RUN_MANUAL", details: { at: at.toISOString(), offsetMinutes } });
+  await audit({
+    userId: user!.id,
+    actor: user!.name,
+    action: "AUTOMATION_RUN_MANUAL",
+    details: { at: at.toISOString(), offsetMinutes },
+  });
   const report = await runAutomationTick(at);
   revalidatePath("/", "layout");
   return { ok: true as const, report };

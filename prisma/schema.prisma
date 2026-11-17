@@ -41,6 +41,11 @@ model User {
   auditLogs                   AuditLog[]
   pushSubscriptions           PushSubscription[]
   acknowledgedAlerts          GuardAlert[]            @relation("AlertAcknowledgedBy")
+  attentionClaims             AttentionClaim[]        @relation("AttentionClaimedBy")
+  handoversGiven              Handover[]              @relation("HandoverFrom")
+  handoversReceived           Handover[]              @relation("HandoverTo")
+  handoverNotes               HandoverNote[]          @relation("HandoverNoteAuthor")
+  handoverNotesResolved       HandoverNote[]          @relation("HandoverNoteResolver")
   resolvedAlerts              GuardAlert[]            @relation("AlertResolvedBy")
   locationRequests            DeviceLocationRequest[] @relation("LocationRequestedBy")
   callRequests                CallRequest[]           @relation("CallRequestedBy")
@@ -1599,4 +1604,44 @@ model SecurityRateBucket {
   count Int
   resetAt DateTime
   @@index([resetAt])
+}
+
+/// Who is handling an item on the "Needs you now" list (shift:<id> or device:<id>). Guard alerts keep
+/// their owner in GuardAlert.acknowledgedBy. One owner per item; a handover moves the claims.
+model AttentionClaim {
+  itemKey   String   @id
+  userId    String
+  user      User     @relation("AttentionClaimedBy", fields: [userId], references: [id])
+  claimedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// One operator handing the control desk to another: a frozen copy of what was open and who had it.
+model Handover {
+  id         String    @id @default(cuid())
+  fromId     String
+  from       User      @relation("HandoverFrom", fields: [fromId], references: [id])
+  toId       String
+  to         User      @relation("HandoverTo", fields: [toId], references: [id])
+  snapshot   Json
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime?
+
+  @@index([toId, acceptedAt])
+  @@index([createdAt])
+}
+
+/// A standing note for the next operator ("Gate B light is out"). Stays on the handover view until resolved.
+model HandoverNote {
+  id           String    @id @default(cuid())
+  body         String
+  authorId     String
+  author       User      @relation("HandoverNoteAuthor", fields: [authorId], references: [id])
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   User?     @relation("HandoverNoteResolver", fields: [resolvedById], references: [id])
+
+  @@index([resolvedAt, createdAt])
 }

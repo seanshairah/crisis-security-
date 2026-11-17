@@ -22,9 +22,22 @@ export type IconSize = keyof typeof ICON_SIZE | number;
  * marked `hidden sm:block` still rendered on a phone. A responsive-only value such as `sm:block`
  * is deliberately not matched: that caller still wants our default below the breakpoint.
  */
-const CALLER_SETS_DISPLAY = /(^|\s)(hidden|block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents)(\s|$)/;
+const CALLER_SETS_DISPLAY =
+  /(^|\s)(hidden|block|inline|inline-block|flex|inline-flex|grid|inline-grid|contents)(\s|$)/;
 
-export function Icon({ name, size = "md", filled = false, className, label }: { name: IconName; size?: IconSize; filled?: boolean; className?: string; label?: string }) {
+export function Icon({
+  name,
+  size = "md",
+  filled = false,
+  className,
+  label,
+}: {
+  name: IconName;
+  size?: IconSize;
+  filled?: boolean;
+  className?: string;
+  label?: string;
+}) {
   const px = typeof size === "number" ? size : ICON_SIZE[size];
   const base = CALLER_SETS_DISPLAY.test(className ?? "")
     ? "shrink-0 fill-current align-[-0.125em]"
@@ -48,9 +61,28 @@ export function Icon({ name, size = "md", filled = false, className, label }: { 
 }
 
 /** Icon-only control. The label is both the tooltip and the accessible name, so it is never optional. */
-export function IconButton({ icon, label, filled, size = "md", className, ...rest }: { icon: IconName; label: string; filled?: boolean; size?: IconSize } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children">) {
+export function IconButton({
+  icon,
+  label,
+  filled,
+  size = "md",
+  className,
+  ...rest
+}: { icon: IconName; label: string; filled?: boolean; size?: IconSize } & Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+>) {
   return (
-    <button type="button" title={label} aria-label={label} className={cn("inline-flex items-center justify-center rounded-[var(--radius-control)] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent", className)} {...rest}>
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      className={cn(
+        "inline-flex items-center justify-center rounded-[var(--radius-control)] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        className,
+      )}
+      {...rest}
+    >
       <Icon name={icon} size={size} filled={filled} />
     </button>
   );

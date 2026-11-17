@@ -21,7 +21,7 @@
     <!-- Header -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="4dp">
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
-            <TextView android:id="@+id/headerTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/headerTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="26sp" android:fontFamily="@font/display" android:textStyle="italic" android:maxLines="1" android:ellipsize="end" />
             <TextView android:id="@+id/headerSub" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/ink2" android:textSize="13sp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
         <TextView android:id="@+id/connChip" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" />
@@ -71,7 +71,7 @@
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                         <LinearLayout android:id="@+id/quickAssist" style="@style/ActionRow"><FrameLayout style="@style/ActionIconWrap" android:background="@drawable/circle_amber_soft"><ImageView style="@style/ActionIcon" android:src="@drawable/ic_people" app:tint="@color/warn_strong" /></FrameLayout><TextView style="@style/ActionText" android:text="@string/alert_assistance" /><ImageView style="@style/ActionChevron" /></LinearLayout>
                         <View style="@style/RowDivider" />
-                        <LinearLayout android:id="@+id/quickOk" style="@style/ActionRow"><FrameLayout style="@style/ActionIconWrap" android:background="@drawable/circle_green_soft"><ImageView style="@style/ActionIcon" android:src="@drawable/ic_thumb_up" app:tint="@color/accent" /></FrameLayout><TextView style="@style/ActionText" android:text="@string/alert_ok" /><ImageView style="@style/ActionChevron" /></LinearLayout>
+                        <LinearLayout android:id="@+id/quickOk" style="@style/ActionRow"><FrameLayout style="@style/ActionIconWrap" android:background="@drawable/circle_green_soft"><ImageView style="@style/ActionIcon" android:src="@drawable/ic_thumb_up" app:tint="@color/ok" /></FrameLayout><TextView style="@style/ActionText" android:text="@string/alert_ok" /><ImageView style="@style/ActionChevron" /></LinearLayout>
                         <View style="@style/RowDivider" />
                         <LinearLayout android:id="@+id/quickMore" style="@style/ActionRow"><FrameLayout style="@style/ActionIconWrap" android:background="@drawable/circle_grey_soft"><ImageView style="@style/ActionIcon" android:src="@drawable/ic_more" app:tint="@color/ink2" /></FrameLayout><TextView style="@style/ActionText" android:text="@string/alerts_more" /><ImageView style="@style/ActionChevron" /></LinearLayout>
                     </LinearLayout>

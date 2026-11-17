@@ -1,5 +1,9 @@
 import { guarded, json, error } from "@/lib/api";
-import { ClientNotificationError, describeNotification, discardClientNotification } from "@/lib/client-notifications/service";
+import {
+  ClientNotificationError,
+  describeNotification,
+  discardClientNotification,
+} from "@/lib/client-notifications/service";
 
 type Ctx = { params: Promise<{ id: string }> };
 

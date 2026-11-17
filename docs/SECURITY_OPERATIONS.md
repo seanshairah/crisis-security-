@@ -6,7 +6,7 @@ This is the current security reference. Historical audits are under `archive/`; 
 
 Use a separate Crisis database, private random AUTH/CRON/AUTOMATION and provider webhook secrets, and an HTTPS endpoint for production Android phones. Production refuses example secrets. HTTP localhost and USB forwarding are for the debug APK. No Omega deployment or database records are changed by this source.
 
-`TRUST_PROXY_HOPS=0` ignores forwarded IP headers. For a controlled reverse proxy, configure the exact number of trusted hops and ensure ingress overwrites/appends X-Forwarded-For. The address is selected from the right, not the client-controlled first entry. Do not enable header trust on an unprotected directly reachable server. When the source cannot be trusted, requests share an anonymous budget rather than accepting spoofed addresses.
+`TRUST_PROXY_HOPS=0` ignores forwarded IP headers. For a controlled reverse proxy, configure the exact number of trusted hops and ensure ingress overwrites/appends X-Forwarded-For. The address is selected from the right, not the client-controlled first entry. Do not enable header trust on an unprotected directly reachable server. When the source cannot be trusted, login falls back to a per-account budget of 30 failures per 15 minutes (no shared bucket, so a stranger cannot lock everyone out) and activation to a generous shared brake plus its per-code budget; `checkEnv` warns in production until `TRUST_PROXY_HOPS` is set. Logging out revokes every session of that account on all devices (the session `tokenVersion` is incremented), by design.
 
 All gateway rate limits use atomic PostgreSQL counters shared across processes, with indexed expiry and bounded cleanup. Counter keys are hashed. Database failures do not fall back to an unlimited in-memory counter. Portal login consumes source and source/account budgets before password verification, without an account-wide lock that an unrelated address can trigger. PIN attempts are limited per company-device/guard pair plus a device request budget; other guards on that phone and that guard on another phone retain their own budgets. New activation codes contain 10 unambiguous characters, with source and per-code budgets. Existing unexpired activation codes retain their original value.
 
@@ -45,3 +45,12 @@ Release tasks fail if release signing configuration is absent. The release APK m
 ## Verification
 
 Run `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run docs:api:check`, the isolated patrol/setup/security integration scripts, and the HTTP session revocation regression. CI supplies disposable PostgreSQL on loopback port 55439 and also runs Android JVM tests and a debug build. Physical device tests and deployment credentials are separate from CI; reports identify simulated/emulator evidence explicitly.
+
+
+## Content Security Policy
+
+Pages get a fresh nonce on every request (`src/middleware.ts`, policy in `src/lib/security/csp.ts`). Scripts run only with that nonce
+(`'strict-dynamic'` lets a trusted script load the map libraries), so `'unsafe-inline'` is no longer allowed for scripts. Styles keep
+`'unsafe-inline'`, because React style props and the map libraries set inline styles and a style cannot run code. API responses get
+`default-src 'none'`. Leaflet's stylesheet is bundled from npm rather than loaded from a CDN. When adding a third-party script or an
+external host, add it to `csp.ts` and check the browser console for "Refused to" on the affected page.

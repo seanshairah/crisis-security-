@@ -2,7 +2,6 @@ package zw.co.crisis.security.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,9 +17,12 @@ import org.json.JSONObject
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import androidx.core.content.res.ResourcesCompat
+import zw.co.crisis.security.R
 import zw.co.crisis.security.patrol.CheckpointCode
 import zw.co.crisis.security.patrol.CoordinateCheckpoint
 import zw.co.crisis.security.patrol.PatrolMessages
+import zw.co.crisis.security.patrol.ScanOutcome
 import zw.co.crisis.security.service.GatewayService
 import java.util.UUID
 import zw.co.crisis.security.data.Prefs
@@ -54,7 +56,7 @@ class PatrolActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this); store = PatrolStore.get(this)
-        val scroll = ScrollView(this).apply { setBackgroundResource(zw.co.crisis.security.R.drawable.bg_field_camo) }
+        val scroll = ScrollView(this).apply { setBackgroundColor(getColor(R.color.surface2)) }
         val padding = (16 * resources.displayMetrics.density).toInt()
         column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(padding,padding,padding,padding) }
         scroll.addView(column); setContentView(scroll)
@@ -68,9 +70,10 @@ class PatrolActivity : AppCompatActivity() {
     private fun localTime(value: String): String = android.text.format.DateFormat.getTimeFormat(this).format(java.util.Date(PatrolStore.time(value)))
     private fun api() = ApiClient(prefs.serverUrl, prefs.deviceToken)
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
-    private val ink = Color.rgb(237,240,238)
-    private val muted = Color.rgb(169,180,174)
-    private fun panel(color: Int = Color.rgb(29,35,32)) = GradientDrawable().apply { setColor(color); cornerRadius = dp(18).toFloat(); setStroke(dp(1),Color.rgb(57,67,60)) }
+    // Colours come from the theme resources, so this screen follows the light/dark setting like every other.
+    private val ink get() = getColor(R.color.ink)
+    private val muted get() = getColor(R.color.ink2)
+    private fun panel(color: Int = getColor(R.color.surface)) = GradientDrawable().apply { setColor(color); cornerRadius = dp(24).toFloat(); setStroke(dp(1),getColor(R.color.line)) }
     private fun label(text: String, size: Float = 15f) = TextView(this).apply {
         this.text = text; textSize = size; setTextColor(if(size <= 12f) muted else ink)
         setPadding(dp(4),dp(9),dp(4),dp(9)); if(size >= 19f) setTypeface(typeface,Typeface.BOLD)
@@ -78,21 +81,53 @@ class PatrolActivity : AppCompatActivity() {
     }
     private fun button(text: String, action: () -> Unit) {
         column.addView(com.google.android.material.button.MaterialButton(this).apply {
-            this.text = text; isAllCaps = false; textSize = 16f; minHeight = dp(56); cornerRadius = dp(16)
-            setTextColor(ink); backgroundTintList = android.content.res.ColorStateList.valueOf(if(text.startsWith("Scan") || text.startsWith("Sign in")) Color.rgb(67,86,72) else if(text.startsWith("Emergency")) Color.rgb(123,45,43) else Color.rgb(40,48,43))
+            this.text = text; isAllCaps = false; textSize = 16f; minHeight = dp(56); cornerRadius = dp(28)
+            val primary = text.startsWith("Scan") || text.startsWith("Sign in"); val emergency = text.startsWith("Emergency")
+            setTextColor(getColor(if (primary) R.color.on_accent else if (emergency) R.color.white else R.color.ink)); backgroundTintList = android.content.res.ColorStateList.valueOf(getColor(if (primary) R.color.accent else if (emergency) R.color.critical_solid else R.color.surface3))
             layoutParams = LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(6); bottomMargin=dp(6) }
             isEnabled = !busy; setOnClickListener { if(!busy) action() }
         })
     }
+    /** Title in the display serif, then where and when. Night shifts read "Tonight's patrol". */
+    private fun header(session: JSONObject?) {
+        label("CRISIS SECURITY", 12f)
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val title = if (session == null) "Field operations" else if (hour >= 18 || hour < 6) "Tonight's patrol" else "Today's patrol"
+        label(title, 36f).apply { typeface = ResourcesCompat.getFont(this@PatrolActivity, R.font.display) }
+        label(session?.let { "${it.getString("siteName")} · ${localTime(it.getString("startedAt"))}–${localTime(it.getString("expiresAt"))}" } ?: "Scan the checkpoint when this phone prompts you.", 13f)
+    }
+
+    /** Shift, Location, Synced: three tiles, each a word and a colour, never colour alone. Unknown is amber, never red. */
+    private fun statusTiles(session: JSONObject?) {
+        val pending = store.pendingCount()
+        val loc = prefs.lastFixState
+        val tiles = listOf(
+            Triple("Shift", if (session == null) "Not signed in" else "Ends ${localTime(session.getString("expiresAt"))}", if (session == null) R.color.warn_soft else R.color.ok_soft),
+            Triple("Location", when (loc) { "INSIDE" -> "Inside site"; "OUTSIDE" -> "Outside site"; else -> "Checking" }, when (loc) { "INSIDE" -> R.color.ok_soft; "OUTSIDE" -> R.color.critical_soft; else -> R.color.warn_soft }),
+            Triple("Synced", if (pending == 0) "Up to date" else "$pending saved", if (pending == 0) R.color.ok_soft else R.color.warn_soft),
+        )
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        tiles.forEachIndexed { i, (name, value, tint) ->
+            row.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; background = panel(getColor(tint)); setPadding(dp(12), dp(12), dp(12), dp(12))
+                addView(TextView(this@PatrolActivity).apply { text = name; textSize = 12f; setTextColor(muted) })
+                addView(TextView(this@PatrolActivity).apply { text = value; textSize = 15f; setTextColor(ink); setTypeface(typeface, Typeface.BOLD) })
+                contentDescription = "$name: $value"
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { if (i > 0) marginStart = dp(8) }
+            })
+        }
+        column.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8); bottomMargin = dp(8) })
+    }
+
     private fun render(message: String = feedbackMessage, error: Boolean = feedbackError) {
         feedbackMessage = message; feedbackError = error
         column.removeAllViews()
-        label("◈  CRISIS SECURITY", 12f)
-        label("Field operations", 28f)
-        label("Scan the checkpoint when this phone prompts you.", 12f)
+        val live = store.config()?.optJSONObject("session")?.takeIf { System.currentTimeMillis() < PatrolStore.time(it.getString("expiresAt")) }
+        header(live)
+        statusTiles(live)
         status = label(message).apply {
             accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE
-            if(error) { background=panel(Color.rgb(68,36,35)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
+            if(error) { background=panel(getColor(R.color.critical_soft)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
         }
         val recent = store.recentRows()
         recent.firstOrNull()?.let { row ->
@@ -101,7 +136,7 @@ class PatrolActivity : AppCompatActivity() {
             val result = PatrolMessages.result(row.state,row.decision,row.localDecision)
             label("LATEST SCAN · ${localTime(row.capturedAt)}",12f)
             label((if(accepted) "✓  " else if(row.state == "QUEUED" && !localFailed) "◷  " else "!  ") + row.checkpointName + "\n" + result, 19f).apply {
-                background = panel(if(accepted) Color.rgb(27,62,43) else if(row.state=="QUEUED" && !localFailed) Color.rgb(64,53,28) else Color.rgb(68,36,35))
+                background = panel(getColor(if(accepted) R.color.ok_soft else if(row.state=="QUEUED" && !localFailed) R.color.warn_soft else R.color.critical_soft))
                 setPadding(dp(16),dp(16),dp(16),dp(16))
             }
         }
@@ -109,8 +144,8 @@ class PatrolActivity : AppCompatActivity() {
         val s = store.config()?.optJSONObject("session")
         if (s == null || System.currentTimeMillis() >= PatrolStore.time(s.getString("expiresAt"))) {
             label("Enter your guard number and PIN to start your shift. You need a connection to sign in.")
-            val guard = EditText(this).apply { hint = "Guard number"; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY); column.addView(this) }
-            val pin = EditText(this).apply { hint = "6–12 digit PIN"; inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; setTextColor(Color.WHITE); setHintTextColor(Color.LTGRAY); column.addView(this) }
+            val guard = EditText(this).apply { hint = "Guard number"; setTextColor(ink); setHintTextColor(getColor(R.color.ink3)); column.addView(this) }
+            val pin = EditText(this).apply { hint = "6–12 digit PIN"; inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD; setTextColor(ink); setHintTextColor(getColor(R.color.ink3)); column.addView(this) }
             button("Sign in for shift") {
                 val no = guard.text.toString(); val code = pin.text.toString(); pin.text.clear()
                 runAction { val cfg = withContext(Dispatchers.IO) { api().patrolLogin(no, code) }; store.saveConfig(cfg); prefs.guardName = cfg.optJSONObject("session")?.optString("guardName") ?: ""; prefs.lastFixAt = 0L; withContext(Dispatchers.IO) { zw.co.crisis.security.service.SyncEngine(this@PatrolActivity).refreshConfig() }; "Signed in" }
@@ -125,8 +160,8 @@ class PatrolActivity : AppCompatActivity() {
                 if (a.optString("status") == "COMPLETED" || store.hasScan(a.getString("id"))) continue
                 val due = PatrolStore.time(a.getString("dueAt")); val end = PatrolStore.time(a.getString("expiresAt"))
                 if (PatrolWindows.isOpen(now, due, end, PatrolStore.time(s.getString("expiresAt")))) {
-                    open++; label("DUE NOW / ${a.getString("checkpointName")}", 19f)
-                    label("Scan by ${localTime(a.getString("expiresAt"))}", 12f)
+                    open++
+                    label("Next up · ${a.getString("checkpointName")}\nScan by ${localTime(a.getString("expiresAt"))}", 19f).apply { background = panel(getColor(R.color.warn_soft)); setPadding(dp(16),dp(16),dp(16),dp(16)) }
                     button("Scan checkpoint QR") {
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) { ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 71); status.text = "Grant precise location, then tap Scan again"; return@button }
                         selected = a; selectedSession = s
@@ -134,7 +169,7 @@ class PatrolActivity : AppCompatActivity() {
                     }
                 }
             }
-            if (open == 0) label("No checkpoint is due right now. Keep this phone with you — it will notify you when the next checkpoint is due.")
+            if (open == 0) label("Next check: at a random time. We will alert you.")
             button("Sync evidence now") { runAction { withContext(Dispatchers.IO) { PatrolRuntime(this@PatrolActivity).sync(api()) }; "Connected. Scan results updated." } }
             button("End session / hand over") { runAction { withContext(Dispatchers.IO) { api().patrolLogout(s.getString("id")) }; store.clearSession(); prefs.guardName = ""; prefs.lastFixAt = 0L; withContext(Dispatchers.IO) { zw.co.crisis.security.service.SyncEngine(this@PatrolActivity).refreshConfig() }; "Session ended. Next guard can sign in." } }
         }
@@ -142,6 +177,7 @@ class PatrolActivity : AppCompatActivity() {
         recent.drop(1).forEach { label("${it.checkpointName} · ${PatrolMessages.result(it.state, it.decision, it.localDecision)}",12f) }
         button("Emergency / SOS") { AlertFlow.confirmEmergency(this, AlertFlow.Feedback { text, _ -> render(text) }) }
         button("Help & messages") { startActivity(Intent(this, AlertsActivity::class.java)) }
+        button("Me") { startActivity(Intent(this, MeActivity::class.java)) }
         button("Phone settings") { startActivity(Intent(this, SettingsActivity::class.java)) }
         if(zw.co.crisis.security.util.DeviceInfo.locationPermission(this) == "denied") button("Enable precise location") { startActivity(Intent(this, PermissionsActivity::class.java)) }
         if(!androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()) button("Enable patrol notifications") { startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE,packageName)) }
@@ -181,6 +217,16 @@ class PatrolActivity : AppCompatActivity() {
             // Upload is independent of capture. Failed transport never rolls back a queued scan.
             withContext(Dispatchers.IO) { runCatching { PatrolRuntime(this@PatrolActivity).sync(api()) } }
             val receipt = store.recentRows().firstOrNull { it.eventId == event.getString("eventId") }
+            val distanceM = if (fix != null) FloatArray(1).also { android.location.Location.distanceBetween(fix.latitude, fix.longitude, a.optDouble("latitude"), a.optDouble("longitude"), it) }[0].toInt() else -1
+            val outcome = ScanOutcome.of(receipt?.decision, localDecision)
+            startActivity(Intent(this@PatrolActivity, ScanResultActivity::class.java)
+                .putExtra(ScanResultActivity.EXTRA_OUTCOME, outcome.name)
+                .putExtra(ScanResultActivity.EXTRA_CHECKPOINT, a.getString("checkpointName"))
+                .putExtra(ScanResultActivity.EXTRA_TIME, localTime(GatewayEvent.iso(now)))
+                .putExtra(ScanResultActivity.EXTRA_MESSAGE, if (outcome == ScanOutcome.VERIFIED) null else PatrolMessages.result(receipt?.state ?: "RECEIVED", receipt?.decision, localDecision))
+                .putExtra(ScanResultActivity.EXTRA_DISTANCE_M, distanceM)
+                .putExtra(ScanResultActivity.EXTRA_RADIUS_M, a.optInt("radiusM", -1))
+                .putExtra(ScanResultActivity.EXTRA_ACCURACY_M, fix?.accuracy?.toInt() ?: -1))
             if(receipt?.decision == "ACCEPTED") "Checkpoint verified ✓" else if(localDecision != "LOCAL_MATCH") PatrolMessages.result("RECEIVED",localDecision) else "Scan saved · awaiting confirmation"
         }
     }

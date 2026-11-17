@@ -8,6 +8,15 @@ export const GET = guarded("SUPER_ADMIN", async (req) => {
   const where: Prisma.AuditLogWhereInput = {};
   if (url.searchParams.get("action")) where.action = url.searchParams.get("action")!;
   if (url.searchParams.get("userId")) where.userId = url.searchParams.get("userId")!;
-  const [items, total] = await Promise.all([db.auditLog.findMany({ where, include: { user: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" }, take, skip }), db.auditLog.count({ where })]);
+  const [items, total] = await Promise.all([
+    db.auditLog.findMany({
+      where,
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "desc" },
+      take,
+      skip,
+    }),
+    db.auditLog.count({ where }),
+  ]);
   return json({ items, total, page });
 });

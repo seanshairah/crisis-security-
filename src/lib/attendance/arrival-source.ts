@@ -9,7 +9,11 @@ export type ArrivalSource = "GPS" | "NETWORK" | "MANUAL" | "CALL" | "SMS" | "CON
 
 const ORDER: EvidenceSource[] = ["GPS", "NETWORK", "MANUAL", "CALL", "SMS", "IVR", "MISSED_CALL"];
 
-export function arrivalSource(input: { arrivalConfirmedAt: Date | null; gpsVerified: boolean; confirmedSources: EvidenceSource[] }): ArrivalSource {
+export function arrivalSource(input: {
+  arrivalConfirmedAt: Date | null;
+  gpsVerified: boolean;
+  confirmedSources: EvidenceSource[];
+}): ArrivalSource {
   if (input.gpsVerified || input.confirmedSources.includes("GPS")) return "GPS";
   const best = ORDER.find((s) => input.confirmedSources.includes(s));
   if (best === "NETWORK" || best === "MANUAL" || best === "CALL" || best === "SMS") return best;
@@ -19,7 +23,13 @@ export function arrivalSource(input: { arrivalConfirmedAt: Date | null; gpsVerif
 }
 
 export const ARRIVAL_SOURCE_LABEL: Record<ArrivalSource, string> = {
-  GPS: "GPS verified", NETWORK: "Network verified", MANUAL: "Confirmed by a supervisor", CALL: "By call", SMS: "By SMS", CONFIRMED: "Confirmed", NONE: "Not confirmed",
+  GPS: "GPS verified",
+  NETWORK: "Network verified",
+  MANUAL: "Confirmed by a supervisor",
+  CALL: "By call",
+  SMS: "By SMS",
+  CONFIRMED: "Confirmed",
+  NONE: "Not confirmed",
 };
 
 export type PhoneGroup = "ANDROID" | "BASIC" | "UNKNOWN";

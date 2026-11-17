@@ -27,7 +27,9 @@ export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export type GatewayAuthResult = { device: GatewayDevice; error?: undefined } | { device?: undefined; error: string; status: 401 | 403 };
+export type GatewayAuthResult =
+  | { device: GatewayDevice; error?: undefined }
+  | { device?: undefined; error: string; status: 401 | 403 };
 
 /** Resolve the device behind a request. Rejects revoked and disabled devices. */
 export async function authenticateGateway(req: Request): Promise<GatewayAuthResult> {
@@ -35,7 +37,8 @@ export async function authenticateGateway(req: Request): Promise<GatewayAuthResu
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!token) return { error: "Missing device token", status: 401 };
   const device = await db.gatewayDevice.findUnique({ where: { tokenHash: hashToken(token) } });
-  if (!device || device.activationStatus !== "ACTIVE") return { error: "Unknown or inactive device token", status: 401 };
+  if (!device || device.activationStatus !== "ACTIVE")
+    return { error: "Unknown or inactive device token", status: 401 };
   if (device.status === "REVOKED") return { error: "This gateway has been revoked", status: 403 };
   if (device.status === "DISABLED") return { error: "This gateway is disabled", status: 403 };
   return { device };

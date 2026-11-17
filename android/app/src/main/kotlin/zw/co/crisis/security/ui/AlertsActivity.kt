@@ -101,6 +101,6 @@ class AlertsActivity : AppCompatActivity() {
             }
         }
 
-        fun commStateColour(r: EventQueue.CommRow): Int = when (r.status) { "QUEUED" -> R.color.warn_strong; "FAILED" -> R.color.critical; "ACKNOWLEDGED", "RESOLVED" -> R.color.accent_strong; else -> R.color.ink2 }
+        fun commStateColour(r: EventQueue.CommRow): Int = when (r.status) { "QUEUED" -> R.color.warn_strong; "FAILED" -> R.color.critical; "ACKNOWLEDGED", "RESOLVED" -> R.color.ok; else -> R.color.ink2 }
     }
 }

@@ -3,15 +3,42 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
 
 const NAMES: Record<string, string> = {
-  setup: "Guided setup", patrols: "Patrol command", dashboard: "Overview", operations: "Active operations", alerts: "Guard alerts", shifts: "Shifts", attendance: "Attendance", incidents: "Incidents",
-  guards: "Guards", clients: "Clients", locations: "Locations", sms: "SMS logs", templates: "Templates", reports: "Reports",
-  users: "Users", settings: "Settings", audit: "Audit log", simulator: "Simulator", notifications: "Notifications", new: "New", edit: "Edit", recurring: "Recurring", monitoring: "Monitoring", messages: "Messages",
-  calls: "Calls", gateways: "Gateways", exceptions: "Exceptions", map: "Map", location: "Location", "check-ins": "Check-ins",
+  setup: "Guided setup",
+  patrols: "Patrol command",
+  dashboard: "Overview",
+  handover: "Shift handover",
+  operations: "Active operations",
+  alerts: "Guard alerts",
+  shifts: "Shifts",
+  attendance: "Attendance",
+  incidents: "Incidents",
+  guards: "Guards",
+  clients: "Clients",
+  locations: "Locations",
+  sms: "SMS logs",
+  templates: "Templates",
+  reports: "Reports",
+  users: "Users",
+  settings: "Settings",
+  audit: "Audit log",
+  simulator: "Simulator",
+  notifications: "Notifications",
+  new: "New",
+  edit: "Edit",
+  recurring: "Recurring",
+  monitoring: "Monitoring",
+  messages: "Messages",
+  calls: "Calls",
+  gateways: "Gateways",
+  exceptions: "Exceptions",
+  map: "Map",
+  location: "Location",
+  "check-ins": "Check-ins",
 };
 
 /** A segment with no entry above still has to read as a heading, not as the URL. */
@@ -22,48 +49,144 @@ function label(seg: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 const SECTION: Record<string, string> = {
-  dashboard: "Operations", operations: "Operations", shifts: "Operations", attendance: "Operations", incidents: "Operations",
-  guards: "Workforce", clients: "Workforce", locations: "Workforce", sms: "Communications", simulator: "Communications", messages: "Communications", monitoring: "Operations",
+  dashboard: "Operations",
+  operations: "Operations",
+  shifts: "Operations",
+  attendance: "Operations",
+  incidents: "Operations",
+  guards: "Workforce",
+  clients: "Workforce",
+  locations: "Workforce",
+  sms: "Communications",
+  simulator: "Communications",
+  messages: "Communications",
+  monitoring: "Operations",
 };
 
-export function Topbar({ user, unread, systemStatus, onMenu }: { user: { name: string; avatarUrl: string | null; title: string | null }; unread: number; systemStatus: { tone: "ok" | "warn" | "critical"; label: string }; onMenu?: () => void }) {
+export function Topbar({
+  user,
+  unread,
+  systemStatus,
+  onMenu,
+}: {
+  user: { name: string; avatarUrl: string | null; title: string | null };
+  unread: number;
+  systemStatus: { tone: "ok" | "warn" | "critical"; label: string };
+  onMenu?: () => void;
+}) {
   const path = usePathname();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [menu, setMenu] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  useEffect(() => {
+    const saved = document.documentElement.getAttribute("data-theme");
+    setTheme(
+      saved === "light" || saved === "dark"
+        ? saved
+        : window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark",
+    );
+  }, []);
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try {
+      localStorage.setItem("crisis-theme", next);
+    } catch {
+      /* private mode: the choice just lasts for this visit */
+    }
+  };
   const segs = path.split("/").filter(Boolean);
   const section = SECTION[segs[0]] ?? "Crisis";
-  const crumbs = segs.map((s, i) => ({ label: label(s), href: "/" + segs.slice(0, i + 1).join("/") }));
+  const crumbs = segs.map((s, i) => ({
+    label: label(s),
+    href: "/" + segs.slice(0, i + 1).join("/"),
+  }));
   const dot = { ok: "bg-ok", warn: "bg-warn", critical: "bg-critical" }[systemStatus.tone];
 
   return (
     <header className="mb-3 flex h-14 items-center justify-between gap-2 rounded-[var(--radius-card)] border border-line bg-surface px-3 sm:mb-4 sm:gap-4 sm:px-4">
       <div className="flex min-w-0 items-center gap-2 text-[14px]">
-        <button onClick={onMenu} className="-ml-1 mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-ink-2 hover:bg-surface-2 hover:text-ink lg:hidden" aria-label="Open menu"><Icon name="menu" size={20} filled /></button>
+        <button
+          onClick={onMenu}
+          className="-ml-1 mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-ink-2 hover:bg-surface-2 hover:text-ink lg:hidden"
+          aria-label="Open menu"
+        >
+          <Icon name="menu" size={20} filled />
+        </button>
         <span className="hidden text-ink-2 sm:inline">{section}</span>
         {crumbs.map((c, i) => (
-          <span key={c.href} className={cn("items-center gap-2", i === crumbs.length - 1 ? "flex" : "hidden sm:flex")}>
+          <span
+            key={c.href}
+            className={cn(
+              "items-center gap-2",
+              i === crumbs.length - 1 ? "flex" : "hidden sm:flex",
+            )}
+          >
             <Icon name="chevron_right" size={12} className="hidden text-ink-3 sm:block" filled />
-            {i === crumbs.length - 1 ? <span className="truncate font-medium text-ink">{c.label}</span> : <Link href={c.href} className="text-ink-2 hover:text-ink">{c.label}</Link>}
+            {i === crumbs.length - 1 ? (
+              <span className="truncate font-medium text-ink">{c.label}</span>
+            ) : (
+              <Link href={c.href} className="text-ink-2 hover:text-ink">
+                {c.label}
+              </Link>
+            )}
           </span>
         ))}
-        <span className={cn("ml-2 hidden h-7 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-2 px-2.5 text-[12px] font-medium text-ink-2 xl:inline-flex")}>
+        <span
+          className={cn(
+            "ml-2 hidden h-7 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-2 px-2.5 text-[12px] font-medium text-ink-2 xl:inline-flex",
+          )}
+        >
           <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
           {systemStatus.label}
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <form action="/guards" className="relative hidden md:block">
-          <Icon name="search" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" filled />
-          <input name="q" placeholder="Search guards" className="h-9 w-56 rounded-[var(--radius-control)] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
+          <Icon
+            name="search"
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"
+            filled
+          />
+          <input
+            name="q"
+            placeholder="Search guards"
+            className="h-9 w-56 rounded-full border border-line bg-surface-2 pl-9 pr-3 text-sm placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          />
         </form>
-        <button onClick={() => start(() => router.refresh())} className={cn("hidden h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink sm:flex", pending && "animate-spin")} aria-label="Refresh"><Icon name="refresh" size={16} filled /></button>
-        <Link href="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink" aria-label="Notifications">
+        <button
+          onClick={() => start(() => router.refresh())}
+          className={cn(
+            "hidden h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink sm:flex",
+            pending && "animate-spin",
+          )}
+          aria-label="Refresh"
+        >
+          <Icon name="refresh" size={16} filled />
+        </button>
+        <Link
+          href="/notifications"
+          className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-2 hover:bg-surface-2 hover:text-ink"
+          aria-label="Notifications"
+        >
           <Icon name="notifications" size={16} filled />
-          {unread > 0 && <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-semibold text-white tnum">{unread > 99 ? "99+" : unread}</span>}
+          {unread > 0 && (
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical-solid px-1 text-[10px] font-semibold text-white tnum">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
         </Link>
         <div className="relative">
-          <button onClick={() => setMenu((m) => !m)} className="flex items-center rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent" aria-label="Account menu">
+          <button
+            onClick={() => setMenu((m) => !m)}
+            className="flex items-center rounded-full ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label="Account menu"
+          >
             <Avatar src={user.avatarUrl} name={user.name} size={36} />
           </button>
           {menu && (
@@ -73,8 +196,18 @@ export function Topbar({ user, unread, systemStatus, onMenu }: { user: { name: s
                 <p className="text-[12px] text-ink-2">{user.title}</p>
               </div>
               <div className="my-1 border-t border-line" />
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex h-8 w-full items-center gap-2 rounded-[8px] px-3 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink"
+              >
+                <Icon name={theme === "light" ? "dark_mode" : "light_mode"} size={15} filled />{" "}
+                {theme === "light" ? "Dark theme" : "Light theme"}
+              </button>
               <form action="/api/auth/logout" method="post">
-                <button className="flex h-8 w-full items-center gap-2 rounded-[8px] px-3 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink"><Icon name="logout" size={15} filled /> Sign out</button>
+                <button className="flex h-8 w-full items-center gap-2 rounded-[8px] px-3 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink">
+                  <Icon name="logout" size={15} filled /> Sign out
+                </button>
               </form>
             </div>
           )}

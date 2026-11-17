@@ -39,7 +39,9 @@ export async function requireUser(minimum: Role = "SUPERVISOR"): Promise<Session
 }
 
 /** For route handlers: returns the user or null; caller responds 401/403. */
-export async function apiUser(minimum: Role = "SUPERVISOR"): Promise<{ user: SessionUser | null; status: 200 | 401 | 403 }> {
+export async function apiUser(
+  minimum: Role = "SUPERVISOR",
+): Promise<{ user: SessionUser | null; status: 200 | 401 | 403 }> {
   const user = await getSessionUser();
   if (!user) return { user: null, status: 401 };
   if (!hasRole(user, minimum)) return { user, status: 403 };

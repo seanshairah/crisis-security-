@@ -18,7 +18,17 @@ export async function createUser(_: ActionState, fd: FormData): Promise<ActionSt
     const d = r.data;
     if (!d.password) return { error: "A password is required for a new user." };
     const avatarUrl = (await resolvePhoto(fd, "avatarUrl")) ?? null;
-    const u = await db.user.create({ data: { name: d.name, email: d.email, role: d.role, title: d.title, phone: d.phone, avatarUrl, passwordHash: await hashPassword(d.password) } });
+    const u = await db.user.create({
+      data: {
+        name: d.name,
+        email: d.email,
+        role: d.role,
+        title: d.title,
+        phone: d.phone,
+        avatarUrl,
+        passwordHash: await hashPassword(d.password),
+      },
+    });
     await auditAs(me, "USER_CREATED", "User", u.id, { email: u.email, role: u.role });
   } catch (e) {
     return fail(e);
@@ -34,8 +44,25 @@ export async function updateUser(id: string, _: ActionState, fd: FormData): Prom
     if (!r.success) return { error: firstIssue(r.error) };
     const d = r.data;
     const avatarUrl = await resolvePhoto(fd, "avatarUrl");
-    const u = await db.user.update({ where: { id }, data: { name: d.name, email: d.email, role: d.role, title: d.title, phone: d.phone, ...(avatarUrl !== undefined ? { avatarUrl } : {}), ...(d.password ? { passwordHash: await hashPassword(d.password), tokenVersion: { increment: 1 } } : {}) } });
-    await auditAs(me, "USER_UPDATED", "User", u.id, { email: u.email, role: u.role, passwordChanged: Boolean(d.password) });
+    const u = await db.user.update({
+      where: { id },
+      data: {
+        name: d.name,
+        email: d.email,
+        role: d.role,
+        title: d.title,
+        phone: d.phone,
+        ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+        ...(d.password
+          ? { passwordHash: await hashPassword(d.password), tokenVersion: { increment: 1 } }
+          : {}),
+      },
+    });
+    await auditAs(me, "USER_UPDATED", "User", u.id, {
+      email: u.email,
+      role: u.role,
+      passwordChanged: Boolean(d.password),
+    });
   } catch (e) {
     return fail(e);
   }
@@ -47,7 +74,9 @@ export async function setUserActive(id: string, active: boolean) {
   const me = await actor("SUPER_ADMIN");
   if (me.id === id) throw new Error("You cannot deactivate your own account.");
   const u = await db.user.update({ where: { id }, data: { active } });
-  await auditAs(me, active ? "USER_REACTIVATED" : "USER_DEACTIVATED", "User", u.id, { email: u.email });
+  await auditAs(me, active ? "USER_REACTIVATED" : "USER_DEACTIVATED", "User", u.id, {
+    email: u.email,
+  });
   revalidatePath("/users");
 }
 
@@ -65,14 +94,28 @@ export async function updateSettings(_: ActionState, fd: FormData): Promise<Acti
   return { ok: true };
 }
 
-export async function updateTemplate(key: string, _: ActionState, fd: FormData): Promise<ActionState> {
+export async function updateTemplate(
+  key: string,
+  _: ActionState,
+  fd: FormData,
+): Promise<ActionState> {
   try {
     const me = await actor("SUPER_ADMIN");
     const body = String(fd.get("body") ?? "").trim();
     if (body.length < 10) return { error: "The message is too short." };
     if (body.length > 480) return { error: "Keep messages under 480 characters (3 SMS segments)." };
     const def = TEMPLATE_DEFS.find((t) => t.key === key);
-    await db.messageTemplate.upsert({ where: { key }, update: { body }, create: { key, name: def?.name ?? key, description: def?.description, body, variables: def?.variables ?? [] } });
+    await db.messageTemplate.upsert({
+      where: { key },
+      update: { body },
+      create: {
+        key,
+        name: def?.name ?? key,
+        description: def?.description,
+        body,
+        variables: def?.variables ?? [],
+      },
+    });
     invalidateTemplateCache();
     await auditAs(me, "TEMPLATE_UPDATED", "MessageTemplate", key);
   } catch (e) {
@@ -94,6 +137,9 @@ export async function resetTemplate(key: string) {
 
 export async function markNotificationsRead(ids: string[] | "all") {
   await actor("SUPERVISOR");
-  await db.notification.updateMany({ where: ids === "all" ? { readAt: null } : { id: { in: ids } }, data: { readAt: new Date() } });
+  await db.notification.updateMany({
+    where: ids === "all" ? { readAt: null } : { id: { in: ids } },
+    data: { readAt: new Date() },
+  });
   revalidatePath("/", "layout");
 }

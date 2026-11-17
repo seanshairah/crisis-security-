@@ -5,7 +5,19 @@ import type { Map as MapboxMapType, GeoJSONSource, Popup as PopupType } from "ma
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ICON_PATHS, type IconName } from "@/components/ui/icons.generated";
 import { mapboxToken, mapStyleUrl, type MapStyleKey } from "@/lib/map/provider";
-import { accuracyFC, boundsOf, DEFAULT_CENTRE, fenceFC, MAP_COLOUR, pointFC, siteFC, trailFC, type MapPoint, type MapSite, type MapTrail } from "@/lib/map/features";
+import {
+  accuracyFC,
+  boundsOf,
+  DEFAULT_CENTRE,
+  fenceFC,
+  MAP_COLOUR,
+  pointFC,
+  siteFC,
+  trailFC,
+  type MapPoint,
+  type MapSite,
+  type MapTrail,
+} from "@/lib/map/features";
 
 export type MapboxMapProps = {
   sites: MapSite[];
@@ -27,7 +39,13 @@ export type MapboxMapProps = {
   onUnavailable?: (reason: string) => void;
 };
 
-const SRC = { fence: "crisis-fences", site: "crisis-sites", acc: "crisis-accuracy", trail: "crisis-trails", point: "crisis-points" } as const;
+const SRC = {
+  fence: "crisis-fences",
+  site: "crisis-sites",
+  acc: "crisis-accuracy",
+  trail: "crisis-trails",
+  point: "crisis-points",
+} as const;
 const GLYPH_PX = 40;
 
 /** Material Symbol rendered to a canvas so markers use the same glyphs as the rest of the interface. */
@@ -54,7 +72,19 @@ function glyphImage(name: IconName, colour: string): ImageData | null {
  * renderers agree on what a stale fix or an accuracy ring looks like. Mapbox renders; it is never
  * asked where a guard is.
  */
-export function MapboxMap({ sites, points, trails = [], cluster = false, styleKey = "streets", scrollZoom = true, onPick, fitKey = 0, autoFit = true, className, onUnavailable }: MapboxMapProps) {
+export function MapboxMap({
+  sites,
+  points,
+  trails = [],
+  cluster = false,
+  styleKey = "streets",
+  scrollZoom = true,
+  onPick,
+  fitKey = 0,
+  autoFit = true,
+  className,
+  onUnavailable,
+}: MapboxMapProps) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<MapboxMapType | null>(null);
   const popup = useRef<PopupType | null>(null);
@@ -85,37 +115,200 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
     src(SRC.point, pointFC(pp), cl ? { cluster: true, clusterRadius: 44, clusterMaxZoom: 15 } : {});
 
     for (const p of pp) {
-      for (const [suffix, colour] of [["w", "#ffffff"], ["d", "#161616"]] as const) {
+      for (const [suffix, colour] of [
+        ["w", "#ffffff"],
+        ["d", "#161616"],
+      ] as const) {
         const id = `crisis-${p.kind}-${suffix}`;
         if (m.hasImage(id)) continue;
-        const img = glyphImage(({ guard: "shield_person", request: "my_location", candidate: "my_location", call: "call", exit: "directions_run", return: "where_to_vote", unavailable: "location_off", pin: "pin_drop", check: "check", latest: "location_on" } as Record<string, IconName>)[p.kind] ?? "location_on", colour);
+        const img = glyphImage(
+          (
+            {
+              guard: "shield_person",
+              request: "my_location",
+              candidate: "my_location",
+              call: "call",
+              exit: "directions_run",
+              return: "where_to_vote",
+              unavailable: "location_off",
+              pin: "pin_drop",
+              check: "check",
+              latest: "location_on",
+            } as Record<string, IconName>
+          )[p.kind] ?? "location_on",
+          colour,
+        );
         if (img) m.addImage(id, img, { pixelRatio: 2 });
       }
     }
 
     if (m.getLayer("crisis-fence-fill")) return; // layers exist for this style; only data changed
-    m.addLayer({ id: "crisis-fence-fill", type: "fill", source: SRC.fence, paint: { "fill-color": MAP_COLOUR.site, "fill-opacity": 0.08 } });
-    m.addLayer({ id: "crisis-fence-line", type: "line", source: SRC.fence, paint: { "line-color": MAP_COLOUR.site, "line-width": 2 } });
-    m.addLayer({ id: "crisis-trail", type: "line", source: SRC.trail, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": MAP_COLOUR.trail, "line-width": 2, "line-opacity": 0.75, "line-dasharray": [2, 1.5] } });
-    m.addLayer({ id: "crisis-accuracy-fill", type: "fill", source: SRC.acc, paint: { "fill-color": ["get", "colour"], "fill-opacity": 0.1 } });
-    m.addLayer({ id: "crisis-accuracy-line", type: "line", source: SRC.acc, paint: { "line-color": ["get", "colour"], "line-width": 1, "line-dasharray": [3, 2], "line-opacity": 0.8 } });
-    m.addLayer({ id: "crisis-site-dot", type: "circle", source: SRC.site, paint: { "circle-radius": 5, "circle-color": "#1B5E20", "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
-    m.addLayer({ id: "crisis-site-label", type: "symbol", source: SRC.site, minzoom: 12, layout: { "text-field": ["get", "name"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top", "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#2b2b2b", "text-halo-color": "#ffffff", "text-halo-width": 1.4 } });
-    m.addLayer({ id: "crisis-alert-ring", type: "circle", source: SRC.point, filter: ["all", ["!", ["has", "point_count"]], ["!=", ["get", "alert"], ""]], paint: { "circle-radius": ["+", ["get", "radius"], 5], "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": MAP_COLOUR.alert, "circle-stroke-width": 3 } });
+    m.addLayer({
+      id: "crisis-fence-fill",
+      type: "fill",
+      source: SRC.fence,
+      paint: { "fill-color": MAP_COLOUR.site, "fill-opacity": 0.08 },
+    });
+    m.addLayer({
+      id: "crisis-fence-line",
+      type: "line",
+      source: SRC.fence,
+      paint: { "line-color": MAP_COLOUR.site, "line-width": 2 },
+    });
+    m.addLayer({
+      id: "crisis-trail",
+      type: "line",
+      source: SRC.trail,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": MAP_COLOUR.trail,
+        "line-width": 2,
+        "line-opacity": 0.75,
+        "line-dasharray": [2, 1.5],
+      },
+    });
+    m.addLayer({
+      id: "crisis-accuracy-fill",
+      type: "fill",
+      source: SRC.acc,
+      paint: { "fill-color": ["get", "colour"], "fill-opacity": 0.1 },
+    });
+    m.addLayer({
+      id: "crisis-accuracy-line",
+      type: "line",
+      source: SRC.acc,
+      paint: {
+        "line-color": ["get", "colour"],
+        "line-width": 1,
+        "line-dasharray": [3, 2],
+        "line-opacity": 0.8,
+      },
+    });
+    m.addLayer({
+      id: "crisis-site-dot",
+      type: "circle",
+      source: SRC.site,
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#1B5E20",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
+    });
+    m.addLayer({
+      id: "crisis-site-label",
+      type: "symbol",
+      source: SRC.site,
+      minzoom: 12,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": 11,
+        "text-offset": [0, 1.1],
+        "text-anchor": "top",
+        "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
+      },
+      paint: { "text-color": "#2b2b2b", "text-halo-color": "#ffffff", "text-halo-width": 1.4 },
+    });
+    m.addLayer({
+      id: "crisis-alert-ring",
+      type: "circle",
+      source: SRC.point,
+      filter: ["all", ["!", ["has", "point_count"]], ["!=", ["get", "alert"], ""]],
+      paint: {
+        "circle-radius": ["+", ["get", "radius"], 5],
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-color": MAP_COLOUR.alert,
+        "circle-stroke-width": 3,
+      },
+    });
     if (cl) {
       // A cluster is a count, not a state: it stays neutral so a group of guards is never read as "on site".
-      m.addLayer({ id: "crisis-cluster", type: "circle", source: SRC.point, filter: ["has", "point_count"], paint: { "circle-color": "#2b2b2b", "circle-opacity": 0.92, "circle-radius": ["step", ["get", "point_count"], 15, 5, 19, 15, 24], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      m.addLayer({ id: "crisis-cluster-count", type: "symbol", source: SRC.point, filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"] }, paint: { "text-color": "#ffffff" } });
+      m.addLayer({
+        id: "crisis-cluster",
+        type: "circle",
+        source: SRC.point,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#2b2b2b",
+          "circle-opacity": 0.92,
+          "circle-radius": ["step", ["get", "point_count"], 15, 5, 19, 15, 24],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
+        },
+      });
+      m.addLayer({
+        id: "crisis-cluster-count",
+        type: "symbol",
+        source: SRC.point,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 12,
+          "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+        },
+        paint: { "text-color": "#ffffff" },
+      });
     }
     const unclustered = ["!", ["has", "point_count"]] as unknown as never;
-    m.addLayer({ id: "crisis-point", type: "circle", source: SRC.point, filter: unclustered, paint: { "circle-radius": ["get", "radius"], "circle-color": ["case", ["get", "hollow"], "#ffffff", ["get", "colour"]], "circle-stroke-color": ["case", ["get", "hollow"], ["get", "colour"], "#ffffff"], "circle-stroke-width": 2 } });
-    m.addLayer({ id: "crisis-point-glyph", type: "symbol", source: SRC.point, filter: unclustered, layout: { "icon-image": ["concat", "crisis-", ["get", "kind"], ["case", ["get", "hollow"], "-d", "-w"]], "icon-size": ["case", ["get", "emphasis"], 0.5, 0.38], "icon-allow-overlap": true }, paint: {} });
-    m.addLayer({ id: "crisis-point-label", type: "symbol", source: SRC.point, filter: ["all", unclustered, ["get", "emphasis"]], minzoom: 11, layout: { "text-field": ["get", "label"], "text-size": 11, "text-offset": [0, 1.3], "text-anchor": "top", "text-max-width": 18, "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"] }, paint: { "text-color": "#161616", "text-halo-color": "#ffffff", "text-halo-width": 1.6 } });
+    m.addLayer({
+      id: "crisis-point",
+      type: "circle",
+      source: SRC.point,
+      filter: unclustered,
+      paint: {
+        "circle-radius": ["get", "radius"],
+        "circle-color": ["case", ["get", "hollow"], "#ffffff", ["get", "colour"]],
+        "circle-stroke-color": ["case", ["get", "hollow"], ["get", "colour"], "#ffffff"],
+        "circle-stroke-width": 2,
+      },
+    });
+    m.addLayer({
+      id: "crisis-point-glyph",
+      type: "symbol",
+      source: SRC.point,
+      filter: unclustered,
+      layout: {
+        "icon-image": [
+          "concat",
+          "crisis-",
+          ["get", "kind"],
+          ["case", ["get", "hollow"], "-d", "-w"],
+        ],
+        "icon-size": ["case", ["get", "emphasis"], 0.5, 0.38],
+        "icon-allow-overlap": true,
+      },
+      paint: {},
+    });
+    m.addLayer({
+      id: "crisis-point-label",
+      type: "symbol",
+      source: SRC.point,
+      filter: ["all", unclustered, ["get", "emphasis"]],
+      minzoom: 11,
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": 11,
+        "text-offset": [0, 1.3],
+        "text-anchor": "top",
+        "text-max-width": 18,
+        "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
+      },
+      paint: { "text-color": "#161616", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
+    });
 
-    for (const layer of ["crisis-point", "crisis-point-glyph", "crisis-site-dot", "crisis-cluster"]) {
+    for (const layer of [
+      "crisis-point",
+      "crisis-point-glyph",
+      "crisis-site-dot",
+      "crisis-cluster",
+    ]) {
       if (!m.getLayer(layer)) continue;
-      m.on("mouseenter", layer, () => { m.getCanvas().style.cursor = "pointer"; });
-      m.on("mouseleave", layer, () => { m.getCanvas().style.cursor = ""; });
+      m.on("mouseenter", layer, () => {
+        m.getCanvas().style.cursor = "pointer";
+      });
+      m.on("mouseleave", layer, () => {
+        m.getCanvas().style.cursor = "";
+      });
     }
     // Popups are built as DOM nodes with textContent: guard names and device names are data, never markup.
     for (const layer of ["crisis-point", "crisis-point-glyph", "crisis-site-dot"]) {
@@ -130,7 +323,12 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         const title = document.createElement("strong");
         title.textContent = pr.label || pr.name || "Position";
         box.append(title);
-        for (const line of [pr.at, pr.detail, pr.accuracyM ? `±${pr.accuracyM} m` : "", pr.alert].filter(Boolean)) {
+        for (const line of [
+          pr.at,
+          pr.detail,
+          pr.accuracyM ? `±${pr.accuracyM} m` : "",
+          pr.alert,
+        ].filter(Boolean)) {
           const p = document.createElement("div");
           p.textContent = line;
           if (line === pr.alert) p.style.color = MAP_COLOUR.alert;
@@ -146,16 +344,26 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         void (async () => {
           const mod = await import("mapbox-gl");
           popup.current?.remove();
-          popup.current = new mod.Popup({ closeButton: true, offset: 12, maxWidth: "260px" }).setLngLat(geom.coordinates as [number, number]).setDOMContent(box).addTo(m);
+          popup.current = new mod.Popup({ closeButton: true, offset: 12, maxWidth: "260px" })
+            .setLngLat(geom.coordinates as [number, number])
+            .setDOMContent(box)
+            .addTo(m);
         })();
       });
     }
-    if (m.getLayer("crisis-cluster")) m.on("click", "crisis-cluster", (e) => {
-      const f = e.features?.[0];
-      if (!f) return;
-      const source = m.getSource(SRC.point) as GeoJSONSource;
-      source.getClusterExpansionZoom(f.properties!.cluster_id as number, (err, z) => { if (err || z == null) return; m.easeTo({ center: (f.geometry as GeoJSON.Point).coordinates as [number, number], zoom: z }); });
-    });
+    if (m.getLayer("crisis-cluster"))
+      m.on("click", "crisis-cluster", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const source = m.getSource(SRC.point) as GeoJSONSource;
+        source.getClusterExpansionZoom(f.properties!.cluster_id as number, (err, z) => {
+          if (err || z == null) return;
+          m.easeTo({
+            center: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+            zoom: z,
+          });
+        });
+      });
   }, []);
 
   const fit = useCallback(() => {
@@ -164,8 +372,16 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
     const { sites: ss, points: pp, trails: tt } = data.current;
     const b = boundsOf(ss, pp, tt);
     if (!b) return;
-    if (b.west === b.east && b.south === b.north) m.easeTo({ center: [b.west, b.south], zoom: Math.max(m.getZoom(), 15), duration: 400 });
-    else m.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 48, maxZoom: 17, duration: 400 });
+    if (b.west === b.east && b.south === b.north)
+      m.easeTo({ center: [b.west, b.south], zoom: Math.max(m.getZoom(), 15), duration: 400 });
+    else
+      m.fitBounds(
+        [
+          [b.west, b.south],
+          [b.east, b.north],
+        ],
+        { padding: 48, maxZoom: 17, duration: 400 },
+      );
   }, []);
 
   // ---- create once ----
@@ -174,7 +390,11 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
     let ro: ResizeObserver | null = null;
     (async () => {
       const token = mapboxToken();
-      if (!token) { setFailed(true); onUnavailable?.("no Mapbox token"); return; }
+      if (!token) {
+        setFailed(true);
+        onUnavailable?.("no Mapbox token");
+        return;
+      }
       try {
         const mod = (await import("mapbox-gl")).default;
         if (cancelled || !host.current || map.current) return;
@@ -193,12 +413,37 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
         map.current = m;
         m.addControl(new mod.NavigationControl({ visualizePitch: false }), "top-right");
         m.addControl(new mod.ScaleControl({ maxWidth: 90, unit: "metric" }), "bottom-left");
-        m.on("style.load", () => { styleReady.current = true; paint(); if (!ready.current) { ready.current = true; fit(); } });
+        m.on("style.load", () => {
+          styleReady.current = true;
+          paint();
+          if (!ready.current) {
+            ready.current = true;
+            fit();
+          }
+        });
         // Test hook: the browser suites assert on the real layers and sources rather than on pixels.
         (window as unknown as { __crisisMap?: unknown }).__crisisMap = m;
-        m.on("error", (e) => { if (e.error?.message) console.warn("[map]", e.error.message); });
-        m.on("click", (e) => { const hit = m.queryRenderedFeatures(e.point, { layers: ["crisis-point", "crisis-point-glyph", "crisis-site-dot", "crisis-cluster"].filter((l) => m.getLayer(l)) }); if (!hit.length) onPickRef.current?.(e.lngLat.lat, e.lngLat.lng); });
-        ro = new ResizeObserver(() => { try { m.resize(); } catch { /* unmounted */ } });
+        m.on("error", (e) => {
+          if (e.error?.message) console.warn("[map]", e.error.message);
+        });
+        m.on("click", (e) => {
+          const hit = m.queryRenderedFeatures(e.point, {
+            layers: [
+              "crisis-point",
+              "crisis-point-glyph",
+              "crisis-site-dot",
+              "crisis-cluster",
+            ].filter((l) => m.getLayer(l)),
+          });
+          if (!hit.length) onPickRef.current?.(e.lngLat.lat, e.lngLat.lng);
+        });
+        ro = new ResizeObserver(() => {
+          try {
+            m.resize();
+          } catch {
+            /* unmounted */
+          }
+        });
         ro.observe(host.current);
       } catch (e) {
         setFailed(true);
@@ -209,7 +454,11 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
       cancelled = true;
       ro?.disconnect();
       popup.current?.remove();
-      try { map.current?.remove(); } catch { /* already gone */ }
+      try {
+        map.current?.remove();
+      } catch {
+        /* already gone */
+      }
       map.current = null;
       ready.current = false;
     };
@@ -217,7 +466,11 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
   }, []);
 
   // ---- data in, no remount ----
-  const sig = JSON.stringify({ s: sites.map((s) => [s.id, s.lat, s.lng, s.radiusM]), p: points.map((p) => [p.id, p.lat, p.lng, p.accuracyM, p.freshness, p.state, p.alert]), t: trails.map((t) => [t.id, t.points.length]) });
+  const sig = JSON.stringify({
+    s: sites.map((s) => [s.id, s.lat, s.lng, s.radiusM]),
+    p: points.map((p) => [p.id, p.lat, p.lng, p.accuracyM, p.freshness, p.state, p.alert]),
+    t: trails.map((t) => [t.id, t.points.length]),
+  });
   const lastSig = useRef("");
   useEffect(() => {
     paint();
@@ -225,9 +478,22 @@ export function MapboxMap({ sites, points, trails = [], cluster = false, styleKe
     lastSig.current = sig;
     if (changed && autoFit && ready.current) fit();
   }, [sig, paint, fit, autoFit]);
-  useEffect(() => { if (fitKey > 0) fit(); }, [fitKey, fit]);
-  useEffect(() => { const m = map.current; if (m && ready.current) { styleReady.current = false; m.setStyle(mapStyleUrl(styleKey)); } }, [styleKey]);
-  useEffect(() => { const m = map.current; if (!m) return; if (scrollZoom) m.scrollZoom.enable(); else m.scrollZoom.disable(); }, [scrollZoom]);
+  useEffect(() => {
+    if (fitKey > 0) fit();
+  }, [fitKey, fit]);
+  useEffect(() => {
+    const m = map.current;
+    if (m && ready.current) {
+      styleReady.current = false;
+      m.setStyle(mapStyleUrl(styleKey));
+    }
+  }, [styleKey]);
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    if (scrollZoom) m.scrollZoom.enable();
+    else m.scrollZoom.disable();
+  }, [scrollZoom]);
 
   if (failed) return null;
   return <div ref={host} className={className} data-testid="mapbox-map" />;

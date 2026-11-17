@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { classifyFix } from "@/lib/geofence";
 import { hashGuardPin, verifyGuardPin } from "./shared-device";
 import { createPatrolPlan } from "./plan";
+import { revealWindows } from "./reveal";
 import { scanSchema, type Scan } from "./validation";
 
 export const qrHash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -108,6 +109,14 @@ export async function startPatrolSession(
   pin: string,
   now = new Date(),
 ) {
+  // Device-wide ceiling first: the per-guard budget alone lets someone holding the shared handset
+  // try a few PINs on every guard number. A real handover never needs more than a handful.
+  const deviceBudget = await rateLimit(`patrol-pin-device:${deviceId}`, 40, 900000);
+  if (!deviceBudget.ok)
+    throw new DomainError(
+      "Too many sign-in attempts on this device. Try again in 15 minutes.",
+      429,
+    );
   const budget = await rateLimit(`patrol-pin:${deviceId}:${guardNo}`, 5, 900000);
   if (!budget.ok)
     throw new DomainError("Sign-in locked for this guard on this device for 15 minutes", 429);
@@ -204,7 +213,7 @@ export async function patrolConfig(deviceId: string) {
       startedAt: session.startedAt,
       expiresAt: session.expiresAt,
       policyVersion: session.policyVersion,
-      assignments: session.assignments.map((a) => ({
+      assignments: revealWindows(session.assignments, now).map((a) => ({
         id: a.id,
         checkpointId: a.checkpointId,
         checkpointName: a.checkpoint.name,

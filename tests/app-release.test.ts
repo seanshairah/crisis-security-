@@ -14,7 +14,11 @@ const signed: AppRelease = {
   debugSigned: false,
   builtAt: "2026-10-20T08:00:00.000Z",
 };
-const debugKey: AppRelease = { ...signed, signer: "C=US, O=Android, CN=Android Debug", debugSigned: true };
+const debugKey: AppRelease = {
+  ...signed,
+  signer: "C=US, O=Android, CN=Android Debug",
+  debugSigned: true,
+};
 
 test("a properly signed release may be handed out", () => {
   const d = distributable(signed);

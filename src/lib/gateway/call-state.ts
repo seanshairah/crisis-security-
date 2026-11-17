@@ -6,7 +6,12 @@
  */
 import type { CallDirection, CallStatus } from "@prisma/client";
 
-export const CALL_EVENT_TYPES = ["CALL_STARTED", "CALL_ANSWERED", "CALL_ENDED", "CALL_MISSED"] as const;
+export const CALL_EVENT_TYPES = [
+  "CALL_STARTED",
+  "CALL_ANSWERED",
+  "CALL_ENDED",
+  "CALL_MISSED",
+] as const;
 export const DEVICE_EVENT_TYPES = ["DEVICE_ONLINE", "DEVICE_OFFLINE"] as const;
 export type CallEventType = (typeof CALL_EVENT_TYPES)[number];
 export type DeviceEventType = (typeof DEVICE_EVENT_TYPES)[number];
@@ -53,7 +58,14 @@ export function saneTimestamp(ts: string | Date, now = new Date()): Date {
 /** First state for a call whose first event we see is `ev`. */
 export function initialCallState(ev: IncomingGatewayEvent, at: Date): CallState {
   const direction: CallDirection = ev.direction === "OUTGOING" ? "OUTGOING" : "INCOMING";
-  const base: CallState = { direction, status: "RINGING", startedAt: at, answeredAt: null, endedAt: null, durationSeconds: null };
+  const base: CallState = {
+    direction,
+    status: "RINGING",
+    startedAt: at,
+    answeredAt: null,
+    endedAt: null,
+    durationSeconds: null,
+  };
   return reduceCall(base, ev, at);
 }
 
@@ -62,7 +74,11 @@ export function reduceCall(state: CallState, ev: IncomingGatewayEvent, at: Date)
   switch (ev.eventType) {
     case "CALL_STARTED": {
       if (isTerminal(state.status) || state.status === "ANSWERED") return state; // late duplicate
-      return { ...state, startedAt: at < state.startedAt ? at : state.startedAt, status: "RINGING" };
+      return {
+        ...state,
+        startedAt: at < state.startedAt ? at : state.startedAt,
+        status: "RINGING",
+      };
     }
     case "CALL_ANSWERED": {
       if (isTerminal(state.status)) return state.answeredAt ? state : { ...state, answeredAt: at };
@@ -74,13 +90,26 @@ export function reduceCall(state: CallState, ev: IncomingGatewayEvent, at: Date)
     }
     case "CALL_ENDED": {
       if (isTerminal(state.status) && state.durationSeconds !== null) return state;
-      const answered = ev.answered ?? (state.status === "ANSWERED" || state.answeredAt !== null || (ev.durationSeconds ?? 0) > 0);
+      const answered =
+        ev.answered ??
+        (state.status === "ANSWERED" || state.answeredAt !== null || (ev.durationSeconds ?? 0) > 0);
       const endedAt = state.endedAt ?? at;
       if (!answered) {
-        return { ...state, status: state.direction === "INCOMING" ? "MISSED" : "FAILED", endedAt, durationSeconds: 0 };
+        return {
+          ...state,
+          status: state.direction === "INCOMING" ? "MISSED" : "FAILED",
+          endedAt,
+          durationSeconds: 0,
+        };
       }
-      const answeredAt = state.answeredAt ?? (ev.durationSeconds != null ? new Date(endedAt.getTime() - ev.durationSeconds * 1000) : state.startedAt);
-      const duration = ev.durationSeconds ?? Math.max(0, Math.round((endedAt.getTime() - answeredAt.getTime()) / 1000));
+      const answeredAt =
+        state.answeredAt ??
+        (ev.durationSeconds != null
+          ? new Date(endedAt.getTime() - ev.durationSeconds * 1000)
+          : state.startedAt);
+      const duration =
+        ev.durationSeconds ??
+        Math.max(0, Math.round((endedAt.getTime() - answeredAt.getTime()) / 1000));
       return { ...state, status: "ENDED", answeredAt, endedAt, durationSeconds: duration };
     }
     default:
@@ -95,7 +124,10 @@ export function fmtCallDuration(seconds: number | null | undefined): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export const CALL_STATUS_META: Record<CallStatus, { label: string; tone: "ok" | "warn" | "critical" | "neutral" | "info" | "muted" }> = {
+export const CALL_STATUS_META: Record<
+  CallStatus,
+  { label: string; tone: "ok" | "warn" | "critical" | "neutral" | "info" | "muted" }
+> = {
   RINGING: { label: "Ringing", tone: "info" },
   ANSWERED: { label: "Answered", tone: "ok" },
   ENDED: { label: "Completed", tone: "ok" },

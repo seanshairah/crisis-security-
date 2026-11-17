@@ -20,7 +20,14 @@ import type { ShiftStatus } from "@prisma/client";
 /** Finished or abandoned: the record stands. */
 export const CLOSED_STATUSES: ShiftStatus[] = ["COMPLETED", "MISSED", "CANCELLED"];
 /** The guard is, or should be, on post: the schedule is now load-bearing. */
-export const OPERATING_STATUSES: ShiftStatus[] = ["ON_DUTY", "LATE", "NOT_CONFIRMED", "ASSISTANCE", "INCIDENT", "CRITICAL"];
+export const OPERATING_STATUSES: ShiftStatus[] = [
+  "ON_DUTY",
+  "LATE",
+  "NOT_CONFIRMED",
+  "ASSISTANCE",
+  "INCIDENT",
+  "CRITICAL",
+];
 
 export type ShiftEditSubject = {
   status: ShiftStatus;
@@ -41,16 +48,35 @@ export type EditPolicy = {
 
 export function editPolicy(s: ShiftEditSubject): EditPolicy {
   if (CLOSED_STATUSES.includes(s.status)) {
-    return { canEdit: false, canMoveSchedule: false, reason: `This shift is ${s.status.toLowerCase()}. A closed shift is a record of what happened and cannot be edited.` };
+    return {
+      canEdit: false,
+      canMoveSchedule: false,
+      reason: `This shift is ${s.status.toLowerCase()}. A closed shift is a record of what happened and cannot be edited.`,
+    };
   }
   if (s.arrivalConfirmedAt) {
-    return { canEdit: true, canMoveSchedule: false, reason: "The guard is recorded on post, so the guard, site and times are fixed. Cancel the shift and create a new one if the posting itself changed." };
+    return {
+      canEdit: true,
+      canMoveSchedule: false,
+      reason:
+        "The guard is recorded on post, so the guard, site and times are fixed. Cancel the shift and create a new one if the posting itself changed.",
+    };
   }
   if (OPERATING_STATUSES.includes(s.status)) {
-    return { canEdit: true, canMoveSchedule: false, reason: "This shift is already running, so the guard, site and times are fixed. Cancel it and create a new one if the posting itself changed." };
+    return {
+      canEdit: true,
+      canMoveSchedule: false,
+      reason:
+        "This shift is already running, so the guard, site and times are fixed. Cancel it and create a new one if the posting itself changed.",
+    };
   }
   if (s.arrivalSmsSentAt) {
-    return { canEdit: true, canMoveSchedule: false, reason: "The arrival check has already been sent to the guard, so the guard, site and times are fixed. Cancel the shift and create a new one instead." };
+    return {
+      canEdit: true,
+      canMoveSchedule: false,
+      reason:
+        "The arrival check has already been sent to the guard, so the guard, site and times are fixed. Cancel the shift and create a new one instead.",
+    };
   }
   return { canEdit: true, canMoveSchedule: true, reason: null };
 }
@@ -70,25 +96,48 @@ export type ShiftTraceCounts = {
 };
 
 const TRACE_LABEL: Record<keyof ShiftTraceCounts, string> = {
-  checkIns: "check-in", welfareChecks: "welfare check", incidents: "incident", smsMessages: "message",
-  callLogs: "call", locationEvents: "location event", alerts: "alert", notifications: "notification",
-  evidence: "attendance record", networkChecks: "network location check",
+  checkIns: "check-in",
+  welfareChecks: "welfare check",
+  incidents: "incident",
+  smsMessages: "message",
+  callLogs: "call",
+  locationEvents: "location event",
+  alerts: "alert",
+  notifications: "notification",
+  evidence: "attendance record",
+  networkChecks: "network location check",
 };
 
 export type DeletePolicy = { canDelete: boolean; reason: string | null };
 
 export function deletePolicy(s: ShiftEditSubject, counts: ShiftTraceCounts): DeletePolicy {
-  if (s.arrivalConfirmedAt) return { canDelete: false, reason: "This shift has an attendance record. Cancel it instead; deleting would erase the guard's attendance history." };
+  if (s.arrivalConfirmedAt)
+    return {
+      canDelete: false,
+      reason:
+        "This shift has an attendance record. Cancel it instead; deleting would erase the guard's attendance history.",
+    };
   if (OPERATING_STATUSES.includes(s.status) || s.status === "COMPLETED" || s.status === "MISSED") {
-    return { canDelete: false, reason: `This shift is ${s.status.toLowerCase()} and is part of the operational record. Cancel it instead.` };
+    return {
+      canDelete: false,
+      reason: `This shift is ${s.status.toLowerCase()} and is part of the operational record. Cancel it instead.`,
+    };
   }
-  const traces = (Object.keys(TRACE_LABEL) as (keyof ShiftTraceCounts)[]).filter((k) => (counts[k] ?? 0) > 0);
+  const traces = (Object.keys(TRACE_LABEL) as (keyof ShiftTraceCounts)[]).filter(
+    (k) => (counts[k] ?? 0) > 0,
+  );
   if (traces.length) {
-    const named = traces.map((k) => `${counts[k]} ${TRACE_LABEL[k]}${counts[k] === 1 ? "" : "s"}`).join(", ");
-    return { canDelete: false, reason: `This shift already has ${named}. Cancel it instead; deleting would erase that history.` };
+    const named = traces
+      .map((k) => `${counts[k]} ${TRACE_LABEL[k]}${counts[k] === 1 ? "" : "s"}`)
+      .join(", ");
+    return {
+      canDelete: false,
+      reason: `This shift already has ${named}. Cancel it instead; deleting would erase that history.`,
+    };
   }
   return { canDelete: true, reason: null };
 }
 
 /** One line for the interface, explaining what cancelling does that deleting does not. */
-export const DELETE_EXPLAINER = "Deleting removes the shift completely, as if it had never been scheduled. It is only possible while nothing has happened on it. To stop a shift that guards or clients already know about, cancel it instead: that keeps the record and the timeline.";
+export const DELETE_EXPLAINER =
+  "Deleting removes the shift completely, as if it had never been scheduled. It is only possible while nothing has happened on it. To stop a shift that guards or clients already know about, cancel it instead: that keeps the record and the timeline.";

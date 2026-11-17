@@ -24,7 +24,10 @@ export const mapStyleUrl = (key: MapStyleKey): string =>
     ? "mapbox://styles/mapbox/satellite-streets-v12"
     : process.env.NEXT_PUBLIC_MAPBOX_STYLE?.trim() || "mapbox://styles/mapbox/streets-v12";
 
-export const MAP_STYLE_LABEL: Record<MapStyleKey, string> = { streets: "Street", satellite: "Satellite" };
+export const MAP_STYLE_LABEL: Record<MapStyleKey, string> = {
+  streets: "Street",
+  satellite: "Satellite",
+};
 
 /** Shown in the map footer so an operator always knows whose pictures they are reading. */
 export const mapProviderName = (p: MapProvider = mapProvider()) =>

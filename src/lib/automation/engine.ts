@@ -12,7 +12,13 @@ import { notify } from "@/lib/notifications";
 import { sendTemplated } from "@/lib/sms/outbound";
 import { sendClientUpdate } from "@/lib/sms/client-updates";
 import { onArrivalNotConfirmed } from "@/lib/client-notifications/rules";
-import { materialiseRecurrences, recordEvent, shiftInclude, LIVE_STATUSES, ON_SITE_STATUSES } from "@/lib/services/shifts";
+import {
+  materialiseRecurrences,
+  recordEvent,
+  shiftInclude,
+  LIVE_STATUSES,
+  ON_SITE_STATUSES,
+} from "@/lib/services/shifts";
 import { runCheckInStep } from "@/lib/attendance/check-in-service";
 import { fmtTime } from "@/lib/time";
 import { gatewayMaintenance } from "@/lib/gateway/service";
@@ -44,14 +50,42 @@ export type TickReport = {
 let running = false;
 
 export async function runAutomationTick(now = new Date()): Promise<TickReport> {
-  const report: TickReport = { at: now.toISOString(), recurrencesCreated: 0, arrivalSent: 0, remindersSent: 0, escalated: 0, welfareSent: 0, welfareMissed: 0, handoverNotices: 0, completionSent: 0, completionTimedOut: 0, missed: 0, gatewaysOffline: 0, locationOverdue: 0, locationEscalated: 0, checkInsOpened: 0, checkInsEscalated: 0, arrivalRetried: 0, errors: [] };
+  const report: TickReport = {
+    at: now.toISOString(),
+    recurrencesCreated: 0,
+    arrivalSent: 0,
+    remindersSent: 0,
+    escalated: 0,
+    welfareSent: 0,
+    welfareMissed: 0,
+    handoverNotices: 0,
+    completionSent: 0,
+    completionTimedOut: 0,
+    missed: 0,
+    gatewaysOffline: 0,
+    locationOverdue: 0,
+    locationEscalated: 0,
+    checkInsOpened: 0,
+    checkInsEscalated: 0,
+    arrivalRetried: 0,
+    errors: [],
+  };
   if (running) {
     report.errors.push("tick already running");
     return report;
   }
   running = true;
   try {
-    const [sendOffset, grace, escalation, welfarePct, welfareWindow, completionWindow, handoverMinutes, horizon] = await Promise.all([
+    const [
+      sendOffset,
+      grace,
+      escalation,
+      welfarePct,
+      welfareWindow,
+      completionWindow,
+      handoverMinutes,
+      horizon,
+    ] = await Promise.all([
       getSettingNumber("arrival.sendOffsetMinutes"),
       getSettingNumber("arrival.graceMinutes"),
       getSettingNumber("arrival.escalationMinutes"),
@@ -80,13 +114,31 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 2. arrival check
-    const due = await db.shift.findMany({ where: { status: "SCHEDULED", arrivalSmsSentAt: null, startAt: { lte: addMinutes(now, sendOffset) }, endAt: { gt: now } }, include: shiftInclude });
+    const due = await db.shift.findMany({
+      where: {
+        status: "SCHEDULED",
+        arrivalSmsSentAt: null,
+        startAt: { lte: addMinutes(now, sendOffset) },
+        endAt: { gt: now },
+      },
+      include: shiftInclude,
+    });
     for (const s of due) {
       try {
-        await db.shift.update({ where: { id: s.id }, data: { status: "AWAITING_ARRIVAL", pendingPrompt: "ARRIVAL", arrivalSmsSentAt: now } });
-        await recordEvent(s.id, s.guardId, "SHIFT_STARTED", { at: s.startAt, note: `Shift at ${s.location.name} scheduled ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}.` });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { status: "AWAITING_ARRIVAL", pendingPrompt: "ARRIVAL", arrivalSmsSentAt: now },
+        });
+        await recordEvent(s.id, s.guardId, "SHIFT_STARTED", {
+          at: s.startAt,
+          note: `Shift at ${s.location.name} scheduled ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}.`,
+        });
         const msg = await sendTemplated(s, "ARRIVAL", "ARRIVAL");
-        await recordEvent(s.id, s.guardId, "ARRIVAL_SMS_SENT", { at: now, note: "Arrival check sent.", smsMessageId: msg.id });
+        await recordEvent(s.id, s.guardId, "ARRIVAL_SMS_SENT", {
+          at: now,
+          note: "Arrival check sent.",
+          smsMessageId: msg.id,
+        });
         report.arrivalSent++;
       } catch (e) {
         report.errors.push(`arrival ${s.id}: ${(e as Error).message}`);
@@ -103,13 +155,35 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 3. arrival reminder
-    const remind = await db.shift.findMany({ where: { status: "AWAITING_ARRIVAL", arrivalReminderSentAt: null, arrivalSmsSentAt: { lte: addMinutes(now, -grace) }, attendance: { arrivalConfirmedAt: null } }, include: shiftInclude });
+    const remind = await db.shift.findMany({
+      where: {
+        status: "AWAITING_ARRIVAL",
+        arrivalReminderSentAt: null,
+        arrivalSmsSentAt: { lte: addMinutes(now, -grace) },
+        attendance: { arrivalConfirmedAt: null },
+      },
+      include: shiftInclude,
+    });
     for (const s of remind) {
       try {
-        await db.shift.update({ where: { id: s.id }, data: { status: "LATE", arrivalReminderSentAt: now } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { status: "LATE", arrivalReminderSentAt: now },
+        });
         const msg = await sendTemplated(s, "ARRIVAL_REMINDER", "ARRIVAL_REMINDER");
-        await recordEvent(s.id, s.guardId, "ARRIVAL_REMINDER_SENT", { at: now, note: `No reply after ${grace} min. Reminder sent.`, smsMessageId: msg.id });
-        await notify({ type: "GUARD_LATE", severity: "WARNING", title: `${s.guard.firstName} ${s.guard.lastName} has not confirmed arrival`, body: `${s.location.name}, shift ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}. Reminder sent at ${fmtTime(now)}.`, guardId: s.guardId, shiftId: s.id });
+        await recordEvent(s.id, s.guardId, "ARRIVAL_REMINDER_SENT", {
+          at: now,
+          note: `No reply after ${grace} min. Reminder sent.`,
+          smsMessageId: msg.id,
+        });
+        await notify({
+          type: "GUARD_LATE",
+          severity: "WARNING",
+          title: `${s.guard.firstName} ${s.guard.lastName} has not confirmed arrival`,
+          body: `${s.location.name}, shift ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}. Reminder sent at ${fmtTime(now)}.`,
+          guardId: s.guardId,
+          shiftId: s.id,
+        });
         report.remindersSent++;
       } catch (e) {
         report.errors.push(`reminder ${s.id}: ${(e as Error).message}`);
@@ -117,13 +191,34 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 4. arrival escalation
-    const escalate = await db.shift.findMany({ where: { status: "LATE", arrivalEscalatedAt: null, arrivalReminderSentAt: { lte: addMinutes(now, -escalation) }, attendance: { arrivalConfirmedAt: null } }, include: shiftInclude });
+    const escalate = await db.shift.findMany({
+      where: {
+        status: "LATE",
+        arrivalEscalatedAt: null,
+        arrivalReminderSentAt: { lte: addMinutes(now, -escalation) },
+        attendance: { arrivalConfirmedAt: null },
+      },
+      include: shiftInclude,
+    });
     for (const s of escalate) {
       try {
-        await db.shift.update({ where: { id: s.id }, data: { status: "NOT_CONFIRMED", arrivalEscalatedAt: now } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { status: "NOT_CONFIRMED", arrivalEscalatedAt: now },
+        });
         await db.attendance.update({ where: { shiftId: s.id }, data: { status: "NOT_REPORTED" } });
-        await recordEvent(s.id, s.guardId, "ARRIVAL_ESCALATED", { at: now, note: `No reply after reminder. Attendance not confirmed. ${s.supervisor?.name ?? "Supervisor"} notified.` });
-        await notify({ type: "GUARD_NOT_REPORTED", severity: "CRITICAL", title: `${s.guard.firstName} ${s.guard.lastName} failed to report at ${s.location.name}`, body: `No reply to the arrival check or reminder. Shift ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}. Call ${s.guard.phone}.`, guardId: s.guardId, shiftId: s.id });
+        await recordEvent(s.id, s.guardId, "ARRIVAL_ESCALATED", {
+          at: now,
+          note: `No reply after reminder. Attendance not confirmed. ${s.supervisor?.name ?? "Supervisor"} notified.`,
+        });
+        await notify({
+          type: "GUARD_NOT_REPORTED",
+          severity: "CRITICAL",
+          title: `${s.guard.firstName} ${s.guard.lastName} failed to report at ${s.location.name}`,
+          body: `No reply to the arrival check or reminder. Shift ${fmtTime(s.startAt)}–${fmtTime(s.endAt)}. Call ${s.guard.phone}.`,
+          guardId: s.guardId,
+          shiftId: s.id,
+        });
         // Supervisor first (above), then the client if the site asks for late or missed check-ins.
         await onArrivalNotConfirmed(s.id, `shift:${s.id}:arrival-escalated`);
         report.escalated++;
@@ -134,16 +229,31 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
 
     // 5. welfare check at the configured point of the shift
     // Sites with a welfare schedule are handled by step 6b instead.
-    const onSite = await db.shift.findMany({ where: { status: { in: ON_SITE_STATUSES }, welfareSmsSentAt: null, endAt: { gt: now }, location: unscheduledSite }, include: shiftInclude });
+    const onSite = await db.shift.findMany({
+      where: {
+        status: { in: ON_SITE_STATUSES },
+        welfareSmsSentAt: null,
+        endAt: { gt: now },
+        location: unscheduledSite,
+      },
+      include: shiftInclude,
+    });
     for (const s of onSite) {
       const point = new Date(s.startAt.getTime() + (s.durationMinutes * 60000 * welfarePct) / 100);
       if (point > now) continue;
       if (s.pendingPrompt === "INCIDENT_DESCRIPTION") continue; // do not interrupt an incident report
       try {
-        await db.shift.update({ where: { id: s.id }, data: { welfareSmsSentAt: now, pendingPrompt: "WELFARE" } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { welfareSmsSentAt: now, pendingPrompt: "WELFARE" },
+        });
         await db.welfareCheck.create({ data: { shiftId: s.id, sentAt: now } });
         const msg = await sendTemplated(s, "WELFARE", "WELFARE");
-        await recordEvent(s.id, s.guardId, "WELFARE_SMS_SENT", { at: now, note: "Mid-shift welfare check sent.", smsMessageId: msg.id });
+        await recordEvent(s.id, s.guardId, "WELFARE_SMS_SENT", {
+          at: now,
+          note: "Mid-shift welfare check sent.",
+          smsMessageId: msg.id,
+        });
         report.welfareSent++;
       } catch (e) {
         report.errors.push(`welfare ${s.id}: ${(e as Error).message}`);
@@ -151,14 +261,41 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 6. missed welfare check
-    const missedWelfare = await db.shift.findMany({ where: { pendingPrompt: "WELFARE", welfareMissedAt: null, welfareSmsSentAt: { lte: addMinutes(now, -welfareWindow) }, location: unscheduledSite }, include: shiftInclude });
+    const missedWelfare = await db.shift.findMany({
+      where: {
+        pendingPrompt: "WELFARE",
+        welfareMissedAt: null,
+        welfareSmsSentAt: { lte: addMinutes(now, -welfareWindow) },
+        location: unscheduledSite,
+      },
+      include: shiftInclude,
+    });
     for (const s of missedWelfare) {
       try {
-        await db.shift.update({ where: { id: s.id }, data: { welfareMissedAt: now, pendingPrompt: "WELFARE" } }); // keep listening
-        await db.welfareCheck.updateMany({ where: { shiftId: s.id, response: "PENDING" }, data: { response: "NO_RESPONSE" } });
-        await db.attendance.update({ where: { shiftId: s.id }, data: { missedChecks: { increment: 1 } } });
-        await recordEvent(s.id, s.guardId, "WELFARE_MISSED", { at: now, note: `No reply to the welfare check within ${welfareWindow} min.` });
-        await notify({ type: "WELFARE_MISSED", severity: "WARNING", title: `${s.guard.firstName} ${s.guard.lastName} missed the welfare check`, body: `${s.location.name}. Check sent ${fmtTime(s.welfareSmsSentAt)}, no reply by ${fmtTime(now)}. Call ${s.guard.phone}.`, guardId: s.guardId, shiftId: s.id });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { welfareMissedAt: now, pendingPrompt: "WELFARE" },
+        }); // keep listening
+        await db.welfareCheck.updateMany({
+          where: { shiftId: s.id, response: "PENDING" },
+          data: { response: "NO_RESPONSE" },
+        });
+        await db.attendance.update({
+          where: { shiftId: s.id },
+          data: { missedChecks: { increment: 1 } },
+        });
+        await recordEvent(s.id, s.guardId, "WELFARE_MISSED", {
+          at: now,
+          note: `No reply to the welfare check within ${welfareWindow} min.`,
+        });
+        await notify({
+          type: "WELFARE_MISSED",
+          severity: "WARNING",
+          title: `${s.guard.firstName} ${s.guard.lastName} missed the welfare check`,
+          body: `${s.location.name}. Check sent ${fmtTime(s.welfareSmsSentAt)}, no reply by ${fmtTime(now)}. Call ${s.guard.phone}.`,
+          guardId: s.guardId,
+          shiftId: s.id,
+        });
         report.welfareMissed++;
       } catch (e) {
         report.errors.push(`welfare-missed ${s.id}: ${(e as Error).message}`);
@@ -186,18 +323,39 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 7. handover notices
-    const incoming = await db.shift.findMany({ where: { status: "SCHEDULED", handoverSmsSentAt: null, startAt: { gt: now, lte: addMinutes(now, handoverMinutes) } }, include: shiftInclude });
+    const incoming = await db.shift.findMany({
+      where: {
+        status: "SCHEDULED",
+        handoverSmsSentAt: null,
+        startAt: { gt: now, lte: addMinutes(now, handoverMinutes) },
+      },
+      include: shiftInclude,
+    });
     for (const s of incoming) {
       try {
-        const outgoing = await db.shift.findFirst({ where: { locationId: s.locationId, id: { not: s.id }, status: { in: LIVE_STATUSES }, endAt: { gte: addMinutes(s.startAt, -60), lte: addMinutes(s.startAt, 60) } }, include: shiftInclude });
+        const outgoing = await db.shift.findFirst({
+          where: {
+            locationId: s.locationId,
+            id: { not: s.id },
+            status: { in: LIVE_STATUSES },
+            endAt: { gte: addMinutes(s.startAt, -60), lte: addMinutes(s.startAt, 60) },
+          },
+          include: shiftInclude,
+        });
         await db.shift.update({ where: { id: s.id }, data: { handoverSmsSentAt: now } });
         if (!outgoing) continue;
         const inName = `${s.guard.firstName} ${s.guard.lastName}`;
         const outName = `${outgoing.guard.firstName} ${outgoing.guard.lastName}`;
         await sendTemplated(s, "HANDOVER_INCOMING", "HANDOVER", { other_guard: outName });
         await sendTemplated(outgoing, "HANDOVER_OUTGOING", "HANDOVER", { other_guard: inName });
-        await recordEvent(s.id, s.guardId, "HANDOVER_NOTICE", { at: now, note: `Taking over from ${outName}.` });
-        await recordEvent(outgoing.id, outgoing.guardId, "HANDOVER_NOTICE", { at: now, note: `Relief: ${inName} at ${fmtTime(s.startAt)}.` });
+        await recordEvent(s.id, s.guardId, "HANDOVER_NOTICE", {
+          at: now,
+          note: `Taking over from ${outName}.`,
+        });
+        await recordEvent(outgoing.id, outgoing.guardId, "HANDOVER_NOTICE", {
+          at: now,
+          note: `Relief: ${inName} at ${fmtTime(s.startAt)}.`,
+        });
         report.handoverNotices++;
       } catch (e) {
         report.errors.push(`handover ${s.id}: ${(e as Error).message}`);
@@ -205,13 +363,23 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 8. completion check
-    const ending = await db.shift.findMany({ where: { status: { in: ON_SITE_STATUSES }, completionSmsSentAt: null, endAt: { lte: now } }, include: shiftInclude });
+    const ending = await db.shift.findMany({
+      where: { status: { in: ON_SITE_STATUSES }, completionSmsSentAt: null, endAt: { lte: now } },
+      include: shiftInclude,
+    });
     for (const s of ending) {
       if (s.pendingPrompt === "INCIDENT_DESCRIPTION") continue;
       try {
-        await db.shift.update({ where: { id: s.id }, data: { completionSmsSentAt: now, pendingPrompt: "COMPLETION" } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { completionSmsSentAt: now, pendingPrompt: "COMPLETION" },
+        });
         const msg = await sendTemplated(s, "COMPLETION", "COMPLETION");
-        await recordEvent(s.id, s.guardId, "COMPLETION_SMS_SENT", { at: now, note: "End-of-shift check sent.", smsMessageId: msg.id });
+        await recordEvent(s.id, s.guardId, "COMPLETION_SMS_SENT", {
+          at: now,
+          note: "End-of-shift check sent.",
+          smsMessageId: msg.id,
+        });
         report.completionSent++;
       } catch (e) {
         report.errors.push(`completion ${s.id}: ${(e as Error).message}`);
@@ -219,18 +387,47 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 9. completion timeout → close as unconfirmed
-    const unconfirmed = await db.shift.findMany({ where: { pendingPrompt: "COMPLETION", completionTimedOutAt: null, completionSmsSentAt: { lte: addMinutes(now, -completionWindow) } }, include: shiftInclude });
+    const unconfirmed = await db.shift.findMany({
+      where: {
+        pendingPrompt: "COMPLETION",
+        completionTimedOutAt: null,
+        completionSmsSentAt: { lte: addMinutes(now, -completionWindow) },
+      },
+      include: shiftInclude,
+    });
     for (const s of unconfirmed) {
       try {
         const stillOnDuty = s.attendance?.status === "STILL_ON_DUTY";
-        await db.shift.update({ where: { id: s.id }, data: { completionTimedOutAt: now, ...(stillOnDuty ? {} : { status: "COMPLETED", pendingPrompt: "NONE" }) } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: {
+            completionTimedOutAt: now,
+            ...(stillOnDuty ? {} : { status: "COMPLETED", pendingPrompt: "NONE" }),
+          },
+        });
         if (!stillOnDuty) {
-          await db.attendance.update({ where: { shiftId: s.id }, data: { status: s.attendance?.status === "INCIDENT" ? "INCIDENT" : "COMPLETED" } });
-          await recordEvent(s.id, s.guardId, "COMPLETION_TIMEOUT", { at: now, note: `No reply to the end-of-shift check within ${completionWindow} min. Closed as completed, unconfirmed.` });
-          await recordEvent(s.id, s.guardId, "SHIFT_COMPLETED", { at: now, note: "Shift closed by the system." });
+          await db.attendance.update({
+            where: { shiftId: s.id },
+            data: { status: s.attendance?.status === "INCIDENT" ? "INCIDENT" : "COMPLETED" },
+          });
+          await recordEvent(s.id, s.guardId, "COMPLETION_TIMEOUT", {
+            at: now,
+            note: `No reply to the end-of-shift check within ${completionWindow} min. Closed as completed, unconfirmed.`,
+          });
+          await recordEvent(s.id, s.guardId, "SHIFT_COMPLETED", {
+            at: now,
+            note: "Shift closed by the system.",
+          });
           await sendClientUpdate(s, "SHIFT_ENDED", now);
         }
-        await notify({ type: "SHIFT_UNCONFIRMED", severity: "WARNING", title: `${s.guard.firstName} ${s.guard.lastName} did not confirm shift completion`, body: `${s.location.name}, ended ${fmtTime(s.endAt)}. ${stillOnDuty ? "Guard reported still on duty." : "Closed as completed without confirmation."}`, guardId: s.guardId, shiftId: s.id });
+        await notify({
+          type: "SHIFT_UNCONFIRMED",
+          severity: "WARNING",
+          title: `${s.guard.firstName} ${s.guard.lastName} did not confirm shift completion`,
+          body: `${s.location.name}, ended ${fmtTime(s.endAt)}. ${stillOnDuty ? "Guard reported still on duty." : "Closed as completed without confirmation."}`,
+          guardId: s.guardId,
+          shiftId: s.id,
+        });
         report.completionTimedOut++;
       } catch (e) {
         report.errors.push(`completion-timeout ${s.id}: ${(e as Error).message}`);
@@ -238,13 +435,32 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
     }
 
     // 10. missed shifts — never arrived and the shift has ended
-    const missed = await db.shift.findMany({ where: { status: { in: ["SCHEDULED", "AWAITING_ARRIVAL", "LATE", "NOT_CONFIRMED"] }, endAt: { lte: now } }, include: shiftInclude });
+    const missed = await db.shift.findMany({
+      where: {
+        status: { in: ["SCHEDULED", "AWAITING_ARRIVAL", "LATE", "NOT_CONFIRMED"] },
+        endAt: { lte: now },
+      },
+      include: shiftInclude,
+    });
     for (const s of missed) {
       try {
-        await db.shift.update({ where: { id: s.id }, data: { status: "MISSED", pendingPrompt: "NONE" } });
+        await db.shift.update({
+          where: { id: s.id },
+          data: { status: "MISSED", pendingPrompt: "NONE" },
+        });
         await db.attendance.update({ where: { shiftId: s.id }, data: { status: "NOT_REPORTED" } });
-        await recordEvent(s.id, s.guardId, "SHIFT_MISSED", { at: now, note: "Shift ended with no arrival confirmation." });
-        await notify({ type: "SHIFT_MISSED", severity: "CRITICAL", title: `${s.guard.firstName} ${s.guard.lastName} missed the shift at ${s.location.name}`, body: `${fmtTime(s.startAt)}–${fmtTime(s.endAt)}, no arrival confirmed.`, guardId: s.guardId, shiftId: s.id });
+        await recordEvent(s.id, s.guardId, "SHIFT_MISSED", {
+          at: now,
+          note: "Shift ended with no arrival confirmation.",
+        });
+        await notify({
+          type: "SHIFT_MISSED",
+          severity: "CRITICAL",
+          title: `${s.guard.firstName} ${s.guard.lastName} missed the shift at ${s.location.name}`,
+          body: `${fmtTime(s.startAt)}–${fmtTime(s.endAt)}, no arrival confirmed.`,
+          guardId: s.guardId,
+          shiftId: s.id,
+        });
         report.missed++;
       } catch (e) {
         report.errors.push(`missed ${s.id}: ${(e as Error).message}`);
@@ -267,12 +483,30 @@ export async function runAutomationTick(now = new Date()): Promise<TickReport> {
       report.errors.push(`location ${(e as Error).message}`);
     }
     // 12b. tell the control room, once an hour, when the SMS provider is refusing messages
-    try { await alertOnFailingSms(now); } catch (e) { report.errors.push(`sms alert ${(e as Error).message}`); }
+    try {
+      await alertOnFailingSms(now);
+    } catch (e) {
+      report.errors.push(`sms alert ${(e as Error).message}`);
+    }
     // 13. location requests to guard phones past their deadline become EXPIRED (never left pending for ever)
-    try { await expireStaleRequests(now); } catch (e) { report.errors.push(`location requests ${(e as Error).message}`); }
+    try {
+      await expireStaleRequests(now);
+    } catch (e) {
+      report.errors.push(`location requests ${(e as Error).message}`);
+    }
     // 14. call requests nobody acted on lapse; a "dialling" with no call record is reported as failed
-    try { const { expireCallRequests } = await import("@/lib/gateway/call-requests"); await expireCallRequests(now); } catch (e) { report.errors.push(`call requests ${(e as Error).message}`); }
-    try { const { expirePatrols } = await import("@/lib/patrol/service"); await expirePatrols(now); } catch (e) { report.errors.push(`patrols ${(e as Error).message}`); }
+    try {
+      const { expireCallRequests } = await import("@/lib/gateway/call-requests");
+      await expireCallRequests(now);
+    } catch (e) {
+      report.errors.push(`call requests ${(e as Error).message}`);
+    }
+    try {
+      const { expirePatrols } = await import("@/lib/patrol/service");
+      await expirePatrols(now);
+    } catch (e) {
+      report.errors.push(`patrols ${(e as Error).message}`);
+    }
   } finally {
     running = false;
   }
@@ -284,10 +518,13 @@ export function startInProcessScheduler(intervalMs = 60_000) {
   if (timer) return;
   console.log(`[automation] in-process scheduler started, every ${intervalMs / 1000}s`);
   // Through the shared lease, so this timer and a cron or heartbeat run never overlap.
-  const tick = () => import("./scheduler")
-    .then((m) => m.runScheduledTick("in-process"))
-    .then((r) => { if (r.ran && r.report.errors.length) console.error("[automation]", r.report.errors); })
-    .catch((e) => console.error("[automation] tick failed", e));
+  const tick = () =>
+    import("./scheduler")
+      .then((m) => m.runScheduledTick("in-process"))
+      .then((r) => {
+        if (r.ran && r.report.errors.length) console.error("[automation]", r.report.errors);
+      })
+      .catch((e) => console.error("[automation] tick failed", e));
   timer = setInterval(tick, intervalMs);
   setTimeout(tick, 5_000);
 }
@@ -298,18 +535,33 @@ const ARRIVAL_RETRY_MINUTES = 5;
 /** Re-send an arrival text whose last attempt failed. Returns how many were re-sent. */
 export async function retryFailedArrivals(now = new Date()): Promise<number> {
   const shifts = await db.shift.findMany({
-    where: { status: "AWAITING_ARRIVAL", pendingPrompt: "ARRIVAL", arrivalReminderSentAt: null, endAt: { gt: now }, attendance: { arrivalConfirmedAt: null } },
-    include: shiftInclude, take: 200,
+    where: {
+      status: "AWAITING_ARRIVAL",
+      pendingPrompt: "ARRIVAL",
+      arrivalReminderSentAt: null,
+      endAt: { gt: now },
+      attendance: { arrivalConfirmedAt: null },
+    },
+    include: shiftInclude,
+    take: 200,
   });
   let resent = 0;
   for (const s of shifts) {
-    const sends = await db.smsMessage.findMany({ where: { shiftId: s.id, direction: "OUTBOUND", type: "ARRIVAL" }, orderBy: { createdAt: "desc" }, take: ARRIVAL_MAX_SENDS + 1 });
+    const sends = await db.smsMessage.findMany({
+      where: { shiftId: s.id, direction: "OUTBOUND", type: "ARRIVAL" },
+      orderBy: { createdAt: "desc" },
+      take: ARRIVAL_MAX_SENDS + 1,
+    });
     const last = sends[0];
     if (!last || last.status !== "FAILED") continue;
     if (sends.length >= ARRIVAL_MAX_SENDS) continue;
     if (now.getTime() - last.createdAt.getTime() < ARRIVAL_RETRY_MINUTES * 60_000) continue;
     const msg = await sendTemplated(s, "ARRIVAL", "ARRIVAL");
-    await recordEvent(s.id, s.guardId, "ARRIVAL_SMS_SENT", { at: now, note: `Arrival check sent again (attempt ${sends.length + 1} of ${ARRIVAL_MAX_SENDS}): the previous text was refused${last.error ? ` (${last.error})` : ""}.${msg.status === "FAILED" ? " This attempt failed too." : ""}`, smsMessageId: msg.id });
+    await recordEvent(s.id, s.guardId, "ARRIVAL_SMS_SENT", {
+      at: now,
+      note: `Arrival check sent again (attempt ${sends.length + 1} of ${ARRIVAL_MAX_SENDS}): the previous text was refused${last.error ? ` (${last.error})` : ""}.${msg.status === "FAILED" ? " This attempt failed too." : ""}`,
+      smsMessageId: msg.id,
+    });
     resent++;
   }
   return resent;
@@ -322,15 +574,32 @@ export async function retryFailedArrivals(now = new Date()): Promise<number> {
  */
 export async function alertOnFailingSms(now = new Date()): Promise<boolean> {
   const since = new Date(now.getTime() - 15 * 60_000);
-  const failed = await db.smsMessage.findFirst({ where: { direction: "OUTBOUND", status: "FAILED", createdAt: { gte: since } }, orderBy: { createdAt: "desc" } });
+  const failed = await db.smsMessage.findFirst({
+    where: { direction: "OUTBOUND", status: "FAILED", createdAt: { gte: since } },
+    orderBy: { createdAt: "desc" },
+  });
   if (!failed) return false;
   // The newest failure may carry no reason; the provider's words are what tell someone what to fix.
-  const explained = (await db.smsMessage.findFirst({ where: { direction: "OUTBOUND", status: "FAILED", createdAt: { gte: since }, error: { not: null } }, orderBy: { createdAt: "desc" } })) ?? failed;
-  const recent = await db.notification.findFirst({ where: { type: "SMS_FAILING", createdAt: { gte: new Date(now.getTime() - 60 * 60_000) } } });
+  const explained =
+    (await db.smsMessage.findFirst({
+      where: {
+        direction: "OUTBOUND",
+        status: "FAILED",
+        createdAt: { gte: since },
+        error: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+    })) ?? failed;
+  const recent = await db.notification.findFirst({
+    where: { type: "SMS_FAILING", createdAt: { gte: new Date(now.getTime() - 60 * 60_000) } },
+  });
   if (recent) return false;
-  const count = await db.smsMessage.count({ where: { direction: "OUTBOUND", status: "FAILED", createdAt: { gte: since } } });
+  const count = await db.smsMessage.count({
+    where: { direction: "OUTBOUND", status: "FAILED", createdAt: { gte: since } },
+  });
   await notify({
-    type: "SMS_FAILING", severity: "CRITICAL",
+    type: "SMS_FAILING",
+    severity: "CRITICAL",
     title: "Text messages are not being sent",
     body: `${count} outbound ${count === 1 ? "text has" : "texts have"} failed in the last 15 minutes. Latest reason: ${explained.error ?? "none given"}. Guards are not receiving arrival, welfare or completion checks until this is fixed.`,
     url: "/sms",

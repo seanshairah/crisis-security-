@@ -17,7 +17,16 @@ export async function decideCheckIn(id: string, decision: "APPROVE" | "REJECT", 
 export async function retryCheckInFix(id: string) {
   await actor("SUPERVISOR");
   const row = await db.attendanceCheckIn.findUniqueOrThrow({ where: { id } });
-  const shift = await db.shift.findUniqueOrThrow({ where: { id: row.shiftId }, include: { guard: true, location: true, attendance: true, attendanceCheckIn: true, supervisor: true } });
+  const shift = await db.shift.findUniqueOrThrow({
+    where: { id: row.shiftId },
+    include: {
+      guard: true,
+      location: true,
+      attendance: true,
+      attendanceCheckIn: true,
+      supervisor: true,
+    },
+  });
   await requestFix(id, shift);
   revalidatePath("/attendance/check-ins");
 }

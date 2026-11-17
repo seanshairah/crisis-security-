@@ -12,7 +12,16 @@ export const GET = guarded("SUPERVISOR", async (req) => {
   if (q.get("type")) where.type = q.get("type") as never;
   if (q.get("direction")) where.direction = q.get("direction") as never;
   const [items, total] = await Promise.all([
-    db.smsMessage.findMany({ where, include: { guard: { select: { id: true, firstName: true, lastName: true } }, location: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" }, take, skip }),
+    db.smsMessage.findMany({
+      where,
+      include: {
+        guard: { select: { id: true, firstName: true, lastName: true } },
+        location: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take,
+      skip,
+    }),
     db.smsMessage.count({ where }),
   ]);
   return json({ items, total, page });
