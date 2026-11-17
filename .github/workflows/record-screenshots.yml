@@ -1,16 +1,24 @@
-# Re-records the Android layout snapshots after a visual change. Run by hand (Actions -> Record Android
-# screenshots, choose the branch). It commits the new images to that branch, so they show up in the pull
-# request's diff for a person to look at before merging, and uploads them as an artifact too.
+# Re-records the Android layout snapshots after a visual change, and commits them to the branch so they show up
+# in the pull request's diff for a person to look at before merging. Two ways to run it:
+#   - add the label "record-screenshots" to a pull request (works before this file is on the default branch), or
+#   - Actions -> Record Android screenshots -> Run workflow, choosing the branch.
 name: Record Android screenshots
 on:
   workflow_dispatch:
+  pull_request:
+    types: [labeled]
 permissions:
   contents: write
 jobs:
   record:
+    if: github.event_name == 'workflow_dispatch' || (github.event.label.name == 'record-screenshots' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,11 +30,11 @@ jobs:
           name: android-snapshots
           path: android/app/src/test/snapshots/images
           if-no-files-found: error
-      - name: Commit the new images to this branch
+      - name: Commit the new images to the branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add android/app/src/test/snapshots/images
           if git diff --cached --quiet; then echo "Snapshots unchanged."; exit 0; fi
           git commit -m "Re-record Android layout snapshots"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${TARGET_BRANCH}"

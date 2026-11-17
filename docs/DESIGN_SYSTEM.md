@@ -61,7 +61,7 @@ no window to prompt from until it syncs again. It is off by default; enable it p
 - **Android Me**: signed-in guard, shift hours, patrols verified, duty site, phone and device; read-only and offline.
 - **Operations phone**: a gateway handset, not an operator's tool, so it keeps its call-monitoring layout. The handoff's "Operations (mobile)" view is
   the portal dashboard, which is responsive and gets the same design on a phone browser.
-- **Screenshots**: `Record Android screenshots` workflow (run by hand on a branch) re-renders the snapshots, including the new emergency-sent and
+- **Screenshots**: `Record Android screenshots` workflow (label a pull request `record-screenshots`, or run it by hand on a branch) re-renders the snapshots, including the new emergency-sent and
   scan-result layouts, and commits them to that branch so they appear in the pull request diff.
 
 ## Not done
