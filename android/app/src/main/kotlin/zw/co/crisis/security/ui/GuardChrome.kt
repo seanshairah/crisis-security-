@@ -66,6 +66,8 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
             val footer = Ui.column(c)
             val sync = Ui.row(c, 8, Gravity.CENTER)
             if (tab != null) {
+                // Opaque, so text scrolling underneath never shows through the sync line.
+                footer.setBackgroundColor(c.getColor(R.color.surface2))
                 footer.addView(sync, LinearLayout.LayoutParams(-1, Ui.dp(c, 40)))
                 footer.addView(tabBar(c, tab, onTab), LinearLayout.LayoutParams(-1, LinearLayout.LayoutParams.WRAP_CONTENT))
                 // Content clears the footer from the first frame; the navigation-bar inset is added on top by install().
