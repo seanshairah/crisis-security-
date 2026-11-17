@@ -2,6 +2,9 @@
 # in the pull request's diff for a person to look at before merging. Two ways to run it:
 #   - add the label "record-screenshots" to a pull request (works before this file is on the default branch), or
 #   - Actions -> Record Android screenshots -> Run workflow, choosing the branch.
+# The commit it makes is pushed with the workflow token, so GitHub does not run CI for it on its own (or holds the run
+# as "action required" until a maintainer approves it). It changes only images, so the code CI last checked is the
+# same; the next ordinary push to the branch, or approving the held run in the Actions tab, gives the head a green check.
 name: Record Android screenshots
 on:
   workflow_dispatch:
