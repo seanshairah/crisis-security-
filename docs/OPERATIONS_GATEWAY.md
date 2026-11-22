@@ -1,6 +1,6 @@
 # Operations gateway (OPERATIONS_GATEWAY mode)
 
-The control-room phone. Same APK; a device registered with mode *Operations gateway* and (optionally) a site. It reports incoming, outgoing, answered, missed and ended calls with number, direction, timestamps and duration, and sends heartbeats. It does not use GPS: an operations call cannot tell where the guard is; only the guard's own device can report that.
+The control-room phone. Same APK; a device registered with mode _Operations gateway_ and (optionally) a site. It reports incoming, outgoing, answered, missed and ended calls with number, direction, timestamps and duration, and sends heartbeats. It does not use GPS: an operations call cannot tell where the guard is; only the guard's own device can report that.
 
 Full detail is in [ANDROID_GATEWAY.md](ANDROID_GATEWAY.md) (app behaviour, Android limits, event contract) and [CALL_GATEWAY.md](CALL_GATEWAY.md) (backend processing and correlation). Installation: [ANDROID_INSTALLATION.md](ANDROID_INSTALLATION.md).
 

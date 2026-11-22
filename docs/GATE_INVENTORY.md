@@ -38,7 +38,7 @@ Configure secrets privately, separately from device tokens:
   "direction": "DEPARTURE",
   "details": {
     "category": "MAIZE",
-    "items": [{"name":"Maize","description":"Dry bags","quantity":25,"unit":"bags"}],
+    "items": [{ "name": "Maize", "description": "Dry bags", "quantity": 25, "unit": "bags" }],
     "party": "Person taking goods",
     "place": "Destination",
     "occurredAt": "2026-11-22T10:00:00.000Z",
@@ -83,7 +83,7 @@ Crisis posts to `GATE_OUTBOUND_URL` with bearer authentication and `Idempotency-
 **Receiver obligation:** atomically persist the delivery ID and its effect on stock. Apply each ID once. Do not add stock for rejections. Apply approved corrections as amendments to the referenced movement according to the receiving system's inventory rules. Acknowledge only after durable recording:
 
 ```json
-{"accepted":true,"deliveryId":"OPAQUE_STABLE_DELIVERY_ID"}
+{ "accepted": true, "deliveryId": "OPAQUE_STABLE_DELIVERY_ID" }
 ```
 
 A 2xx response without this matching acknowledgement is not success. Timeout, lost acknowledgement and 5xx produce a visible failure and exponential retries (up to an hour between retries). Retries reuse the exact delivery ID and frozen payload. A database lease prevents overlapping workers from sending the same row concurrently under normal operation. A receiver must still deduplicate because a network timeout can occur after it applied the update.

@@ -352,7 +352,7 @@ export async function listForGuard(deviceId: string, sessionId: string, q = "") 
     },
     include: {
       deliveries: {
-        select: { status: true, lastError: true },
+        select: { status: true, lastError: true, deadAt: true },
         orderBy: { createdAt: "desc" },
         take: 1,
       },

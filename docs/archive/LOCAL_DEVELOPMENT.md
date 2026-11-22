@@ -8,16 +8,16 @@ How to run the portal, the automation engine and the Android app on a fresh comp
 
 ## Requirements
 
-| Tool | Version | Notes |
-| --- | --- | --- |
-| Node.js | 20 or 22 (the project is built with 22) | <https://nodejs.org> |
-| npm | 10+ (comes with Node) | the only package manager used; do not add pnpm/yarn lockfiles |
-| Git | any recent | |
-| PostgreSQL | 16 (local, Docker, or a free Neon database) | `docker run -d --name omega-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16` |
-| JDK | 17 or 21 | required by the Android Gradle plugin (`java -version`) |
-| Android SDK | platform 35, build-tools 35.0.0, platform-tools | via Android Studio (SDK Manager) or the command-line tools |
-| Android Studio | Ladybug or newer (optional) | for the emulator and debugging; Gradle alone builds the APK |
-| Chromium | optional | the QA scripts in `scripts/dev` screenshot pages with Playwright |
+| Tool           | Version                                         | Notes                                                                                  |
+| -------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Node.js        | 20 or 22 (the project is built with 22)         | <https://nodejs.org>                                                                   |
+| npm            | 10+ (comes with Node)                           | the only package manager used; do not add pnpm/yarn lockfiles                          |
+| Git            | any recent                                      |                                                                                        |
+| PostgreSQL     | 16 (local, Docker, or a free Neon database)     | `docker run -d --name omega-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16` |
+| JDK            | 17 or 21                                        | required by the Android Gradle plugin (`java -version`)                                |
+| Android SDK    | platform 35, build-tools 35.0.0, platform-tools | via Android Studio (SDK Manager) or the command-line tools                             |
+| Android Studio | Ladybug or newer (optional)                     | for the emulator and debugging; Gradle alone builds the APK                            |
+| Chromium       | optional                                        | the QA scripts in `scripts/dev` screenshot pages with Playwright                       |
 
 Set `ANDROID_HOME` (Windows: `%LOCALAPPDATA%\Android\Sdk`, macOS: `~/Library/Android/sdk`, Linux: `~/Android/Sdk`). `npm run android:sync` writes `android/local.properties` from it.
 
@@ -34,16 +34,16 @@ cp .env.example .env
 
 Edit `.env`:
 
-| Variable | Local value |
-| --- | --- |
-| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/crisis_security?schema=public` (or your Neon string) |
-| `DATABASE_OVER_HTTP` | `false` locally; `true` only when port 5432 is blocked and you use Neon |
-| `AUTH_SECRET` | any string of 32+ characters |
-| `SMS_PROVIDER` | `simulated` (nothing is sent; the simulator plays the guard) |
-| `AUTOMATION_INPROCESS` | `true` (the engine runs inside `next dev`) |
-| `TIMEZONE` | `Africa/Harare` |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` (shown on the gateway activation card) |
-| `ADMIN_PASSWORD` | password for the first super admin, used once by `npm run db:seed` |
+| Variable               | Local value                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | `postgresql://postgres:postgres@localhost:5432/crisis_security?schema=public` (or your Neon string) |
+| `DATABASE_OVER_HTTP`   | `false` locally; `true` only when port 5432 is blocked and you use Neon                             |
+| `AUTH_SECRET`          | any string of 32+ characters                                                                        |
+| `SMS_PROVIDER`         | `simulated` (nothing is sent; the simulator plays the guard)                                        |
+| `AUTOMATION_INPROCESS` | `true` (the engine runs inside `next dev`)                                                          |
+| `TIMEZONE`             | `Africa/Harare`                                                                                     |
+| `NEXT_PUBLIC_APP_URL`  | `http://localhost:3000` (shown on the gateway activation card)                                      |
+| `ADMIN_PASSWORD`       | password for the first super admin, used once by `npm run db:seed`                                  |
 
 Optional: `VAPID_*` for browser push, `SMS_*` for a real gateway. Never commit `.env`.
 
@@ -93,21 +93,21 @@ Pointing the app at your computer:
 - **Emulator:** the host is `http://10.0.2.2:3000`; the app allows plain HTTP for that address only. Create an AVD in Android Studio (API 30+ with Google APIs), run it, then `cd android && ./gradlew installDebug`.
 - **Real phone on the same Wi‑Fi:** the app requires HTTPS for any other host, so expose the dev server with an HTTPS tunnel (`npx localtunnel --port 3000` or ngrok) and enter that URL, or build with `GATEWAY_DEFAULT_SERVER_URL=https://… npm run android:debug` to pre-fill it. Enable USB debugging on the phone and `./gradlew installDebug`, or copy the APK over.
 - `adb logcat -s GatewayService CallMonitor SyncEngine` shows what the app is doing.
-- Simulating calls on the emulator: in Android Studio's *Extended controls → Phone*, place an incoming call; or `adb emu gsm call 0771234567`, `adb emu gsm accept 0771234567`, `adb emu gsm cancel 0771234567`.
+- Simulating calls on the emulator: in Android Studio's _Extended controls → Phone_, place an incoming call; or `adb emu gsm call 0771234567`, `adb emu gsm accept 0771234567`, `adb emu gsm cancel 0771234567`.
 
 Release signing: create `android/keystore.properties` (ignored by git) with `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, or export the same names as environment variables. Generate a keystore with `keytool -genkeypair -v -keystore omega-gateway.jks -alias gateway -keyalg RSA -keysize 2048 -validity 10000`. Keep it safe: updates must be signed with the same key.
 
 ## Useful scripts
 
-| Script | Purpose |
-| --- | --- |
-| `scripts/dev/gateway-e2e.ts` | the 33-step scenario (activate → SMS arrival → calls → missed → unknown → offline replay → revoke → SMS still works); creates and removes tagged test data |
-| `scripts/dev/gateway-qa-data.ts [--clean]` | small data set for screenshots of the gateway pages |
-| `scripts/dev/client-updates-check.ts` | client site-status SMS check |
-| `scripts/dev/e2e.mjs`, `shot.mjs`, `shot-mobile.mjs`, `sweep.mjs` | browser QA. `QA_PASSWORD` is required and has no default — use the seeded demo password, never a production one |
-| `npm run android:layout` | measures each Android layout the way LinearLayout does and reports text given less room than its words need |
-| `scripts/dev/db-counts.ts` | row counts per table |
-| `scripts/purge-data.ts --yes` | remove all operational data and non-super-admin users |
+| Script                                                            | Purpose                                                                                                                                                    |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/dev/gateway-e2e.ts`                                      | the 33-step scenario (activate → SMS arrival → calls → missed → unknown → offline replay → revoke → SMS still works); creates and removes tagged test data |
+| `scripts/dev/gateway-qa-data.ts [--clean]`                        | small data set for screenshots of the gateway pages                                                                                                        |
+| `scripts/dev/client-updates-check.ts`                             | client site-status SMS check                                                                                                                               |
+| `scripts/dev/e2e.mjs`, `shot.mjs`, `shot-mobile.mjs`, `sweep.mjs` | browser QA. `QA_PASSWORD` is required and has no default — use the seeded demo password, never a production one                                            |
+| `npm run android:layout`                                          | measures each Android layout the way LinearLayout does and reports text given less room than its words need                                                |
+| `scripts/dev/db-counts.ts`                                        | row counts per table                                                                                                                                       |
+| `scripts/purge-data.ts --yes`                                     | remove all operational data and non-super-admin users                                                                                                      |
 
 ## Testing from a phone on the LAN (http://<laptop-IP>:3000)
 

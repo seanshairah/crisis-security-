@@ -15,19 +15,19 @@ Recorded with user, time, IP and user agent: device registered / activated / cod
 
 ## Data collected by the app
 
-| Data | Guard device | Operations gateway |
-| --- | --- | --- |
-| Position (lat, lng, accuracy, provider, speed, bearing), only during shifts (10 min before to 30 min after) | yes | no |
-| Call metadata (number, direction, time, duration, outcome) | yes | yes |
-| Battery, network type, app and Android version, permission state | yes | yes |
-| Audio, microphone, camera, contacts, SMS content, photos, position outside shifts | **never** | **never** |
+| Data                                                                                                        | Guard device | Operations gateway |
+| ----------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| Position (lat, lng, accuracy, provider, speed, bearing), only during shifts (10 min before to 30 min after) | yes          | no                 |
+| Call metadata (number, direction, time, duration, outcome)                                                  | yes          | yes                |
+| Battery, network type, app and Android version, permission state                                            | yes          | yes                |
+| Audio, microphone, camera, contacts, SMS content, photos, position outside shifts                           | **never**    | **never**          |
 
 The onboarding screen on a guard phone states this before any permission is requested. There is no hidden mode: the service shows a permanent notification whose text includes the monitoring state.
 
 ## Location data handling
 
 - Events, not tracks: arrival, periodic checks (every 10 min inside), exit, outside updates (every 3 min), return, unavailable, call-time. Retention `geofence.locationRetentionDays` (default 180); timeline lines stay with the shift.
-- Wording in the UI is neutral by design: *Location exception*, *Outside assigned site*, *Location verification required*, *Location unavailable*. An exception asks for a phone call, it does not accuse.
+- Wording in the UI is neutral by design: _Location exception_, _Outside assigned site_, _Location verification required_, _Location unavailable_. An exception asks for a phone call, it does not accuse.
 - GPS spoofing: mock providers are flagged (`LOCATION INTEGRITY WARNING`), accuracy and provider are stored. No anti-spoofing guarantee is made.
 - Who can see location: supervisors and above, like the rest of the operational data; each view is audited.
 

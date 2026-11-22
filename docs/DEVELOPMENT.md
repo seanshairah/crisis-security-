@@ -7,4 +7,4 @@ Setup, commands and tooling are in [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).
 - Maps: `src/components/map/site-map.tsx` (Leaflet, OpenStreetMap tiles, client-only). Pass `site` and `points`; no API key.
 - Simulators: `src/lib/gateway/simulate.ts` builds the same event the phone would send; both simulator components call the `simulateGateway` server action.
 - Android: `GatewayService` runs three loops (heartbeat, sync, monitor). `LocationMonitor.step()` is the place to change fix acquisition; `stepMonitor` the place to change policy.
-- Emulator testing: Android Studio *Extended controls → Location* sets a fix; set a route to walk out of the fence. `adb emu geo fix <lng> <lat>` does the same from the command line.
+- Emulator testing: Android Studio _Extended controls → Location_ sets a fix; set a route to walk out of the fence. `adb emu geo fix <lng> <lat>` does the same from the command line.

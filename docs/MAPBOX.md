@@ -8,15 +8,15 @@ account degrades the pictures, never the monitoring.
 
 ## Architecture
 
-| File | Role |
-|---|---|
-| `src/lib/map/provider.ts` | Chooses the renderer and the style. Mapbox when `NEXT_PUBLIC_MAPBOX_TOKEN` is set, otherwise Leaflet. |
-| `src/lib/map/features.ts` | Pure model: domain rows in, GeoJSON and colours out. No browser, no network. Unit-tested in `tests/map-features.test.ts`. |
-| `src/components/map/mapbox-map.tsx` | The Mapbox GL view. One map instance per mount; data arrives through `setData`. |
-| `src/components/map/leaflet-map.tsx` | The raster fallback, reading the same model so both renderers agree. |
-| `src/components/map/map-view.tsx` | Picks a renderer, draws the legend and the street/satellite switch, falls back at runtime if WebGL fails. |
-| `src/components/map/site-map.tsx`, `live-map.tsx`, `guards/guard-map.tsx` | Thin adapters that keep each page's existing props. |
-| `src/components/map/site-picker.tsx` | Duty-site picker. Mapbox engine first, then Google Maps if a Google key is set, then Leaflet. |
+| File                                                                      | Role                                                                                                                      |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/map/provider.ts`                                                 | Chooses the renderer and the style. Mapbox when `NEXT_PUBLIC_MAPBOX_TOKEN` is set, otherwise Leaflet.                     |
+| `src/lib/map/features.ts`                                                 | Pure model: domain rows in, GeoJSON and colours out. No browser, no network. Unit-tested in `tests/map-features.test.ts`. |
+| `src/components/map/mapbox-map.tsx`                                       | The Mapbox GL view. One map instance per mount; data arrives through `setData`.                                           |
+| `src/components/map/leaflet-map.tsx`                                      | The raster fallback, reading the same model so both renderers agree.                                                      |
+| `src/components/map/map-view.tsx`                                         | Picks a renderer, draws the legend and the street/satellite switch, falls back at runtime if WebGL fails.                 |
+| `src/components/map/site-map.tsx`, `live-map.tsx`, `guards/guard-map.tsx` | Thin adapters that keep each page's existing props.                                                                       |
+| `src/components/map/site-picker.tsx`                                      | Duty-site picker. Mapbox engine first, then Google Maps if a Google key is set, then Leaflet.                             |
 
 ### The map is never re-created
 
@@ -37,12 +37,12 @@ off on single-guard maps, where every point matters.
 
 ## Configuration
 
-| Variable | Value |
-|---|---|
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | **Public** token (`pk.…`). Reaches the browser, so restrict it by URL in the Mapbox account to the portal's domains. |
-| `NEXT_PUBLIC_MAPBOX_STYLE` | Optional. A custom style URL replacing Mapbox Streets, for company theming. |
-| `NEXT_PUBLIC_MAPTILER_KEY` | Unchanged. Only used by the Leaflet fallback. |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Unchanged. Only used by the site picker when no Mapbox token is set. |
+| Variable                          | Value                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_MAPBOX_TOKEN`        | **Public** token (`pk.…`). Reaches the browser, so restrict it by URL in the Mapbox account to the portal's domains. |
+| `NEXT_PUBLIC_MAPBOX_STYLE`        | Optional. A custom style URL replacing Mapbox Streets, for company theming.                                          |
+| `NEXT_PUBLIC_MAPTILER_KEY`        | Unchanged. Only used by the Leaflet fallback.                                                                        |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Unchanged. Only used by the site picker when no Mapbox token is set.                                                 |
 
 Never put a secret (`sk.…`) token in any `NEXT_PUBLIC_*` variable; those are compiled into the
 browser bundle. The portal needs no secret token: it uses styles, tiles and forward geocoding only.
@@ -101,12 +101,12 @@ OpenStreetMap immediately, with no code change.
 
 ## Fallback behaviour
 
-| Situation | Result |
-|---|---|
-| No `NEXT_PUBLIC_MAPBOX_TOKEN` | Leaflet raster maps everywhere. The footer under each map names the provider. |
-| Token set, WebGL unavailable (old machine, blocked GPU) | `MapboxMap` reports failure, `MapView` swaps to Leaflet and the footer reads "(fallback)". |
-| Token set, Mapbox returns 401/429 | The map draws nothing and logs `[map]`. Remove the token to fall back deliberately. |
-| Token set, site picker fails to start Mapbox | The picker shows the reason and mounts Leaflet, keeping the form and the position state machine intact. |
+| Situation                                               | Result                                                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| No `NEXT_PUBLIC_MAPBOX_TOKEN`                           | Leaflet raster maps everywhere. The footer under each map names the provider.                           |
+| Token set, WebGL unavailable (old machine, blocked GPU) | `MapboxMap` reports failure, `MapView` swaps to Leaflet and the footer reads "(fallback)".              |
+| Token set, Mapbox returns 401/429                       | The map draws nothing and logs `[map]`. Remove the token to fall back deliberately.                     |
+| Token set, site picker fails to start Mapbox            | The picker shows the reason and mounts Leaflet, keeping the form and the position state machine intact. |
 
 ## Verification
 

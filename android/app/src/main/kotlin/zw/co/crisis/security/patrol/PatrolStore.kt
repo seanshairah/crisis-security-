@@ -33,7 +33,10 @@ class PatrolStore private constructor(context: Context) : SQLiteOpenHelper(conte
     }
     @Synchronized fun gatePending(): List<JSONObject> = readableDatabase.rawQuery("SELECT json FROM gate_commands WHERE state='QUEUED' ORDER BY createdAt LIMIT 20", null).use { c -> buildList { while(c.moveToNext()) add(JSONObject(c.getString(0))) } }
     @Synchronized fun gateAck(id: String, state: String, result: String) { writableDatabase.execSQL("UPDATE gate_commands SET state=?,result=? WHERE id=?", arrayOf(state,result,id)) }
-    @Synchronized fun gateRows(sessionId: String): List<Pair<String,String>> = readableDatabase.rawQuery("SELECT json,state,result FROM gate_commands ORDER BY createdAt DESC LIMIT 100", null).use { c -> buildList { while(c.moveToNext()) { val j=JSONObject(c.getString(0)); if(j.optString("sessionId")==sessionId) add(j.optString("direction", "Physical check") to (c.getString(2) ?: "Saved on phone · waiting for connection")) } } }
+    data class GateSaved(val commandId: String, val direction: String, val state: String, val result: String?, val createdAt: Long, val command: JSONObject)
+    /** Every gate check this phone has kept for the session, newest first, with where each one stands. */
+    @Synchronized fun gateSaved(sessionId: String): List<GateSaved> = readableDatabase.rawQuery("SELECT id,json,state,result,createdAt FROM gate_commands ORDER BY createdAt DESC LIMIT 100", null).use { c -> buildList { while(c.moveToNext()) { val j=JSONObject(c.getString(1)); if(j.optString("sessionId")==sessionId) add(GateSaved(c.getString(0), j.optString("direction", "Physical check"), c.getString(2), c.getString(3), c.getLong(4), j)) } } }
+    @Synchronized fun gateState(id: String): Pair<String, String?>? = readableDatabase.rawQuery("SELECT state,result FROM gate_commands WHERE id=?", arrayOf(id)).use { if(it.moveToFirst()) it.getString(0) to it.getString(1) else null }
     @Synchronized fun gatePendingCount(): Int = readableDatabase.rawQuery("SELECT COUNT(*) FROM gate_commands WHERE state='QUEUED'", null).use { it.moveToFirst();it.getInt(0) }
     private fun upgradeTo2(db: SQLiteDatabase, existing: Boolean) {
         db.execSQL("ALTER TABLE events ADD COLUMN checkpointName TEXT NOT NULL DEFAULT 'Checkpoint'")

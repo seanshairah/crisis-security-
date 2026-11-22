@@ -4,7 +4,7 @@
 
 Check, in this order:
 
-1. **Permissions.** Android Settings → Apps → Security Gateway → Permissions: *Phone* and *Call logs* must be allowed. Without *Call logs* (Android 9+) calls are detected but numbers are not: the portal shows "unknown number".
+1. **Permissions.** Android Settings → Apps → Security Gateway → Permissions: _Phone_ and _Call logs_ must be allowed. Without _Call logs_ (Android 9+) calls are detected but numbers are not: the portal shows "unknown number".
 2. **Android version.** Android 7+ is required. On Android 10+ outgoing numbers only come from the call log after the call ends (the app handles this; the first event may say "unknown number" until the call ends).
 3. **Service running.** The notification "Security Gateway · Online" must be visible. If not, open the app; it restarts the service. Check `adb logcat -s GatewayService CallMonitor` on a connected phone.
 4. **Battery optimisation / manufacturer restrictions.** See ANDROID_INSTALLATION.md step 6. Symptoms: works for an hour after opening, then stops; works while charging only.
@@ -13,9 +13,9 @@ Check, in this order:
 
 ## Gateway shows offline in the portal
 
-1. Internet on the phone (mobile data or Wi‑Fi). Open the app: *Status* says "NO INTERNET" if so.
+1. Internet on the phone (mobile data or Wi‑Fi). Open the app: _Status_ says "NO INTERNET" if so.
 2. Server URL: Settings on the phone must match the portal domain exactly, with `https://`. Use **Test connection**.
-3. Activation: the device must be *Active* in Gateway phones. "DEVICE REVOKED" on the phone means it was revoked or disabled in the portal; register and activate again.
+3. Activation: the device must be _Active_ in Gateway phones. "DEVICE REVOKED" on the phone means it was revoked or disabled in the portal; register and activate again.
 4. Token: if the admin generated a **New code** for a device, the old token is void; activate the phone again with the new code.
 5. Backend: `GET https://<domain>/api/health` must return 200. Vercel logs show 401/403/429 from `/api/gateways/*`.
 6. Firewall / captive portal on the Wi‑Fi: try mobile data.
@@ -50,19 +50,19 @@ Treat this as a serious regression. The call gateway does not touch SMS; verify:
 
 The dashboard now shows three separate rows: **Shift**, **GPS** (with the reason underneath) and **Sync**. Read the reason first; each one has a different fix.
 
-| GPS reason on the phone | Meaning | Fix |
-|---|---|---|
-| *GPS accuracy ±121.4 m is worse than the 100 m limit* | A fix was obtained but it is too loose to decide. Not "outside". | Move to open sky and tap **Check location now**. Raise *Worst usable GPS accuracy* only for very large sites. |
-| *No GPS fix* | Nothing came back within 60 s. | Near a window or outdoors; GPS does not need data or airtime. |
-| *Location is switched off on the phone* | Location services are off. | Turn them on in the phone's Settings. |
-| *Location permission was removed* | The app lost its location permission. | Tap **Grant permissions** → **Allow all the time**. |
-| *The duty site has no coordinates* | The site was never placed on the map. | Locations → Edit → **Position and geofence**: use the map picker. |
-| *Reading … is too close to the site boundary* | Distance ± accuracy straddles the fence. | Normal near the fence; the next check decides. |
-| **GPS: OFF · no shift being monitored** | No shift within 10 minutes. | Create the shift; the phone picks up the config within one heartbeat. |
+| GPS reason on the phone                               | Meaning                                                          | Fix                                                                                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| _GPS accuracy ±121.4 m is worse than the 100 m limit_ | A fix was obtained but it is too loose to decide. Not "outside". | Move to open sky and tap **Check location now**. Raise _Worst usable GPS accuracy_ only for very large sites. |
+| _No GPS fix_                                          | Nothing came back within 60 s.                                   | Near a window or outdoors; GPS does not need data or airtime.                                                 |
+| _Location is switched off on the phone_               | Location services are off.                                       | Turn them on in the phone's Settings.                                                                         |
+| _Location permission was removed_                     | The app lost its location permission.                            | Tap **Grant permissions** → **Allow all the time**.                                                           |
+| _The duty site has no coordinates_                    | The site was never placed on the map.                            | Locations → Edit → **Position and geofence**: use the map picker.                                             |
+| _Reading … is too close to the site boundary_         | Distance ± accuracy straddles the fence.                         | Normal near the fence; the next check decides.                                                                |
+| **GPS: OFF · no shift being monitored**               | No shift within 10 minutes.                                      | Create the shift; the phone picks up the config within one heartbeat.                                         |
 
 Other checks:
 
-1. The **Sync** row is about internet, not GPS. *NO INTERNET · 3 event(s) saved on the phone* with *GPS: INSIDE SITE* means the guard is on site and the events will arrive later as SYNCED LATE.
+1. The **Sync** row is about internet, not GPS. _NO INTERNET · 3 event(s) saved on the phone_ with _GPS: INSIDE SITE_ means the guard is on site and the events will arrive later as SYNCED LATE.
 2. **Check location now** never cancels a check that is already running; it joins it and runs one more afterwards. The button is disabled for a moment after each tap.
 3. Battery managers: the overdue alert means the phone was online but sent no check; see the per-brand settings in ANDROID_INSTALLATION.md.
 4. `adb logcat -s LocationMonitor GatewayService` shows each check, its provider and accuracy, and the classification.
@@ -85,4 +85,4 @@ Expected after an outage: they are marked SYNCED LATE and keep their original ti
 
 ## Missed-call alert does not appear
 
-Alerts for missed calls from guards on duty are always raised. For guards off duty, Settings → Call gateway → *Alert on missed calls* must be Yes. Unknown callers need *Alert on unknown callers*. "Mark handled" on the call clears its alert.
+Alerts for missed calls from guards on duty are always raised. For guards off duty, Settings → Call gateway → _Alert on missed calls_ must be Yes. Unknown callers need _Alert on unknown callers_. "Mark handled" on the call clears its alert.

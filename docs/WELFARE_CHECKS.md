@@ -10,15 +10,15 @@ guard is.
 
 ## Configuration (site form → Welfare checks)
 
-| Field | Column | Notes |
-|---|---|---|
-| Check at | `Location.welfareTimes` | Harare 24-hour times, `00:00, 03:00`. Overnight shifts get both. |
-| Or every (minutes) | `Location.welfareIntervalMinutes` | From the shift start, 15 minimum. |
-| Ask by | `Location.welfareChannel` | SMS, GATEWAY_CALL or VOICE |
-| Tries before escalating | `welfareMaxAttempts` | Default 2 |
-| Minutes between calls | `welfareRetryMinutes` | Default 10 |
-| Text before escalating | `welfareSmsFallback` | Default on; skipped if the guard has SMS turned off |
-| Guard exemption | `Guard.welfareExempt` | The site schedule skips this guard |
+| Field                   | Column                            | Notes                                                            |
+| ----------------------- | --------------------------------- | ---------------------------------------------------------------- |
+| Check at                | `Location.welfareTimes`           | Harare 24-hour times, `00:00, 03:00`. Overnight shifts get both. |
+| Or every (minutes)      | `Location.welfareIntervalMinutes` | From the shift start, 15 minimum.                                |
+| Ask by                  | `Location.welfareChannel`         | SMS, GATEWAY_CALL or VOICE                                       |
+| Tries before escalating | `welfareMaxAttempts`              | Default 2                                                        |
+| Minutes between calls   | `welfareRetryMinutes`             | Default 10                                                       |
+| Text before escalating  | `welfareSmsFallback`              | Default on; skipped if the guard has SMS turned off              |
+| Guard exemption         | `Guard.welfareExempt`             | The site schedule skips this guard                               |
 
 Due points at the exact start or end are left out (arrival and completion have their own checks). A
 point the engine first sees more than 30 minutes late is skipped, not sent late.
@@ -46,14 +46,14 @@ NO_ANSWER, BUSY, FAILED, ESCALATED.
 
 ## IVR
 
-Prompt (`WELFARE_PROMPT`): *"Omega Protection Services shift verification. Press 1 if your shift is
-going well. Press 2 if you need assistance. Press 3 for an emergency."*
+Prompt (`WELFARE_PROMPT`): _"Omega Protection Services shift verification. Press 1 if your shift is
+going well. Press 2 if you need assistance. Press 3 for an emergency."_
 
-| Key | Effect |
-|---|---|
-| 1 | WELL; IVR evidence; pending welfare cleared; client "welfare OK" update (real providers only) |
-| 2 | ASSISTANCE; ASSISTANCE_REQUEST incident (source VOICE); shift ASSISTANCE; supervisor notified |
-| 3 | Emergency; EMERGENCY incident (CRITICAL); shift CRITICAL; emergency alert; EMERGENCY_ACK SMS so the guard can text details |
+| Key | Effect                                                                                                                     |
+| --- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | WELL; IVR evidence; pending welfare cleared; client "welfare OK" update (real providers only)                              |
+| 2   | ASSISTANCE; ASSISTANCE_REQUEST incident (source VOICE); shift ASSISTANCE; supervisor notified                              |
+| 3   | Emergency; EMERGENCY incident (CRITICAL); shift CRITICAL; emergency alert; EMERGENCY_ACK SMS so the guard can text details |
 
 A key press arriving after escalation still counts, and the supervisor is told it came late. A
 settled check never moves back.
@@ -79,10 +79,10 @@ provider, and the cost approved, before one is added. Do not assume the current 
 offers voice. To add one, implement `VoiceProvider` in `src/lib/voice/provider.ts`, register it, and
 map its status and digits in `parseReport`.
 
-| Env var | Meaning |
-|---|---|
-| `VOICE_PROVIDER` | Unset: no voice calls (VOICE sites fall back to SMS) |
-| `VOICE_WEBHOOK_SECRET` | Shared signing secret |
+| Env var                 | Meaning                                                     |
+| ----------------------- | ----------------------------------------------------------- |
+| `VOICE_PROVIDER`        | Unset: no voice calls (VOICE sites fall back to SMS)        |
+| `VOICE_WEBHOOK_SECRET`  | Shared signing secret                                       |
 | `ALLOW_SIMULATED_VOICE` | `1` permits the simulator in a production build (demo only) |
 
 ## Tests

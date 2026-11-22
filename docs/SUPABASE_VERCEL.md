@@ -29,19 +29,19 @@ Vercel → the project → **Settings → Environment Variables**, scope **Produ
 node scripts/generate-secrets.mjs
 ```
 
-| Variable | Value |
-| --- | --- |
-| `DATABASE_URL` | Supabase transaction pooler string (port 6543) |
-| `MIGRATION_DATABASE_URL` | Supabase session pooler string (port 5432) |
-| `AUTH_SECRET`, `CRON_SECRET`, `AUTOMATION_SECRET`, `PATROL_QR_SIGNING_SECRET` | from `generate-secrets.mjs` |
-| `ADMIN_EMAIL` | the first super admin's email |
-| `ADMIN_PASSWORD` | from `generate-secrets.mjs` (needed on the first deploy only; change it after signing in) |
-| `NEXT_PUBLIC_APP_URL` | `https://your-domain` |
-| `TRUST_PROXY_HOPS` | `1` (Vercel sets the client address itself) |
-| `PATROL_WINDOW_LOOKAHEAD_MINUTES` | `auto` (see below) |
-| `AUTOMATION_INPROCESS` | `false` (serverless: the cron below runs the engine) |
-| `TIMEZONE` | `Africa/Harare` |
-| `SMS_PROVIDER`, `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_WEBHOOK_SECRET` | your SMS gateway (see `.env.example`) |
+| Variable                                                                      | Value                                                                                     |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                | Supabase transaction pooler string (port 6543)                                            |
+| `MIGRATION_DATABASE_URL`                                                      | Supabase session pooler string (port 5432)                                                |
+| `AUTH_SECRET`, `CRON_SECRET`, `AUTOMATION_SECRET`, `PATROL_QR_SIGNING_SECRET` | from `generate-secrets.mjs`                                                               |
+| `ADMIN_EMAIL`                                                                 | the first super admin's email                                                             |
+| `ADMIN_PASSWORD`                                                              | from `generate-secrets.mjs` (needed on the first deploy only; change it after signing in) |
+| `NEXT_PUBLIC_APP_URL`                                                         | `https://your-domain`                                                                     |
+| `TRUST_PROXY_HOPS`                                                            | `1` (Vercel sets the client address itself)                                               |
+| `PATROL_WINDOW_LOOKAHEAD_MINUTES`                                             | `auto` (see below)                                                                        |
+| `AUTOMATION_INPROCESS`                                                        | `false` (serverless: the cron below runs the engine)                                      |
+| `TIMEZONE`                                                                    | `Africa/Harare`                                                                           |
+| `SMS_PROVIDER`, `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_WEBHOOK_SECRET`          | your SMS gateway (see `.env.example`)                                                     |
 
 Set the same `DATABASE_URL` for **Preview** only if previews should see production data; otherwise give previews their
 own Supabase project (a Supabase branch) or leave it unset there.

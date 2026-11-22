@@ -5,21 +5,21 @@ The sync engine moves events from the phone's durable outbox to the server. It i
 ## 1. Principles
 
 - **Durable first.** Every event (call, location, later emergency) is written to SQLite before anything else. A row leaves the outbox only when the server acknowledges it with `ok` or `duplicate`.
-- **Original time is kept.** Each event carries the moment it happened (`timestamp`). The server records when it *received* it and derives `LIVE` (≤ 2 min), `SYNCED` (≤ 10 min) or `SYNCED_LATE`. A late event is still the truth about that moment; it is never re-dated.
+- **Original time is kept.** Each event carries the moment it happened (`timestamp`). The server records when it _received_ it and derives `LIVE` (≤ 2 min), `SYNCED` (≤ 10 min) or `SYNCED_LATE`. A late event is still the truth about that moment; it is never re-dated.
 - **Idempotent.** `eventId` is unique per event. Re-sending after a lost response is harmless: the server answers `duplicate`.
 - **Sync ≠ verification.** "Up to date" means the phone has nothing left to send. It says nothing about whether the guard is on site; that is the GPS row.
-- **Offline ≠ outside.** No internet shows as *NO INTERNET · n saved on the phone*, never as a location problem.
+- **Offline ≠ outside.** No internet shows as _NO INTERNET · n saved on the phone_, never as a location problem.
 
 ## 2. Outbox (SQLite `outbox`, schema v2)
 
-| Column | Meaning |
-|---|---|
-| `eventId` (unique) | idempotency key |
-| `json` | the event, with its original timestamp |
-| `eventType`, `priority` | `EMERGENCY` (2) > `HIGH` (1: exits, returns, shift start, calls) > `NORMAL` (0: routine checks) |
-| `status` | `QUEUED` → `SENDING` → (deleted on ack) · `RETRY_PENDING` after a failure · `FAILED` when the server rejected it as malformed |
-| `attempts`, `lastAttemptAt`, `nextAttemptAt`, `lastError` | retry bookkeeping |
-| `sendingSince` | crash recovery: a row still `SENDING` after 5 min, or any `SENDING` row at service start, is sent again |
+| Column                                                    | Meaning                                                                                                                       |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `eventId` (unique)                                        | idempotency key                                                                                                               |
+| `json`                                                    | the event, with its original timestamp                                                                                        |
+| `eventType`, `priority`                                   | `EMERGENCY` (2) > `HIGH` (1: exits, returns, shift start, calls) > `NORMAL` (0: routine checks)                               |
+| `status`                                                  | `QUEUED` → `SENDING` → (deleted on ack) · `RETRY_PENDING` after a failure · `FAILED` when the server rejected it as malformed |
+| `attempts`, `lastAttemptAt`, `nextAttemptAt`, `lastError` | retry bookkeeping                                                                                                             |
+| `sendingSince`                                            | crash recovery: a row still `SENDING` after 5 min, or any `SENDING` row at service start, is sent again                       |
 
 v1 databases (first release) upgrade in place: existing rows become `QUEUED` / `NORMAL`. `FAILED` rows are kept seven days for diagnostics, then purged.
 
@@ -27,18 +27,18 @@ Server-side statuses on each stored event (`LocationEvent.syncStatus`): `LIVE`, 
 
 ## 3. Triggers
 
-| Trigger | Fired by |
-|---|---|
-| `ACTIVATION` | right after the activation code is exchanged for a token |
-| `APP_START` | the service's first run (process start, boot, update) |
-| `NETWORK_RESTORED` | the default network becoming available |
-| `CONFIG_CHANGED` | a changed shift/site config arriving (the monitoring coordinator wakes on the same signal) |
-| `NEW_EVENT` | every enqueue (location check result, call event) |
-| `EMERGENCY` | reserved for the Phase 2 emergency module (highest priority, backoff capped at 60 s) |
-| `SCHEDULED` | periodic tick (heartbeat interval, 1–15 min) |
-| `RETRY` | the earliest `nextAttemptAt` among waiting rows |
-| `MANUAL` | **Sync now** on the dashboard or Settings |
-| `WORKER` | WorkManager fallback every 15 min when the service was killed |
+| Trigger            | Fired by                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `ACTIVATION`       | right after the activation code is exchanged for a token                                   |
+| `APP_START`        | the service's first run (process start, boot, update)                                      |
+| `NETWORK_RESTORED` | the default network becoming available                                                     |
+| `CONFIG_CHANGED`   | a changed shift/site config arriving (the monitoring coordinator wakes on the same signal) |
+| `NEW_EVENT`        | every enqueue (location check result, call event)                                          |
+| `EMERGENCY`        | reserved for the Phase 2 emergency module (highest priority, backoff capped at 60 s)       |
+| `SCHEDULED`        | periodic tick (heartbeat interval, 1–15 min)                                               |
+| `RETRY`            | the earliest `nextAttemptAt` among waiting rows                                            |
+| `MANUAL`           | **Sync now** on the dashboard or Settings                                                  |
+| `WORKER`           | WorkManager fallback every 15 min when the service was killed                              |
 
 Requests coalesce: one run at a time; a trigger arriving mid-run is remembered (the stronger one wins) and a fresh run follows immediately.
 
@@ -59,15 +59,15 @@ A process-wide lock keeps the foreground service and the WorkManager fallback fr
 
 Dashboard **Sync** row (from `SyncPlanner.syncState`):
 
-| State | Text |
-|---|---|
-| `SYNCED` | UP TO DATE · last event sent 14:02 |
-| `SENDING` | SENDING · n event(s) |
-| `QUEUED` | QUEUED · n event(s) waiting · sent automatically |
-| `QUEUED_OFFLINE` | NO INTERNET · n event(s) saved on the phone, sent automatically later |
-| `RETRY_PENDING` | RETRYING · n event(s) · <last error> |
-| `SYNCED_WITH_FAILURES` | UP TO DATE · some events were rejected by the server (see Settings) |
-| `REVOKED` | DEVICE REVOKED · nothing is sent |
+| State                  | Text                                                                  |
+| ---------------------- | --------------------------------------------------------------------- |
+| `SYNCED`               | UP TO DATE · last event sent 14:02                                    |
+| `SENDING`              | SENDING · n event(s)                                                  |
+| `QUEUED`               | QUEUED · n event(s) waiting · sent automatically                      |
+| `QUEUED_OFFLINE`       | NO INTERNET · n event(s) saved on the phone, sent automatically later |
+| `RETRY_PENDING`        | RETRYING · n event(s) · <last error>                                  |
+| `SYNCED_WITH_FAILURES` | UP TO DATE · some events were rejected by the server (see Settings)   |
+| `REVOKED`              | DEVICE REVOKED · nothing is sent                                      |
 
 **Last heartbeat** is shown separately from **Last event sync**: a heartbeat proves the server is reachable, not that events were delivered.
 

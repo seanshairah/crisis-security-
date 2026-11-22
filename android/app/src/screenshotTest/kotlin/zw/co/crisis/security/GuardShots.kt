@@ -6,7 +6,12 @@ import app.cash.paparazzi.Paparazzi
 import com.android.resources.NightMode
 import org.junit.Rule
 import org.junit.Test
+import org.json.JSONObject
+import zw.co.crisis.security.patrol.GateForm
+import zw.co.crisis.security.patrol.GateItem
+import zw.co.crisis.security.patrol.GateTracks
 import zw.co.crisis.security.patrol.ScanOutcome
+import zw.co.crisis.security.ui.GateScreens
 import zw.co.crisis.security.ui.DeliveryTrail
 import zw.co.crisis.security.ui.GuardChrome
 import zw.co.crisis.security.ui.GuardScreens
@@ -73,6 +78,27 @@ abstract class GuardShots(night: Boolean) {
     fun alerts() = shot("alerts", GuardScreens.alerts(paparazzi.context, log.filter { it.kind == zw.co.crisis.security.ui.LogRow.Kind.ALERT }, true, object : GuardScreens.AlertActions {}), GuardChrome.Tab.ALERTS, GuardChrome.Glow.CRITICAL)
     fun patrolTab() = shot("patrol-tab", GuardScreens.session(paparazzi.context, GuardScreens.Session("Tendai Mapfumo", "Harare Depot", "18:00–06:00", log.filter { it.kind == zw.co.crisis.security.ui.LogRow.Kind.PATROL }, listOf("Check alerts are switched off" to "Turn on")), null, object : GuardScreens.SessionActions {}), GuardChrome.Tab.PATROL)
     fun me() = shot("me", GuardScreens.me(paparazzi.context, GuardScreens.Me("Tendai Mapfumo", true, "Harare Depot", "12.0 h", 4, listOf("Duty site" to "Harare Depot", "Shift ends" to "06:00", "Phone number" to "+263 77 884 2210", "Device" to "Gate phone"), "dark")) {}, GuardChrome.Tab.ME)
+
+    private val gateForm = GateForm("ARRIVAL").apply {
+        checkpointId = "g1"; party = "Tafara Grain Traders"; place = "Marondera"; vehicle = "TRUCK"; registration = "AFN 4821"; deliveryNote = "DN-20418"
+        items[0] = GateItem("Maize, white", "", "25", "bags")
+    }
+    fun gateWhere() = shot("gate-1-where", GateScreens.stepWhere(paparazzi.context, gateForm, "Emulator Gate Test Site", "Test receiving gate", emptyMap(), object : GateScreens.WhereActions {}), GuardChrome.Tab.PATROL)
+    fun gateWhereErrors() = shot("gate-1-where-errors", GateScreens.stepWhere(paparazzi.context, GateForm("DEPARTURE"), "Emulator Gate Test Site", "", GateForm("DEPARTURE").problemsStep1(), object : GateScreens.WhereActions {}), GuardChrome.Tab.PATROL)
+    fun gateItems() = shot("gate-2-items", GateScreens.stepItems(paparazzi.context, gateForm, emptyMap(), object : GateScreens.ItemsActions {}), GuardChrome.Tab.PATROL)
+    fun gateReview() = shot("gate-3-review", GateScreens.review(paparazzi.context, gateForm, "Test receiving gate", null, "APPROVE", "", emptyMap(), object : GateScreens.ReviewActions {}), GuardChrome.Tab.PATROL)
+    fun gateReviewDifference(): Unit {
+        val expected = JSONObject(gateForm.toDetails().toString()).also { it.getJSONArray("items").getJSONObject(0).put("quantity", 26) }
+        shot("gate-3-review-difference", GateScreens.review(paparazzi.context, gateForm, "Test receiving gate", expected, "APPROVE", "", mapOf("reason" to "Explain the rejection or difference"), object : GateScreens.ReviewActions {}), GuardChrome.Tab.PATROL)
+    }
+    fun gateSavedOffline() = shot("gate-4-saved-offline", GateScreens.result(paparazzi.context, "Saved on this phone", "Arrival of 25 bags of maize, white is kept safely. It sends when you are back online. Do not record it again.", GateTracks.forLocal("QUEUED"), GateTracks.advice(GateTracks.forLocal("QUEUED")), {}, {}), GuardChrome.Tab.PATROL, sync = SyncLine.of(false, 1, null))
+    fun gateCleared() {
+        val t = GateTracks.forMovement(JSONObject("""{"status":"APPROVED","deliveries":[{"status":"FAILED"}]}"""))
+        shot("gate-4-cleared-sync-retry", GateScreens.result(paparazzi.context, "Reached operations", "Arrival of 25 bags of maize, white is with operations. Gate approval is a separate step.", t, GateTracks.advice(t), {}, {}), GuardChrome.Tab.PATROL, GuardChrome.Glow.OK)
+    }
+    fun gateHome() = shot("gate-home", GateScreens.home(paparazzi.context, GateScreens.Home("Emulator Gate Test Site", true, null,
+        listOf(GateScreens.Row("Arrival · Tafara Grain Traders", "19:10", GateTracks.forLocal("QUEUED"))),
+        listOf(GateScreens.Row("Departure · INV-2291", "Zimplow · ABC 1234", GateTracks.forMovement(JSONObject("""{"status":"PENDING","deliveries":[]}"""))))), object : GateScreens.HomeActions {}), GuardChrome.Tab.PATROL)
 }
 
 class GuardDark : GuardShots(night = true) {
@@ -88,10 +114,20 @@ class GuardDark : GuardShots(night = true) {
     @Test fun alertsShot() = alerts()
     @Test fun patrolTabShot() = patrolTab()
     @Test fun meShot() = me()
+    @Test fun gateWhereShot() = gateWhere()
+    @Test fun gateWhereErrorsShot() = gateWhereErrors()
+    @Test fun gateItemsShot() = gateItems()
+    @Test fun gateReviewShot() = gateReview()
+    @Test fun gateReviewDifferenceShot() = gateReviewDifference()
+    @Test fun gateSavedOfflineShot() = gateSavedOffline()
+    @Test fun gateClearedShot() = gateCleared()
+    @Test fun gateHomeShot() = gateHome()
 }
 
 class GuardLight : GuardShots(night = false) {
     @Test fun homeOpenShot() = homeOpen()
     @Test fun homeClearShot() = homeClear()
     @Test fun alertsShot() = alerts()
+    @Test fun gateWhereShot() = gateWhere()
+    @Test fun gateReviewShot() = gateReview()
 }

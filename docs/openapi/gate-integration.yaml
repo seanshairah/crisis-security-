@@ -32,18 +32,31 @@ components:
       required: [category, items, party, place, occurredAt, vehicleType]
       properties:
         category: { type: string, enum: [MAIZE, MACHINERY, OTHER] }
-        items: { type: array, minItems: 1, maxItems: 40, items: { $ref: "#/components/schemas/Item" } }
+        items:
+          { type: array, minItems: 1, maxItems: 40, items: { $ref: "#/components/schemas/Item" } }
         party: { type: string, description: Supplier, customer or driver company, maxLength: 200 }
         place: { type: string, maxLength: 300 }
         occurredAt: { type: string, format: date-time }
-        vehicleType: { type: string, enum: [NONE, TRUCK, CAR, OTHER] }
-        registration: { type: string, maxLength: 40, description: Required when vehicleType is not NONE }
+        vehicleType: { type: string, enum: [NONE, TRUCK, CAR, BIKE, OTHER] }
+        deliveryNote:
+          {
+            type: string,
+            maxLength: 60,
+            description: Optional delivery note reference such as DN-20418,
+          }
+        registration:
+          { type: string, maxLength: 40, description: Required when vehicleType is not NONE }
         note: { type: string, maxLength: 2000 }
     ExpectedMovement:
       type: object
       required: [reference, locationId, direction, details]
       properties:
-        reference: { type: string, maxLength: 100, description: Your own stable id. Re-sending the same reference with the same details is safe. }
+        reference:
+          {
+            type: string,
+            maxLength: 100,
+            description: Your own stable id. Re-sending the same reference with the same details is safe.,
+          }
         locationId: { type: string, description: Portal site id (agreed in GATE_INBOUND_SITE_IDS) }
         direction: { type: string, enum: [ARRIVAL, DEPARTURE] }
         details: { $ref: "#/components/schemas/Details" }
@@ -78,23 +91,40 @@ components:
         decision it amends.
       required: [deliveryId, event, schemaVersion, movementId, status, direction, version]
       properties:
-        deliveryId: { type: string, description: Stable across retries. Persist it before acknowledging. }
+        deliveryId:
+          { type: string, description: Stable across retries. Persist it before acknowledging. }
         event: { type: string, enum: [gate.decision.v1] }
         schemaVersion: { type: integer, example: 1 }
         movementId: { type: string }
         reference: { type: string }
-        externalReference: { type: string, nullable: true, description: Your reference, without prefix }
+        externalReference:
+          { type: string, nullable: true, description: Your reference, without prefix }
         source: { type: string, enum: [EXTERNAL, GUARD, CORRECTION] }
         locationId: { type: string }
         siteName: { type: string }
         direction: { type: string, enum: [ARRIVAL, DEPARTURE] }
         expected: { allOf: [{ $ref: "#/components/schemas/Details" }], nullable: true }
         observed: { allOf: [{ $ref: "#/components/schemas/Details" }], nullable: true }
-        discrepancies: { type: array, items: { type: string }, description: "Fields that differ, e.g. items, party" }
+        discrepancies:
+          {
+            type: array,
+            items: { type: string },
+            description: "Fields that differ, e.g. items, party",
+          }
         status: { type: string, enum: [APPROVED, REJECTED] }
         reason: { type: string, nullable: true }
-        guard: { type: object, nullable: true, properties: { id: { type: string }, guardNo: { type: string }, name: { type: string } } }
-        checkpoint: { type: object, nullable: true, properties: { id: { type: string }, name: { type: string } } }
+        guard:
+          {
+            type: object,
+            nullable: true,
+            properties: { id: { type: string }, guardNo: { type: string }, name: { type: string } },
+          }
+        checkpoint:
+          {
+            type: object,
+            nullable: true,
+            properties: { id: { type: string }, name: { type: string } },
+          }
         decidedByRole: { type: string, enum: [GUARD, SUPERVISOR] }
         decisionBy: { type: string }
         decisionAt: { type: string, format: date-time }
@@ -108,7 +138,12 @@ components:
       properties:
         accepted: { type: boolean }
         deliveryId: { type: string, description: Must equal the deliveryId you received }
-        retryable: { type: boolean, description: With accepted=false, false parks the record instead of retrying }
+        retryable:
+          {
+            type: boolean,
+            description: With accepted=false,
+            false parks the record instead of retrying,
+          }
   parameters:
     reference:
       name: reference
@@ -125,7 +160,11 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/ExpectedMovement" } } }
       responses:
-        "200": { description: Recorded (or already recorded with identical details), content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } } }
+        "200":
+          {
+            description: Recorded (or already recorded with identical details),
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
         "400": { description: Invalid details }
         "401": { description: Bad token or signature }
         "403": { description: Site not enabled for this connection }
@@ -140,7 +179,11 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ $ref: "#/components/parameters/reference" }]
       responses:
-        "200": { description: Current state, content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } } }
+        "200":
+          {
+            description: Current state,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
         "404": { description: Unknown reference or site not enabled }
   /api/gate/inbound/{reference}/cancel:
     post:
@@ -149,9 +192,19 @@ paths:
       security: [{ bearer: [] }]
       parameters: [{ $ref: "#/components/parameters/reference" }]
       requestBody:
-        content: { application/json: { schema: { type: object, properties: { reason: { type: string, maxLength: 500 } } } } }
+        content:
+          {
+            application/json:
+              {
+                schema: { type: object, properties: { reason: { type: string, maxLength: 500 } } },
+              },
+          }
       responses:
-        "200": { description: Cancelled (idempotent), content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } } }
+        "200":
+          {
+            description: Cancelled (idempotent),
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
         "409": { description: A guard already checked it }
   /your-webhook-url:
     post:
@@ -170,4 +223,8 @@ paths:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/DecisionEvent" } } }
       responses:
-        "200": { description: Acknowledged, content: { application/json: { schema: { $ref: "#/components/schemas/Ack" } } } }
+        "200":
+          {
+            description: Acknowledged,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Ack" } } },
+          }

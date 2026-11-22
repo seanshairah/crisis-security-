@@ -16,16 +16,16 @@ phone to be a managed device; neither is set up.
 
 ## States, and where each comes from
 
-| State | Set by | Means |
-|---|---|---|
-| Request queued | portal | Waiting for the phone to collect it. |
-| Delivered to the phone | the phone fetched the command | **Nothing has rung.** |
-| Waiting for the operator | the phone showed it | Nothing has rung. |
-| Dialling | the phone, when the operator tapped Call | The call was started. |
-| Connected / Call completed / Not answered | **the phone's own call record** of an outgoing call to that number | Never assumed. |
-| Failed / Timed out / Cancelled | phone, timeout (`calls.requestTtlSeconds`, 120 s) or portal | No call was made, unless "failed" says otherwise. |
+| State                                     | Set by                                                             | Means                                             |
+| ----------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
+| Request queued                            | portal                                                             | Waiting for the phone to collect it.              |
+| Delivered to the phone                    | the phone fetched the command                                      | **Nothing has rung.**                             |
+| Waiting for the operator                  | the phone showed it                                                | Nothing has rung.                                 |
+| Dialling                                  | the phone, when the operator tapped Call                           | The call was started.                             |
+| Connected / Call completed / Not answered | **the phone's own call record** of an outgoing call to that number | Never assumed.                                    |
+| Failed / Timed out / Cancelled            | phone, timeout (`calls.requestTtlSeconds`, 120 s) or portal        | No call was made, unless "failed" says otherwise. |
 
-A request that reached *Dialling* but never produced a call record in 10 minutes is shown as failed.
+A request that reached _Dialling_ but never produced a call record in 10 minutes is shown as failed.
 
 ## Choosing the phone
 

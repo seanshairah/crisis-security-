@@ -8,19 +8,19 @@ What already exists, what is reused unchanged, and what this feature adds.
 
 ## Reused unchanged
 
-| Capability | Where | Note |
-|---|---|---|
-| Call detection on the phone | `android/.../call/CallMonitor.kt`, `CallTracker.kt` | Already enqueues `CALL_STARTED/ENDED/MISSED` through the durable outbox, and on a guard phone already attaches the last fix and asks for a fresh location check around the call |
-| Call ingestion and de-duplication | `src/lib/gateway/events.ts` → `applyCallEvent` | `@@unique([gatewayDeviceId, callId])` makes a replayed call event a no-op. Guard matching and `findLiveShiftForGuard` already run on every call |
-| Remote GPS request lifecycle | `src/lib/gateway/location-requests.ts`, `DeviceLocationRequest` | PENDING → DELIVERED → PROCESSING → COMPLETED/FAILED/EXPIRED, command poll, accuracy limit, mock detection, `resultEventId` idempotency |
-| Accuracy-aware geofence | `src/lib/geofence.ts` → `classifyFix` | INSIDE only when `distance + accuracy <= radius`; OUTSIDE only when `distance - accuracy > radius`; otherwise UNKNOWN with reason `poor_accuracy` or `on_boundary` |
-| Minute scheduler | `src/lib/automation/engine.ts` | Idempotent steps keyed on timestamp columns |
-| Settings | `src/lib/settings.ts` | Typed, admin-editable, already used for every other threshold |
-| Audit log | `src/lib/audit.ts` | Used for every manual override |
+| Capability                        | Where                                                           | Note                                                                                                                                                                            |
+| --------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Call detection on the phone       | `android/.../call/CallMonitor.kt`, `CallTracker.kt`             | Already enqueues `CALL_STARTED/ENDED/MISSED` through the durable outbox, and on a guard phone already attaches the last fix and asks for a fresh location check around the call |
+| Call ingestion and de-duplication | `src/lib/gateway/events.ts` → `applyCallEvent`                  | `@@unique([gatewayDeviceId, callId])` makes a replayed call event a no-op. Guard matching and `findLiveShiftForGuard` already run on every call                                 |
+| Remote GPS request lifecycle      | `src/lib/gateway/location-requests.ts`, `DeviceLocationRequest` | PENDING → DELIVERED → PROCESSING → COMPLETED/FAILED/EXPIRED, command poll, accuracy limit, mock detection, `resultEventId` idempotency                                          |
+| Accuracy-aware geofence           | `src/lib/geofence.ts` → `classifyFix`                           | INSIDE only when `distance + accuracy <= radius`; OUTSIDE only when `distance - accuracy > radius`; otherwise UNKNOWN with reason `poor_accuracy` or `on_boundary`              |
+| Minute scheduler                  | `src/lib/automation/engine.ts`                                  | Idempotent steps keyed on timestamp columns                                                                                                                                     |
+| Settings                          | `src/lib/settings.ts`                                           | Typed, admin-editable, already used for every other threshold                                                                                                                   |
+| Audit log                         | `src/lib/audit.ts`                                              | Used for every manual override                                                                                                                                                  |
 
 ## What was missing
 
-1. **No check-in expectation.** A shift had an arrival SMS flow but nothing that expected a *call* at the start of the shift, so there was no state to be "awaiting", "overdue" or "missed" against.
+1. **No check-in expectation.** A shift had an arrival SMS flow but nothing that expected a _call_ at the start of the shift, so there was no state to be "awaiting", "overdue" or "missed" against.
 2. **No qualifying-call rule.** Every call from a guard was recorded, but any call would have looked like a check-in. There was no notion of an authorised check-in destination.
 3. **GPS was never triggered by a call.** Location requests were only ever created by an operator pressing a button.
 4. **No grace or lateness arithmetic.** `Attendance.lateMinutes` existed but nothing computed it from a verified arrival.

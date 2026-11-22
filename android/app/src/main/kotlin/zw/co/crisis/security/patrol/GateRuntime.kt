@@ -9,7 +9,7 @@ class GateRuntime(context: Context) {
         for (command in store.gatePending()) {
             try {
                 val r = api.gateCommand(command)
-                store.gateAck(command.getString("commandId"), "SENT", "Reached server · gate: ${r.optString("status")} · inventory delivery tracked by operations")
+                store.gateAck(command.getString("commandId"), "SENT", r.toString())
             } catch (e: ApiClient.ApiException) {
                 if (e.status in listOf(400,403,404,409)) store.gateAck(command.getString("commandId"), "ATTENTION", e.message ?: "Needs operations review")
                 else throw e

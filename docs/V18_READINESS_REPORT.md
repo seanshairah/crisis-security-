@@ -15,25 +15,25 @@ are not features operators can use today.
 
 ## Deliverables
 
-| # | Deliverable | Where |
-|---|---|---|
-| 1 | Repository audit | `docs/V18_AUDIT_AND_PLAN.md` |
-| 2 | Issues and root causes (A–G) | same, Part A |
-| 3 | Implementation plan | same, "Plan, as built" |
-| 4 | Files modified | the commits below; `git diff --stat 52c4a03..HEAD` |
-| 5 | Database migrations | see Migrations below |
-| 6–8 | Basic-phone attendance, call check-in/out, gateway integration | `docs/BASIC_PHONE_ATTENDANCE.md` |
-| 9–10 | Welfare-call architecture, voice-provider status | `docs/WELFARE_CHECKS.md` (no real provider) |
-| 11–12 | Network-location interfaces, Zimbabwean operator assessment | `docs/NETWORK_LOCATION.md` |
-| 13 | Android fixes | Phase 1 commit: shared EventQueue (WAL, one helper), connection state from heartbeats, shared debug keystore option |
-| 14 | Unified attendance timeline | `AttendanceEvidence` now written for CALL, SMS, GPS, IVR, NETWORK and MANUAL; shift page cards for evidence, welfare checks and network checks |
-| 15 | Dashboard enhancements | Active operations: filters by phone type and arrival source, missed-welfare and not-checked-out tabs, "by call / GPS verified" under each arrival; guard profile: last call, SMS, GPS fix, network check, welfare status |
-| 16–17 | Test and regression results | below |
-| 18 | Remaining dependencies | below |
-| 19 | Security assessment | below |
-| 20 | Production readiness | this document |
-| 21 | Developer documentation | the three docs above, plus this report |
-| 22 | Operations manual | `docs/OPERATIONS_MANUAL.md` |
+| #     | Deliverable                                                    | Where                                                                                                                                                                                                                    |
+| ----- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Repository audit                                               | `docs/V18_AUDIT_AND_PLAN.md`                                                                                                                                                                                             |
+| 2     | Issues and root causes (A–G)                                   | same, Part A                                                                                                                                                                                                             |
+| 3     | Implementation plan                                            | same, "Plan, as built"                                                                                                                                                                                                   |
+| 4     | Files modified                                                 | the commits below; `git diff --stat 52c4a03..HEAD`                                                                                                                                                                       |
+| 5     | Database migrations                                            | see Migrations below                                                                                                                                                                                                     |
+| 6–8   | Basic-phone attendance, call check-in/out, gateway integration | `docs/BASIC_PHONE_ATTENDANCE.md`                                                                                                                                                                                         |
+| 9–10  | Welfare-call architecture, voice-provider status               | `docs/WELFARE_CHECKS.md` (no real provider)                                                                                                                                                                              |
+| 11–12 | Network-location interfaces, Zimbabwean operator assessment    | `docs/NETWORK_LOCATION.md`                                                                                                                                                                                               |
+| 13    | Android fixes                                                  | Phase 1 commit: shared EventQueue (WAL, one helper), connection state from heartbeats, shared debug keystore option                                                                                                      |
+| 14    | Unified attendance timeline                                    | `AttendanceEvidence` now written for CALL, SMS, GPS, IVR, NETWORK and MANUAL; shift page cards for evidence, welfare checks and network checks                                                                           |
+| 15    | Dashboard enhancements                                         | Active operations: filters by phone type and arrival source, missed-welfare and not-checked-out tabs, "by call / GPS verified" under each arrival; guard profile: last call, SMS, GPS fix, network check, welfare status |
+| 16–17 | Test and regression results                                    | below                                                                                                                                                                                                                    |
+| 18    | Remaining dependencies                                         | below                                                                                                                                                                                                                    |
+| 19    | Security assessment                                            | below                                                                                                                                                                                                                    |
+| 20    | Production readiness                                           | this document                                                                                                                                                                                                            |
+| 21    | Developer documentation                                        | the three docs above, plus this report                                                                                                                                                                                   |
+| 22    | Operations manual                                              | `docs/OPERATIONS_MANUAL.md`                                                                                                                                                                                              |
 
 Commits on the branch for this work:
 
@@ -45,22 +45,22 @@ Commits on the branch for this work:
 
 ## Test results (executed 21 October 2026, local PostgreSQL in the build container)
 
-| Suite | Result |
-|---|---|
-| TypeScript typecheck, ESLint | clean |
-| Unit tests (`npm test`) | 150 / 150 |
-| Time zone tests (UTC) | 12 / 12 |
-| Basic-phone attendance e2e | 25 / 25 |
-| Welfare e2e, including the signed HTTP webhook | 42 / 42 |
-| Network location e2e | 32 / 32 |
-| Check-in / auto check-in | 48 / 48, 48 / 48 |
-| Call requests, client notifications | 31 / 31, 51 / 51 |
-| Scheduler, shift edit | 17 / 17, 22 / 22 |
-| Gateway, integration, alerts | 30 / 30, 20 / 20, 20 / 20 |
-| Location, location requests | 38 / 38, 43 / 43 |
-| Client SMS updates check | passed |
-| Android unit tests (`testDebugUnitTest --rerun`) | 61 / 61 |
-| `next build` | passed |
+| Suite                                            | Result                    |
+| ------------------------------------------------ | ------------------------- |
+| TypeScript typecheck, ESLint                     | clean                     |
+| Unit tests (`npm test`)                          | 150 / 150                 |
+| Time zone tests (UTC)                            | 12 / 12                   |
+| Basic-phone attendance e2e                       | 25 / 25                   |
+| Welfare e2e, including the signed HTTP webhook   | 42 / 42                   |
+| Network location e2e                             | 32 / 32                   |
+| Check-in / auto check-in                         | 48 / 48, 48 / 48          |
+| Call requests, client notifications              | 31 / 31, 51 / 51          |
+| Scheduler, shift edit                            | 17 / 17, 22 / 22          |
+| Gateway, integration, alerts                     | 30 / 30, 20 / 20, 20 / 20 |
+| Location, location requests                      | 38 / 38, 43 / 43          |
+| Client SMS updates check                         | passed                    |
+| Android unit tests (`testDebugUnitTest --rerun`) | 61 / 61                   |
+| `next build`                                     | passed                    |
 
 Coverage against the brief:
 
@@ -94,11 +94,11 @@ Coverage against the brief:
 
 ## Migrations (additive only; applied to the local test database only)
 
-| Migration | Adds |
-|---|---|
-| `20261021100000_basic_phone_call_attendance` | phone-profile columns on Guard (with backfill `phoneType = ANDROID` for guard-app guards); AttendanceEvidence; six enums |
-| `20261021120000_welfare_schedule_voice` | welfare schedule columns on Location; `Guard.welfareExempt`; welfare call columns on WelfareCheck; VoiceWebhookEvent; `IncidentSource.VOICE`; two enums |
-| `20261021140000_network_location` | NetworkLocationCheck; `Location.networkVerifyEnabled` and `networkRadiusM`; `CheckInType.NETWORK_LOCATION`; two enums |
+| Migration                                    | Adds                                                                                                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261021100000_basic_phone_call_attendance` | phone-profile columns on Guard (with backfill `phoneType = ANDROID` for guard-app guards); AttendanceEvidence; six enums                                |
+| `20261021120000_welfare_schedule_voice`      | welfare schedule columns on Location; `Guard.welfareExempt`; welfare call columns on WelfareCheck; VoiceWebhookEvent; `IncidentSource.VOICE`; two enums |
+| `20261021140000_network_location`            | NetworkLocationCheck; `Location.networkVerifyEnabled` and `networkRadiusM`; `CheckInType.NETWORK_LOCATION`; two enums                                   |
 
 Review notes:
 

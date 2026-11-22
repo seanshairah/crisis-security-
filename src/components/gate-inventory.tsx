@@ -47,6 +47,7 @@ function Details({ title, d }: { title: string; d: GateDetails | null }) {
           </p>
           <p className="text-sm text-ink-2">
             {new Date(d.occurredAt).toLocaleString()} · {d.vehicleType} {d.registration}
+            {d.deliveryNote ? ` · Note ${d.deliveryNote}` : ""}
           </p>
           <ul className="my-3 space-y-2">
             {d.items.map((i, n) => (

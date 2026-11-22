@@ -6,19 +6,19 @@ One document to take a tagged `main` to production and back. Nothing here is run
 
 The following must be supplied by the operator; the repository holds no production values:
 
-| Item | Where it goes | Notes |
-|---|---|---|
-| Production domain (https) | Vercel project domain, `NEXT_PUBLIC_APP_URL`, `GATEWAY_DEFAULT_SERVER_URL` at APK build time | guard phones refuse plain http in release builds |
-| `DATABASE_URL` (Neon, pooled) | Vercel env | `DATABASE_OVER_HTTP=true` on Vercel |
-| `AUTH_SECRET` (≥ 32 random chars) | Vercel env, **Production and Preview** | the server **refuses to start** in production when it is unset or the example default; shorter values only warn |
-| `CRON_SECRET`, `AUTOMATION_SECRET` | Vercel env + cron | not the example defaults |
-| SMS provider: `SMS_PROVIDER=sendai`, `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_WEBHOOK_SECRET` | Vercel env + Sendai webhook config | the webhook URL is `https://<domain>/api/sms/webhook/sendai` |
-| `VAPID_*` keys | Vercel env | browser push |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Vercel env | **public** `pk.*` token, URL-restricted to the portal domain, with a Mapbox billing alert set before launch (docs/MAPBOX.md). Without it every map falls back to raster tiles |
-| `NEXT_PUBLIC_MAPBOX_STYLE` (optional) | Vercel env | custom company style |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` / `NEXT_PUBLIC_MAPTILER_KEY` (optional) | Vercel env | referrer-restricted at the provider; only used by the fallback renderer |
-| `SIMULATOR_ENABLED` | Vercel env | leave unset (off in production unless SMS is simulated) |
-| Android release keystore + `ANDROID_KEYSTORE_*` | build machine only | never committed |
+| Item                                                                                      | Where it goes                                                                                | Notes                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production domain (https)                                                                 | Vercel project domain, `NEXT_PUBLIC_APP_URL`, `GATEWAY_DEFAULT_SERVER_URL` at APK build time | guard phones refuse plain http in release builds                                                                                                                              |
+| `DATABASE_URL` (Neon, pooled)                                                             | Vercel env                                                                                   | `DATABASE_OVER_HTTP=true` on Vercel                                                                                                                                           |
+| `AUTH_SECRET` (≥ 32 random chars)                                                         | Vercel env, **Production and Preview**                                                       | the server **refuses to start** in production when it is unset or the example default; shorter values only warn                                                               |
+| `CRON_SECRET`, `AUTOMATION_SECRET`                                                        | Vercel env + cron                                                                            | not the example defaults                                                                                                                                                      |
+| SMS provider: `SMS_PROVIDER=sendai`, `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_WEBHOOK_SECRET` | Vercel env + Sendai webhook config                                                           | the webhook URL is `https://<domain>/api/sms/webhook/sendai`                                                                                                                  |
+| `VAPID_*` keys                                                                            | Vercel env                                                                                   | browser push                                                                                                                                                                  |
+| `NEXT_PUBLIC_MAPBOX_TOKEN`                                                                | Vercel env                                                                                   | **public** `pk.*` token, URL-restricted to the portal domain, with a Mapbox billing alert set before launch (docs/MAPBOX.md). Without it every map falls back to raster tiles |
+| `NEXT_PUBLIC_MAPBOX_STYLE` (optional)                                                     | Vercel env                                                                                   | custom company style                                                                                                                                                          |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` / `NEXT_PUBLIC_MAPTILER_KEY` (optional)                 | Vercel env                                                                                   | referrer-restricted at the provider; only used by the fallback renderer                                                                                                       |
+| `SIMULATOR_ENABLED`                                                                       | Vercel env                                                                                   | leave unset (off in production unless SMS is simulated)                                                                                                                       |
+| Android release keystore + `ANDROID_KEYSTORE_*`                                           | build machine only                                                                           | never committed                                                                                                                                                               |
 
 `/api/health` on the deployed URL reports `config.configIssues` (a count) and `config.environment`; a non-zero count means a `[config]` warning was logged at start.
 
@@ -40,7 +40,7 @@ All green before continuing. Record the numbers in the release note.
 
 ## 2. Backup (before any migration)
 
-Neon: create a branch of production (Console → Branches → *Create branch from main*), named `pre-<version>-<date>`. This is a full, instantly restorable copy. Keep it until the release has run for a week. Self-hosted Postgres: `pg_dump -Fc "$DATABASE_URL" > backup-<date>.dump`.
+Neon: create a branch of production (Console → Branches → _Create branch from main_), named `pre-<version>-<date>`. This is a full, instantly restorable copy. Keep it until the release has run for a week. Self-hosted Postgres: `pg_dump -Fc "$DATABASE_URL" > backup-<date>.dump`.
 
 ## 3. Database migration (additive only)
 
@@ -64,6 +64,7 @@ Docker: `docker build -t omega-portal:<version> .` then run with the env file; t
 export GATEWAY_DEFAULT_SERVER_URL=https://<domain>
 npm run android:release           # warns loudly if it falls back to the debug key: do not ship that
 ```
+
 Install on one guard phone and one operations phone, run `docs/DEVICE_TEST_PLAN.md` (sections L and U are the newest), confirm the device page shows `buildType: release` and no secure-storage warning, then distribute `artifacts/android/security-gateway-release.apk`. The debug build (`.debug` suffix) can stay on test phones; it is the only build that can use `omega.devHttpHosts`.
 
 ## 6. Smoke test (10 minutes, production)
@@ -78,15 +79,15 @@ Install on one guard phone and one operations phone, run `docs/DEVICE_TEST_PLAN.
 
 ## 7. Rollback
 
-- Portal: Vercel → previous deployment → *Promote to Production* (or `docker run` the previous image). Older code ignores the added columns and tables; no schema rollback needed.
-- Database: only if data must be discarded, restore the Neon branch from step 2 (Console → branch → *Restore*), accepting the loss of everything written since. Document the decision.
+- Portal: Vercel → previous deployment → _Promote to Production_ (or `docker run` the previous image). Older code ignores the added columns and tables; no schema rollback needed.
+- Database: only if data must be discarded, restore the Neon branch from step 2 (Console → branch → _Restore_), accepting the loss of everything written since. Document the decision.
 - Android: previous APK re-installs over the newer one only with the same signing key; otherwise uninstall/reinstall and re-activate the phone (ANDROID_INSTALLATION.md).
 
 ## 8. Monitoring and logs
 
 - `/api/health` every minute from an external monitor (expects 200 and `ok: true`).
 - Vercel logs: filter `[config]`, `[automation]`, `Unhandled`.
-- Portal pages to watch for the first hour: `/gateways` (heartbeats, sync *Up to date*), `/alerts`, `/operations/exceptions`, `/notifications`.
+- Portal pages to watch for the first hour: `/gateways` (heartbeats, sync _Up to date_), `/alerts`, `/operations/exceptions`, `/notifications`.
 - Audit log (super admin): `LOGIN_THROTTLED`, `GATEWAY_*`, `LOCATION_REQUESTED`.
 
 ---
@@ -116,12 +117,12 @@ so the gap is harmless in that direction; the new build needs the table to exist
 Nothing is required: every setting has a working default and the feature is on. Review these in
 Settings → Call check-in before the first shift:
 
-| Setting | Default | Change it when |
-|---|---|---|
-| `checkin.enabled` | true | Set false to roll the feature back without deploying |
-| `checkin.graceMinutes` | 5 | The company's own rule differs |
-| `checkin.numbers` | blank | Guards must ring one specific control-room number |
-| `checkin.windowBeforeMinutes` | 60 | Guards ring in earlier than an hour before |
+| Setting                       | Default | Change it when                                       |
+| ----------------------------- | ------- | ---------------------------------------------------- |
+| `checkin.enabled`             | true    | Set false to roll the feature back without deploying |
+| `checkin.graceMinutes`        | 5       | The company's own rule differs                       |
+| `checkin.numbers`             | blank   | Guards must ring one specific control-room number    |
+| `checkin.windowBeforeMinutes` | 60      | Guards ring in earlier than an hour before           |
 
 A site can override the grace period on its own form, and a single shift on the shift edit page.
 

@@ -17,8 +17,9 @@ export const detailsSchema = z
     party: z.string().trim().min(1).max(200),
     place: z.string().trim().min(1).max(300),
     occurredAt: z.iso.datetime(),
-    vehicleType: z.enum(["NONE", "TRUCK", "CAR", "OTHER"]),
+    vehicleType: z.enum(["NONE", "TRUCK", "CAR", "BIKE", "OTHER"]),
     registration: z.string().trim().max(40).default(""),
+    deliveryNote: z.string().trim().max(60).default(""),
     note: z.string().trim().max(2000).default(""),
   })
   .superRefine((v, c) => {

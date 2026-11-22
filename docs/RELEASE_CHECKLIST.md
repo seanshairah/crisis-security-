@@ -4,7 +4,7 @@
 
 - [ ] `npm run test:all` green locally (typecheck, lint, unit, the four e2e suites against a local database with `npm run dev`).
 - [ ] `cd android && ./gradlew testDebugUnitTest` green.
-- [ ] `npm run db:migration-status` against production shows *all migrations applied* (after `npx tsx scripts/neon-migrate.ts` or `prisma migrate deploy`).
+- [ ] `npm run db:migration-status` against production shows _all migrations applied_ (after `npx tsx scripts/neon-migrate.ts` or `prisma migrate deploy`).
 - [ ] `docs/DATABASE_CHANGES.md` updated for any new migration; all additive.
 - [ ] Secrets: none in the diff (`git diff --stat` shows no `.env`, no `keystore.properties`, no `.jks`).
 
@@ -24,6 +24,6 @@
 
 ## After
 
-- [ ] Watch `/gateways` for an hour: heartbeats, sync *Up to date*, config versions applied.
+- [ ] Watch `/gateways` for an hour: heartbeats, sync _Up to date_, config versions applied.
 - [ ] Watch `/alerts` and `/operations/exceptions` for anything unexpected.
 - [ ] Note the deployment and APK version in the audit log entry (Settings → Audit log) or the release note.
