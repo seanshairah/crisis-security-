@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 process.env.TZ = process.env.TIMEZONE || "Africa/Harare";
 
 const nextConfig: NextConfig = {
+  // Isolated local verification servers must not overwrite the running dashboard build.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Self-contained server bundle for the Docker image (copied from .next/standalone); harmless on Vercel.
   output: "standalone",
   reactStrictMode: true,

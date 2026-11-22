@@ -83,6 +83,8 @@ enum ShiftPattern {
 }
 
 model Location {
+  gatePolicy GatePolicy?
+  gateMovements GateMovement[]
   patrolPolicy PatrolPolicy?
   checkpoints PatrolCheckpoint[]
   id                     String             @id @default(cuid())
@@ -1655,4 +1657,85 @@ enum PatrolLookahead {
   OFF
   AUTO
   CUSTOM
+}
+
+
+// Gate approval is independent from delivery to the external inventory system.
+enum GateStatus {
+  PENDING
+  REVIEW
+  APPROVED
+  REJECTED
+}
+enum GateSyncStatus {
+  NOT_QUEUED
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+model GatePolicy {
+  locationId String @id
+  location Location @relation(fields: [locationId], references: [id])
+  guardCanApprove Boolean @default(false)
+}
+model GateMovement {
+  id String @id @default(cuid())
+  locationId String
+  location Location @relation(fields: [locationId], references: [id])
+  source String
+  sourceReference String @unique
+  direction String
+  expected Json?
+  observed Json?
+  checkpointId String?
+  sessionId String?
+  guardId String?
+  shiftId String?
+  status GateStatus @default(PENDING)
+  version Int @default(1)
+  decisionBy String?
+  decisionAt DateTime?
+  reason String?
+  correctionOf String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  history GateHistory[]
+  deliveries GateDelivery[]
+  @@index([locationId, status, createdAt])
+}
+model GateHistory {
+  id String @id @default(cuid())
+  movementId String
+  movement GateMovement @relation(fields: [movementId], references: [id])
+  actor String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  @@index([movementId, createdAt])
+}
+model GateDelivery {
+  id String @id @default(cuid())
+  movementId String
+  movement GateMovement @relation(fields: [movementId], references: [id])
+  version Int
+  payload Json
+  status GateSyncStatus @default(PENDING)
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  leaseUntil DateTime?
+  lastError String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  attemptsLog GateDeliveryAttempt[]
+  @@unique([movementId, version])
+  @@index([status, nextAttemptAt])
+}
+model GateDeliveryAttempt {
+  id String @id @default(cuid())
+  deliveryId String
+  delivery GateDelivery @relation(fields: [deliveryId], references: [id])
+  success Boolean
+  detail String
+  createdAt DateTime @default(now())
 }

@@ -10,3 +10,7 @@ Start with these maintained documents:
 - [Verification reports](verification/): dated evidence, with physical and simulated tests identified.
 
 Historical implementation plans and audits are under [archive](archive/). They describe older builds and do not supersede the maintained security guide or current tests. The previous API_DOCUMENTATION page redirects here to avoid two conflicting API references.
+
+Gate arrivals, departures, approvals, offline records and the external stock-system contract: [Gate Inventory](GATE_INVENTORY.md).
+
+Local results and remaining release blockers: [Gate Inventory verification](GATE_INVENTORY_VERIFICATION.md).

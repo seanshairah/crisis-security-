@@ -1,3 +1,4 @@
+import { deliverGateDecisions } from "@/lib/gate/delivery";
 /**
  * Who runs the automation engine, and how often.
  *
@@ -81,6 +82,11 @@ export async function runScheduledTick(
   let error: string | null = null;
   try {
     report = await runAutomationTick(now);
+    try {
+      await deliverGateDecisions(3);
+    } catch {
+      report.errors.push("Gate Inventory delivery could not run; retry pending.");
+    }
     error = report.errors.length ? report.errors.slice(0, 5).join(" · ").slice(0, 500) : null;
   } catch (e) {
     error = (e as Error).message.slice(0, 500);

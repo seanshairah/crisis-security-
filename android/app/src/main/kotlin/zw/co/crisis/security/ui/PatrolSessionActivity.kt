@@ -67,7 +67,10 @@ class PatrolSessionActivity : AppCompatActivity() {
             recent = recent, fixes = fixes,
         )
         holder.removeAllViews()
-        holder.addView(GuardScreens.session(this, model, message, actions))
+        val content = Ui.column(this)
+        content.addView(android.widget.Button(this).apply { text = "Gate Inventory"; isAllCaps = false; minHeight = Ui.dp(this@PatrolSessionActivity, 56); setOnClickListener { startActivity(Intent(this@PatrolSessionActivity, GateInventoryActivity::class.java)) } })
+        content.addView(GuardScreens.session(this, model, message, actions))
+        holder.addView(content)
         chrome.refreshSync()
     }
 
@@ -77,8 +80,8 @@ class PatrolSessionActivity : AppCompatActivity() {
         override fun fix(index: Int) { fixActions.getOrNull(index)?.invoke() }
         override fun sync() = perform("Sending…") {
             GatewayService.requestSync(this@PatrolSessionActivity, Trigger.MANUAL)
-            withContext(Dispatchers.IO) { PatrolRuntime(this@PatrolSessionActivity).sync(api()) }
-            "Sent. Everything on this phone has reached operations."
+            withContext(Dispatchers.IO) { zw.co.crisis.security.patrol.GateRuntime(this@PatrolSessionActivity).sync(api()); PatrolRuntime(this@PatrolSessionActivity).sync(api()) }
+            "Sync completed. Check the status below for any records still waiting."
         }
         override fun endShift() {
             val s = session() ?: return
