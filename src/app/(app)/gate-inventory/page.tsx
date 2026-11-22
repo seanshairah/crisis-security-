@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/rbac";
 import { db } from "@/lib/db";
 import { GateInventory } from "@/components/gate-inventory";
+import { integrationStatus } from "@/lib/gate/status";
 export default async function GateInventoryPage() {
   const user = await requireUser();
   const sites = await db.location.findMany({
@@ -13,7 +14,7 @@ export default async function GateInventoryPage() {
     include: {
       location: { select: { name: true } },
       deliveries: {
-        select: { status: true, lastError: true },
+        select: { status: true, lastError: true, deadAt: true },
         orderBy: { createdAt: "desc" },
         take: 1,
       },
@@ -30,6 +31,11 @@ export default async function GateInventoryPage() {
       }))}
       items={JSON.parse(JSON.stringify(items))}
       admin={user.role !== "SUPERVISOR"}
+      connection={
+        user.role !== "SUPERVISOR"
+          ? JSON.parse(JSON.stringify(await integrationStatus()))
+          : undefined
+      }
     />
   );
 }

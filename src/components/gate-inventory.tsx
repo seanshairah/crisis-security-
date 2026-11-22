@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import type { GateDetails } from "@/lib/gate/contract";
 import QRCode from "qrcode";
+import { GateConnection, type ConnectionStatus } from "@/components/gate-connection";
 const approvalLabel: Record<string, string> = {
   PENDING: "Awaiting physical check",
   REVIEW: "Needs supervisor review",
   APPROVED: "Cleared at gate",
   REJECTED: "Not cleared",
+  CANCELLED: "Withdrawn by inventory",
 };
 const syncLabel: Record<string, string> = {
   PENDING: "Waiting to send",
@@ -31,7 +33,7 @@ type Movement = {
   observed: GateDetails | null;
   reason: string | null;
   createdAt: string;
-  deliveries: { status: string; lastError: string | null }[];
+  deliveries: { status: string; lastError: string | null; deadAt?: string | null }[];
 };
 type History = { actor: string; action: string; createdAt: string };
 function Details({ title, d }: { title: string; d: GateDetails | null }) {
@@ -69,10 +71,12 @@ export function GateInventory({
   sites,
   items,
   admin,
+  connection,
 }: {
   sites: { id: string; name: string; guardCanApprove: boolean }[];
   items: Movement[];
   admin: boolean;
+  connection?: ConnectionStatus;
 }) {
   const router = useRouter();
   const [site, setSite] = useState("");
@@ -158,6 +162,7 @@ export function GateInventory({
           Review physical checks, clear movements and follow delivery to your inventory system.
         </p>
       </header>
+      {admin && connection && <GateConnection status={connection} />}
       <div className="grid gap-3 sm:grid-cols-3">
         {[
           [
@@ -167,7 +172,8 @@ export function GateInventory({
           ["Cleared at gate", items.filter((m) => m.status === "APPROVED").length],
           [
             "Delivery needs attention",
-            items.filter((m) => m.deliveries[0]?.status === "FAILED").length,
+            items.filter((m) => m.deliveries[0]?.status === "FAILED" || m.deliveries[0]?.deadAt)
+              .length,
           ],
         ].map(([label, count]) => (
           <div key={label} className="rounded-xl border border-line bg-surface p-4">
