@@ -6,7 +6,12 @@
       "body": "{ sentAt: ISO datetime, events: scan[] }",
       "maximumSubmitted": 100,
       "maximumProcessed": 20,
-      "acknowledgements": ["ok", "duplicate", "rejected", "retry"],
+      "acknowledgements": [
+        "ok",
+        "duplicate",
+        "rejected",
+        "retry"
+      ],
       "notes": "Unacknowledged and retry rows must remain on the device. Missing/invalid sentAt requires clock review. Excessively delayed evidence requires review."
     },
     "POST /api/patrols/session": {
@@ -40,7 +45,12 @@
         "lookaheadMode": {
           "default": "DEFAULT",
           "type": "string",
-          "enum": ["DEFAULT", "OFF", "AUTO", "CUSTOM"]
+          "enum": [
+            "DEFAULT",
+            "OFF",
+            "AUTO",
+            "CUSTOM"
+          ]
         },
         "lookaheadMinutes": {
           "anyOf": [
@@ -55,7 +65,12 @@
           ]
         }
       },
-      "required": ["enabled", "minIntervalMinutes", "maxIntervalMinutes", "responseMinutes"]
+      "required": [
+        "enabled",
+        "minIntervalMinutes",
+        "maxIntervalMinutes",
+        "responseMinutes"
+      ]
     },
     "checkpoint": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -92,7 +107,14 @@
           "maximum": 100
         }
       },
-      "required": ["name", "latitude", "longitude", "radiusM", "priority", "minimumVisits"]
+      "required": [
+        "name",
+        "latitude",
+        "longitude",
+        "radiusM",
+        "priority",
+        "minimumVisits"
+      ]
     },
     "scan": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
