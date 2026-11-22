@@ -60,8 +60,8 @@ down. Losing the key means every guard's phone needs the app uninstalled and rei
 Android refuses an update signed by a different key. There is no recovery. Never commit either file.
 
 `.gitignore` already excludes `android/keystore.properties`, `android/*.jks` and `*.keystore`.
-Without a keystore the release build falls back to the debug key and logs a warning, which is why the
-portal then refuses to serve it.
+Without a keystore the release build refuses to run (`GradleException`): a release APK is never signed with
+the debug key. Debug APKs are for testing only and the portal refuses to serve them.
 
 Verify what you built before shipping it:
 
