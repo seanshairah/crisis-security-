@@ -8,15 +8,15 @@ longer does.
 ## What was wrong
 
 `src/lib/time.ts` built shift times with `new Date(y, m, d, h, mi)` and formatted them with date-fns
-`format`. Both read the *process* timezone. With the process at UTC:
+`format`. Both read the _process_ timezone. With the process at UTC:
 
-| | |
-|---|---|
-| Administrator types | `18:00` on 21 Oct, meaning 18:00 in Harare |
-| Stored instant | `2026-10-21T18:00:00Z` |
-| Which in Harare is | **20:00** |
-| Guard arrives punctually at 18:00 Harare | `2026-10-21T16:00:00Z` |
-| Arrival minus shift start | **−120 minutes** |
+|                                          |                                            |
+| ---------------------------------------- | ------------------------------------------ |
+| Administrator types                      | `18:00` on 21 Oct, meaning 18:00 in Harare |
+| Stored instant                           | `2026-10-21T18:00:00Z`                     |
+| Which in Harare is                       | **20:00**                                  |
+| Guard arrives punctually at 18:00 Harare | `2026-10-21T16:00:00Z`                     |
+| Arrival minus shift start                | **−120 minutes**                           |
 
 Everything inside the portal looked self-consistent, because the same wrong offset was applied on
 the way in and on the way out. The damage showed up wherever a stored time met a real-world instant:

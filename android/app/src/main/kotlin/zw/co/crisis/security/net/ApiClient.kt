@@ -36,6 +36,8 @@ class ApiClient(private val baseUrl: String, private val token: String? = null) 
     fun ackCommand(id: String, status: String, detail: String? = null): JSONObject = post("/api/gateways/commands/${java.net.URLEncoder.encode(id, "UTF-8")}/ack", JSONObject().put("status", status).apply { detail?.let { put("detail", it) } })
 
     /** GET /api/gateways/config — guard, shift, site, policy. */
+    fun gateList(sessionId: String, query: String = ""): JSONObject = get("/api/gate/device?sessionId="+java.net.URLEncoder.encode(sessionId,"UTF-8")+"&q="+java.net.URLEncoder.encode(query,"UTF-8"))
+    fun gateCommand(command: JSONObject): JSONObject = post("/api/gate/device",command)
     fun patrolConfig(): JSONObject = get("/api/patrols/session")
     fun patrolLogin(guardNo: String, pin: String): JSONObject = post("/api/patrols/session", JSONObject().put("guardNo", guardNo).put("pin", pin))
     fun patrolLogout(sessionId: String): JSONObject = post("/api/patrols/logout", JSONObject().put("sessionId", sessionId))

@@ -3,6 +3,8 @@
  * (count only, never values) by /api/health. Development never blocks; production refuses to start
  * without a real AUTH_SECRET because every session cookie is signed with it.
  */
+import { inboundStatus, outboundConfig } from "@/lib/gate/config";
+
 export type EnvIssue = { key: string; level: "fatal" | "warn"; message: string };
 
 const DEFAULTS = new Set([
@@ -71,6 +73,25 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
       level: "warn",
       message:
         "TRUST_PROXY_HOPS is unset or 0, so client addresses are unknown: login and activation throttles fall back to per-account budgets. Set it to the number of reverse-proxy hops in front of the app.",
+    });
+  // Gate Inventory: optional, but a half-set connection silently holds every decision, so say so.
+  const e = env as NodeJS.ProcessEnv;
+  const touched = (names: string[]) => names.some((k) => !!env[k]);
+  if (touched(["GATE_OUTBOUND_URL", "GATE_OUTBOUND_TOKEN", "GATE_OUTBOUND_SIGNING_SECRET"])) {
+    const o = outboundConfig(e);
+    if (!o.ok)
+      for (const m of o.problems) issues.push({ key: "GATE_OUTBOUND", level: "warn", message: m });
+  }
+  if (touched(["GATE_INBOUND_TOKEN", "GATE_INBOUND_SITE_IDS", "GATE_INBOUND_SIGNING_SECRET"])) {
+    const i = inboundStatus(e);
+    for (const m of i.problems) issues.push({ key: "GATE_INBOUND", level: "warn", message: m });
+  }
+  if (prod && env.GATE_ALLOW_LOCAL_TEST === "true")
+    issues.push({
+      key: "GATE_ALLOW_LOCAL_TEST",
+      level: "warn",
+      message:
+        "GATE_ALLOW_LOCAL_TEST is on in production; it permits plain-http inventory targets.",
     });
   if (prod && env.SIMULATOR_ENABLED === "true")
     issues.push({

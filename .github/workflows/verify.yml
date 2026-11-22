@@ -84,3 +84,33 @@ jobs:
           echo "ANDROID_KEY_PASSWORD=ci-verification-only" >> "$GITHUB_ENV"
       - name: Release tests, lint and assembly with disposable CI signer
         run: ./android/gradlew -p android :app:testReleaseUnitTest :app:assembleRelease
+
+  gate-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crisis_gate
+          POSTGRES_PASSWORD: local-gate-test-only
+          POSTGRES_DB: crisis_gate_fresh
+        ports:
+          - 55440:5432
+        options: >-
+          --health-cmd "pg_isready -U crisis_gate -d crisis_gate_fresh"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://crisis_gate:local-gate-test-only@127.0.0.1:55440/crisis_gate_fresh
+      AUTH_SECRET: isolated-gate-ci-key-never-for-deployment
+      AUTOMATION_INPROCESS: "false"
+      AUTOMATION_HEARTBEAT_TICK: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm run test:gate-integration

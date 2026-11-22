@@ -34,7 +34,7 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
     /** Re-reads the outbox and the connection; call it from the screen's own refresh loop. */
     fun refreshSync() {
         val prefs = Prefs(a)
-        val pending = runCatching { EventQueue.get(a).counts().pending }.getOrDefault(0) + runCatching { PatrolStore.get(a).pendingCount() }.getOrDefault(0)
+        val pending = runCatching { EventQueue.get(a).counts().pending }.getOrDefault(0) + runCatching { PatrolStore.get(a).pendingCount() + PatrolStore.get(a).gatePendingCount() }.getOrDefault(0)
         bindSync(a, sync, SyncLine.of(DeviceInfo.isOnline(a), pending, prefs.lastSyncAt.takeIf { it > 0 }?.let { System.currentTimeMillis() - it }))
     }
 
@@ -109,7 +109,7 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
                     addView(Ui.icon(c, t.icon, 26, tone))
                     addView(Ui.text(c, t.label, 11f, tone, if (on) 600 else 500).apply { gravity = Gravity.CENTER; setPadding(0, Ui.dp(c, 3), 0, 0) })
                     isClickable = true; isFocusable = true; isSelected = on; contentDescription = t.label
-                    setOnClickListener { if (!on) onTab(t) }
+                    setOnClickListener { onTab(t) }
                 }, LinearLayout.LayoutParams(0, -2, 1f))
             }
             return wrap
@@ -120,6 +120,8 @@ class GuardChrome private constructor(private val a: Activity, val root: FrameLa
                 Tab.HOME -> PatrolActivity::class.java; Tab.PATROL -> PatrolSessionActivity::class.java
                 Tab.ALERTS -> AlertsActivity::class.java; Tab.LOG -> ShiftLogActivity::class.java; Tab.ME -> MeActivity::class.java
             }
+            // A child screen can share the selected tab; tapping it still returns to its parent.
+            if (a.javaClass == target) return
             a.startActivity(Intent(a, target).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NO_ANIMATION))
             @Suppress("DEPRECATION") a.overridePendingTransition(0, 0)
         }

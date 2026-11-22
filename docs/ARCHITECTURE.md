@@ -55,15 +55,15 @@ Principles
 
 Technology
 
-| Layer     | Choice                                         |
-| --------- | ---------------------------------------------- |
-| Frontend  | Next.js 15 (App Router), React 19, TypeScript  |
-| Styling   | Tailwind CSS 4, shadcn-style components in-repo |
-| Backend   | Next.js route handlers + server actions, Node   |
-| Database  | PostgreSQL 16, Prisma 6                         |
-| Auth      | bcrypt passwords, signed JWT session cookie, role checks on every page and route |
-| SMS       | Provider abstraction, env-configured            |
-| Icons     | Phosphor (fill weight), one family              |
+| Layer    | Choice                                                                           |
+| -------- | -------------------------------------------------------------------------------- |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript                                    |
+| Styling  | Tailwind CSS 4, shadcn-style components in-repo                                  |
+| Backend  | Next.js route handlers + server actions, Node                                    |
+| Database | PostgreSQL 16, Prisma 6                                                          |
+| Auth     | bcrypt passwords, signed JWT session cookie, role checks on every page and route |
+| SMS      | Provider abstraction, env-configured                                             |
+| Icons    | Phosphor (fill weight), one family                                               |
 
 ---
 
@@ -147,7 +147,7 @@ SCHEDULED
   │   no reply after completion window → auto-close as COMPLETED (unconfirmed), notify
 ```
 
-**Monitoring.** Operations watch *Active operations*: one row per live shift with arrival time, welfare result and status glyph. Clicking a row opens the shift timeline.
+**Monitoring.** Operations watch _Active operations_: one row per live shift with arrival time, welfare result and status glyph. Clicking a row opens the shift timeline.
 
 **Incidents.** Created from SMS (3, INCIDENT, EMERGENCY) or manually. Supervisor acknowledges, adds resolution notes, resolves.
 
@@ -242,29 +242,29 @@ processIncomingMessage({ from, body, provider })
 
 Provider adapters:
 
-| Provider         | Inbound auth                               | Zimbabwe coverage |
-| ---------------- | ------------------------------------------ | ----------------- |
-| africastalking   | `SMS_WEBHOOK_SECRET` as `?key=` or header  | yes (Econet, NetOne, Telecel) |
-| twilio           | X-Twilio-Signature HMAC                    | via international numbers |
-| http (generic)   | `X-Webhook-Secret` header                  | any local gateway (e.g. BulkSMS, Clickatell, Esendex ZW) |
-| simulated        | session + admin role                       | demo only |
+| Provider       | Inbound auth                              | Zimbabwe coverage                                        |
+| -------------- | ----------------------------------------- | -------------------------------------------------------- |
+| africastalking | `SMS_WEBHOOK_SECRET` as `?key=` or header | yes (Econet, NetOne, Telecel)                            |
+| twilio         | X-Twilio-Signature HMAC                   | via international numbers                                |
+| http (generic) | `X-Webhook-Secret` header                 | any local gateway (e.g. BulkSMS, Clickatell, Esendex ZW) |
+| simulated      | session + admin role                      | demo only                                                |
 
 ---
 
 ## 6. Automation logic
 
-`runAutomationTick(now)` runs every minute. Settings (all editable in *Settings*):
+`runAutomationTick(now)` runs every minute. Settings (all editable in _Settings_):
 
-| key                         | default | meaning |
-| --------------------------- | ------- | ------- |
-| arrival.sendOffsetMinutes   | 0       | send arrival SMS this many minutes before start (0 = at start) |
-| arrival.graceMinutes        | 15      | wait before the reminder |
-| arrival.escalationMinutes   | 15      | wait after reminder before NOT_CONFIRMED + notify |
-| welfare.offsetPercent       | 50      | where in the shift the welfare check fires |
-| welfare.responseMinutes     | 20      | wait before a missed welfare check |
-| completion.responseMinutes  | 30      | wait before auto-closing an unconfirmed shift |
-| handover.notifyMinutes      | 30      | notify incoming guard this long before start |
-| recurrence.horizonDays      | 14      | how far ahead recurring shifts are materialised |
+| key                        | default | meaning                                                        |
+| -------------------------- | ------- | -------------------------------------------------------------- |
+| arrival.sendOffsetMinutes  | 0       | send arrival SMS this many minutes before start (0 = at start) |
+| arrival.graceMinutes       | 15      | wait before the reminder                                       |
+| arrival.escalationMinutes  | 15      | wait after reminder before NOT_CONFIRMED + notify              |
+| welfare.offsetPercent      | 50      | where in the shift the welfare check fires                     |
+| welfare.responseMinutes    | 20      | wait before a missed welfare check                             |
+| completion.responseMinutes | 30      | wait before auto-closing an unconfirmed shift                  |
+| handover.notifyMinutes     | 30      | notify incoming guard this long before start                   |
+| recurrence.horizonDays     | 14      | how far ahead recurring shifts are materialised                |
 
 Per tick, in order:
 

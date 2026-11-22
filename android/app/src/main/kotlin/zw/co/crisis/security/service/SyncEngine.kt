@@ -45,6 +45,7 @@ class SyncEngine(private val context: Context) {
         if (!prefs.isActivated) return finish(Outcome.Rejected("not activated"), "not activated")
         if (!online) return finish(Outcome.Retry("offline"), "offline")
         val api = ApiClient(prefs.serverUrl, prefs.deviceToken)
+        runCatching { zw.co.crisis.security.patrol.GateRuntime(context).sync(api) }.onFailure { Log.w(TAG, "Gate sync retained") }
         runCatching { zw.co.crisis.security.patrol.PatrolRuntime(context).sync(api) }.onFailure { Log.w(TAG, "Patrol sync retained: ${it.message}") }
         queue.purgeFailed()
         while (true) {

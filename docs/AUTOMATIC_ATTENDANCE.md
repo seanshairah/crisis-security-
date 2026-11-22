@@ -19,20 +19,20 @@ asked, is not used. The phone's clock is corrected from the time it sent the upl
 with a wrong clock cannot make an early fix look on time.
 
 The accuracy limit is the site's (default ±100 m). A fix less accurate than the limit is never
-accepted as "inside"; it leaves the check-in as *location uncertain*, and the next request tries
+accepted as "inside"; it leaves the check-in as _location uncertain_, and the next request tries
 again. The limit is not relaxed to get a result.
 
 ## What the guard's row can become
 
-| Status | Meaning |
-|---|---|
-| Location pending | The window is open and no usable fix has arrived yet. |
-| Verified on time / within grace / late | A fix inside the fence, with lateness from the GPS capture time. |
-| Outside the site | A usable fix, outside the fence. Raised to the supervisor after the grace period. |
-| Location uncertain / unavailable | Fixes too vague, or none (location off, permission removed). |
-| Device offline | No fix and the phone has not been heard from. **Not** reported as absent, to the supervisor or the client. |
-| Missed | The phone was online, the window closed, and nothing put the guard on site. |
-| Manually approved / rejected | A supervisor decided; shown as manual, never as GPS. |
+| Status                                 | Meaning                                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Location pending                       | The window is open and no usable fix has arrived yet.                                                      |
+| Verified on time / within grace / late | A fix inside the fence, with lateness from the GPS capture time.                                           |
+| Outside the site                       | A usable fix, outside the fence. Raised to the supervisor after the grace period.                          |
+| Location uncertain / unavailable       | Fixes too vague, or none (location off, permission removed).                                               |
+| Device offline                         | No fix and the phone has not been heard from. **Not** reported as absent, to the supervisor or the client. |
+| Missed                                 | The phone was online, the window closed, and nothing put the guard on site.                                |
+| Manually approved / rejected           | A supervisor decided; shown as manual, never as GPS.                                                       |
 
 Escalation (supervisor notification) happens `checkin.escalationMinutes` after the grace period.
 

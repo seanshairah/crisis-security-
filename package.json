@@ -57,7 +57,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"prisma/*.ts\"",
     "docs:api": "tsx scripts/dev/generate-patrol-api-docs.ts",
-    "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check"
+    "docs:api:check": "tsx scripts/dev/generate-patrol-api-docs.ts --check",
+    "gate:receiver": "node scripts/gate-receiver.mjs",
+    "test:gate-integration": "node --import tsx scripts/dev/gate-inventory-integration.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -106,6 +108,7 @@
     "typescript": "^5"
   },
   "overrides": {
+    "effect": "^3.22.5",
     "next": {
       "postcss": "^8.5.31"
     },

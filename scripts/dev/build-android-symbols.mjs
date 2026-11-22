@@ -45,6 +45,17 @@ const NAMES = [
   "chevron_right",
   "swap_horiz",
   "chat",
+  "mobile",
+  "gavel",
+  "sync_alt",
+  "save",
+  "task_alt",
+  "add",
+  "delete",
+  "arrow_forward",
+  "grain",
+  "info",
+  "search",
 ];
 const out = "android/app/src/main/res/drawable";
 for (const n of NAMES) {

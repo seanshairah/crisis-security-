@@ -12,11 +12,11 @@ separate records, so a call is never displayed as GPS and a network estimate nev
 request → guard → phone type → eligibility → method → result
 ```
 
-| Phone | Method |
-|---|---|
+| Phone               | Method                                                                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ANDROID (guard app) | GPS from the app. A network check is a fallback only when GPS has been quiet for `androidStaleMinutes` and `androidFallback` is on, or an admin asks. |
-| BASIC | Network only, with consent, an active shift, a site network area, a known network and an authorised provider. Otherwise a record of why not. |
-| UNKNOWN / OTHER | Never qualifies (NETWORK_UNSUPPORTED). |
+| BASIC               | Network only, with consent, an active shift, a site network area, a known network and an authorised provider. Otherwise a record of why not.          |
+| UNKNOWN / OTHER     | Never qualifies (NETWORK_UNSUPPORTED).                                                                                                                |
 
 Outcomes: **GPS** (nothing stored), **NETWORK** (one request sent, result stored), **RECORD** (no
 request; the reason is stored, e.g. NETWORK_NOT_AUTHORISED), **SKIP** (cooldown, per-shift or monthly
@@ -65,10 +65,10 @@ follow the shape of the CAMARA Location Verification API (circle plus maxAge in;
 PARTIAL / UNKNOWN, matchRate and lastLocationTime out). `mapCamaraVerification` turns that answer
 into our states and treats an old position as stale.
 
-| Adapter | Status |
-|---|---|
-| `econet`, `netone`, `telecel` | **Unconfigured.** Never send a request; always NETWORK_PROVIDER_UNAVAILABLE. No endpoint, credential or capability is assumed. |
-| `simulation` | For tests and demonstrations (`NETWORK_LOCATION_PROVIDER=simulation`). Refused in production builds unless `ALLOW_SIMULATED_NETWORK_LOCATION=1`. Every result is flagged simulated. |
+| Adapter                       | Status                                                                                                                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `econet`, `netone`, `telecel` | **Unconfigured.** Never send a request; always NETWORK_PROVIDER_UNAVAILABLE. No endpoint, credential or capability is assumed.                                                      |
+| `simulation`                  | For tests and demonstrations (`NETWORK_LOCATION_PROVIDER=simulation`). Refused in production builds unless `ALLOW_SIMULATED_NETWORK_LOCATION=1`. Every result is flagged simulated. |
 
 To enable a real operator: obtain a signed agreement and the operator's API documentation, implement
 `verify` against it, keep the credentials in environment variables, make `configured()` check them,

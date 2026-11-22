@@ -7,15 +7,15 @@ Source: the "Crisis Guard App / Control Dashboard v2" design handoff. Behaviour,
 Colour roles are CSS variables in `src/app/globals.css` (portal) and `res/values[-night]/colors.xml` (Android). Components use roles
 (`bg-surface`, `text-ink-2`, `border-line`, `text-ok`, `bg-critical-solid`), never hex values, so a theme is a set of variable values.
 
-| Role | Dark | Light |
-| --- | --- | --- |
-| page / surface / surface-2 | `#141311` / `#1b1a17` / `#201d19` | `#f6f2ec` / `#ffffff` / `#f1ebe1` |
-| line | `#2a2620` | `#e3dccf` |
-| ink / ink-2 / ink-3 | `#f4efe8` / `#b5ab9d` / `#8d8578` | `#1c1915` / `#6b6358` / `#8a8173` |
-| accent (gradient `#f0a35a` → `#c97221`, text `#1a1008`) | same | same |
-| ok / warn / critical (text) | `#7fd17a` / `#f0b24a` / `#f08a7a` | `#3d8f3a` / `#a8720f` / `#c0392b` |
+| Role                                                    | Dark                              | Light                             |
+| ------------------------------------------------------- | --------------------------------- | --------------------------------- |
+| page / surface / surface-2                              | `#141311` / `#1b1a17` / `#201d19` | `#f6f2ec` / `#ffffff` / `#f1ebe1` |
+| line                                                    | `#2a2620`                         | `#e3dccf`                         |
+| ink / ink-2 / ink-3                                     | `#f4efe8` / `#b5ab9d` / `#8d8578` | `#1c1915` / `#6b6358` / `#8a8173` |
+| accent (gradient `#f0a35a` → `#c97221`, text `#1a1008`) | same                              | same                              |
+| ok / warn / critical (text)                             | `#7fd17a` / `#f0b24a` / `#f08a7a` | `#3d8f3a` / `#a8720f` / `#c0392b` |
 
-Rules carried over from the handoff and the codebase: green is *verified*, never the brand accent; amber is waiting or saved offline;
+Rules carried over from the handoff and the codebase: green is _verified_, never the brand accent; amber is waiting or saved offline;
 red is emergency or exception and is **never used for "unknown"**; every status pairs an icon or word with its colour.
 
 Type: Instrument Serif italic for screen titles and the greeting, Figtree for everything else (see `docs/FONTS.md`). Radii: cards 24, rows 18-20,

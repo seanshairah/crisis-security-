@@ -16,35 +16,35 @@ Nothing in this audit changes behaviour. Code changes start in Stage 1.
 
 ### 1.1 Web platform
 
-| Layer | Where | Notes |
-|---|---|---|
-| Framework | Next.js 15 App Router, React 19, TypeScript, Tailwind 4 | `src/app/(app)/…` pages, server actions in `src/actions/*` |
-| Database | Prisma 6 over Neon Postgres | TCP on Vercel; `DATABASE_OVER_HTTP=true` adapter in the sandbox. Migrations applied with `scripts/neon-migrate.ts` (additive only) |
-| Auth / RBAC | jose JWT cookie, `guarded(role)` route wrapper, `can.*` helpers | unchanged by this phase |
-| SMS | `SmsProvider` abstraction (Sendai in production), `processIncomingMessage`, templates, `runAutomationTick` (12 steps) | **must not be modified**. Gateway and location maintenance steps are isolated in their own `try/catch` inside the tick |
-| Call gateway backend | `src/lib/gateway/{auth,service,events,call-state,location-events}.ts` | activation code → hashed Bearer token; `processGatewayEvents` dedupes by `eventId`, folds call events per `(device, callId)` with pure `reduceCall`; raw `GatewayEvent` log; in-memory rate limits |
-| Geofence backend | `src/lib/geofence.ts` (`classifyFix`, `stepMonitor`, `syncStatusFor`, `freshness`) | mirrored in Kotlin `GeofenceEngine.kt`; server re-classifies every fix against the site it knows |
-| Device API | `src/app/api/gateways/{activate,heartbeat,config,events,location-events,simulate}` | `config` returns guard + live/next shift + site lat/lng/radius + geofence policy; `heartbeat` stores permissions, monitoring state, last location; `events` returns one ack per event (`ok`, `duplicate`, `rejected`) |
-| Portal | Devices pages, shift Location card, operations location column, Leaflet/OSM `SiteMap`, simulators (call + location), reports (calls, location) | site coordinates are typed by hand in `src/components/client-location-forms.tsx` |
-| Settings | `gateway.*` and `geofence.*` keys in `src/lib/settings.ts` | `geofence.accuracyMaxM` default 100 m |
+| Layer                | Where                                                                                                                                          | Notes                                                                                                                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework            | Next.js 15 App Router, React 19, TypeScript, Tailwind 4                                                                                        | `src/app/(app)/…` pages, server actions in `src/actions/*`                                                                                                                                                            |
+| Database             | Prisma 6 over Neon Postgres                                                                                                                    | TCP on Vercel; `DATABASE_OVER_HTTP=true` adapter in the sandbox. Migrations applied with `scripts/neon-migrate.ts` (additive only)                                                                                    |
+| Auth / RBAC          | jose JWT cookie, `guarded(role)` route wrapper, `can.*` helpers                                                                                | unchanged by this phase                                                                                                                                                                                               |
+| SMS                  | `SmsProvider` abstraction (Sendai in production), `processIncomingMessage`, templates, `runAutomationTick` (12 steps)                          | **must not be modified**. Gateway and location maintenance steps are isolated in their own `try/catch` inside the tick                                                                                                |
+| Call gateway backend | `src/lib/gateway/{auth,service,events,call-state,location-events}.ts`                                                                          | activation code → hashed Bearer token; `processGatewayEvents` dedupes by `eventId`, folds call events per `(device, callId)` with pure `reduceCall`; raw `GatewayEvent` log; in-memory rate limits                    |
+| Geofence backend     | `src/lib/geofence.ts` (`classifyFix`, `stepMonitor`, `syncStatusFor`, `freshness`)                                                             | mirrored in Kotlin `GeofenceEngine.kt`; server re-classifies every fix against the site it knows                                                                                                                      |
+| Device API           | `src/app/api/gateways/{activate,heartbeat,config,events,location-events,simulate}`                                                             | `config` returns guard + live/next shift + site lat/lng/radius + geofence policy; `heartbeat` stores permissions, monitoring state, last location; `events` returns one ack per event (`ok`, `duplicate`, `rejected`) |
+| Portal               | Devices pages, shift Location card, operations location column, Leaflet/OSM `SiteMap`, simulators (call + location), reports (calls, location) | site coordinates are typed by hand in `src/components/client-location-forms.tsx`                                                                                                                                      |
+| Settings             | `gateway.*` and `geofence.*` keys in `src/lib/settings.ts`                                                                                     | `geofence.accuracyMaxM` default 100 m                                                                                                                                                                                 |
 
 ### 1.2 Android app (`android/`, Kotlin, minSdk 24, targetSdk 35)
 
-| Component | File | Responsibility today |
-|---|---|---|
-| `GatewayApp` | `GatewayApp.kt` | notification channel; starts the service when the process starts |
-| `ActivationActivity` | `ui/ActivationActivity.kt` | server URL + 6-character code → token in `EncryptedSharedPreferences` |
-| `PermissionsActivity` | `ui/PermissionsActivity.kt` | guard-mode onboarding; sets `prefs.onboardingDone` on **Start** |
-| `MainActivity` | `ui/MainActivity.kt` | dashboard; **Sync now** button; permission re-request |
-| `GatewayService` | `service/GatewayService.kt` | foreground service (`specialUse|location`). Owns three coroutines: heartbeat loop, sync loop (conflated channel + backoff) and **monitor loop** (GPS checks) |
-| `SyncEngine` | `service/SyncEngine.kt` | `syncOnce()` drains the outbox; `heartbeat()` posts device info and refreshes the shift config |
-| `SyncWorker` | `service/SyncWorker.kt` | WorkManager safety net every 15 min: heartbeat + sync + restart service |
-| `LocationMonitor` | `location/LocationMonitor.kt` | one shift-aware step: load config → acquire fix → classify → state machine → enqueue events |
-| `GeofenceEngine` | `geofence/GeofenceEngine.kt` | pure classification + state machine, JVM-tested |
-| `EventQueue` | `data/EventQueue.kt` | SQLite outbox `outbox(id, eventId UNIQUE, json, createdAt, attempts, lastError)` — no status or priority columns |
-| `ShiftConfig` | `data/ShiftConfig.kt` | cached copy of `GET /api/gateways/config` |
-| `Prefs` | `data/Prefs.kt` | credentials (encrypted) + plain status fields |
-| `CallMonitor` / `CallTracker` | `call/*` | call metadata only; attaches the last fix to call events in guard mode |
+| Component                     | File                          | Responsibility today                                                                                             |
+| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `GatewayApp`                  | `GatewayApp.kt`               | notification channel; starts the service when the process starts                                                 |
+| `ActivationActivity`          | `ui/ActivationActivity.kt`    | server URL + 6-character code → token in `EncryptedSharedPreferences`                                            |
+| `PermissionsActivity`         | `ui/PermissionsActivity.kt`   | guard-mode onboarding; sets `prefs.onboardingDone` on **Start**                                                  |
+| `MainActivity`                | `ui/MainActivity.kt`          | dashboard; **Sync now** button; permission re-request                                                            |
+| `GatewayService`              | `service/GatewayService.kt`   | foreground service (`specialUse                                                                                  | location`). Owns three coroutines: heartbeat loop, sync loop (conflated channel + backoff) and **monitor loop** (GPS checks) |
+| `SyncEngine`                  | `service/SyncEngine.kt`       | `syncOnce()` drains the outbox; `heartbeat()` posts device info and refreshes the shift config                   |
+| `SyncWorker`                  | `service/SyncWorker.kt`       | WorkManager safety net every 15 min: heartbeat + sync + restart service                                          |
+| `LocationMonitor`             | `location/LocationMonitor.kt` | one shift-aware step: load config → acquire fix → classify → state machine → enqueue events                      |
+| `GeofenceEngine`              | `geofence/GeofenceEngine.kt`  | pure classification + state machine, JVM-tested                                                                  |
+| `EventQueue`                  | `data/EventQueue.kt`          | SQLite outbox `outbox(id, eventId UNIQUE, json, createdAt, attempts, lastError)` — no status or priority columns |
+| `ShiftConfig`                 | `data/ShiftConfig.kt`         | cached copy of `GET /api/gateways/config`                                                                        |
+| `Prefs`                       | `data/Prefs.kt`               | credentials (encrypted) + plain status fields                                                                    |
+| `CallMonitor` / `CallTracker` | `call/*`                      | call metadata only; attaches the last fix to call events in guard mode                                           |
 
 ### 1.3 Build and tooling facts
 
@@ -57,25 +57,25 @@ Nothing in this audit changes behaviour. Code changes start in Stage 1.
 
 ## 2. Baseline results (before any Phase 1 change)
 
-| Check | Command | Result |
-|---|---|---|
-| TypeScript | `npx tsc --noEmit` | clean |
-| ESLint | `npm run lint` | no warnings or errors |
-| Unit tests (web) | `npm test` | 20/20 pass |
-| Android unit tests | `./gradlew testDebugUnitTest` | 9/9 pass (`GeofenceEngineTest` 6, `CallTrackerTest` 3) |
-| Android debug build | `./gradlew assembleDebug` | success, `app-debug.apk` produced |
-| End-to-end scripts | `scripts/dev/gateway-e2e.ts`, `scripts/dev/location-e2e.ts` | last run on the previous phase: 29/29 and 38/38. They need a local database and are re-run at the Phase 1 gate |
+| Check               | Command                                                     | Result                                                                                                         |
+| ------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| TypeScript          | `npx tsc --noEmit`                                          | clean                                                                                                          |
+| ESLint              | `npm run lint`                                              | no warnings or errors                                                                                          |
+| Unit tests (web)    | `npm test`                                                  | 20/20 pass                                                                                                     |
+| Android unit tests  | `./gradlew testDebugUnitTest`                               | 9/9 pass (`GeofenceEngineTest` 6, `CallTrackerTest` 3)                                                         |
+| Android debug build | `./gradlew assembleDebug`                                   | success, `app-debug.apk` produced                                                                              |
+| End-to-end scripts  | `scripts/dev/gateway-e2e.ts`, `scripts/dev/location-e2e.ts` | last run on the previous phase: 29/29 and 38/38. They need a local database and are re-run at the Phase 1 gate |
 
 ### 2.1 Live database baseline (read-only, `scripts/dev/audit-live.ts`)
 
-| Item | Live Neon database |
-|---|---|
-| Users | 4 |
-| Guards | 22, all feature-phone |
-| Sites | 4 (MI-01, ABC-03, 483HC, ABC-01) — **all without coordinates**; ABC-01 radius 30 m, others 150 m |
-| Gateway devices | 0 |
-| Location events / gateway events / calls | 0 / 0 / 0 |
-| Active shifts | 19 (SMS-driven) |
+| Item                                     | Live Neon database                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Users                                    | 4                                                                                                |
+| Guards                                   | 22, all feature-phone                                                                            |
+| Sites                                    | 4 (MI-01, ABC-03, 483HC, ABC-01) — **all without coordinates**; ABC-01 radius 30 m, others 150 m |
+| Gateway devices                          | 0                                                                                                |
+| Location events / gateway events / calls | 0 / 0 / 0                                                                                        |
+| Active shifts                            | 19 (SMS-driven)                                                                                  |
 
 Consequences:
 
@@ -114,11 +114,11 @@ Fix (Stage 1): the monitoring coordinator is woken by config changes and by manu
 - `conn_*` messages mix transport state and permission state, and "Last sync" is updated by heartbeats as well as event syncs, so a successful heartbeat reads as a successful sync.
 - The "Location:" row shows `prefs.locationName`, which is the **device's registration site** from the devices page, not the duty site of the current shift. For a guard device registered without a site it shows "Head office".
 
-Fix (Stage 1): a reason → message table (`no_fix`, `poor_accuracy`, `location_disabled`, `permission_revoked`, `site_has_no_coordinates`, `on_boundary`, `not_on_shift`, `waiting_for_shift`), separate rows for **Shift**, **Duty site**, **GPS**, **Sync**, and **Device registration**, and distinct wording for *device offline*, *GPS unavailable*, *outside site* and *unknown*.
+Fix (Stage 1): a reason → message table (`no_fix`, `poor_accuracy`, `location_disabled`, `permission_revoked`, `site_has_no_coordinates`, `on_boundary`, `not_on_shift`, `waiting_for_shift`), separate rows for **Shift**, **Duty site**, **GPS**, **Sync**, and **Device registration**, and distinct wording for _device offline_, _GPS unavailable_, _outside site_ and _unknown_.
 
 ### D5 · ±100 m displayed while classification says UNKNOWN / 121 m poor_accuracy — Not a defect in classification, Confirmed display defect
 
-The classifier uses the raw accuracy (`acc > accuracyMaxM` → `poor_accuracy`), while the dashboard prints `prefs.lastFixAccuracy.toInt()`. A fix with accuracy 100.4 m is rejected (correctly) but displayed as "±100 m", and the log line the tester saw ("UNKNOWN 121 m poor_accuracy") is a different, later fix. "Distance 14 m" with "UNKNOWN" is also correct behaviour: with ±100 m accuracy and a 150 m radius, `d + acc = 114 m ≤ 150 m` would be INSIDE, but the accuracy gate runs first and refuses any fix worse than the policy maximum. The conservative rule stays; the display must say *why*.
+The classifier uses the raw accuracy (`acc > accuracyMaxM` → `poor_accuracy`), while the dashboard prints `prefs.lastFixAccuracy.toInt()`. A fix with accuracy 100.4 m is rejected (correctly) but displayed as "±100 m", and the log line the tester saw ("UNKNOWN 121 m poor_accuracy") is a different, later fix. "Distance 14 m" with "UNKNOWN" is also correct behaviour: with ±100 m accuracy and a 150 m radius, `d + acc = 114 m ≤ 150 m` would be INSIDE, but the accuracy gate runs first and refuses any fix worse than the policy maximum. The conservative rule stays; the display must say _why_.
 
 Fix (Stage 1): show accuracy with one decimal and the explicit reason ("GPS accuracy ±121 m is worse than the 100 m limit; not counted"), keep the raw value in events, and retry a poor fix within the same step before giving up (see D6).
 
@@ -158,16 +158,16 @@ Fix (Stage 1): one coordinator instance per service, started in `onCreate`, canc
 
 ## 5. Risks of the Phase 1 changes and how they are contained
 
-| Risk | Containment |
-|---|---|
+| Risk                                                 | Containment                                                                                                                                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Breaking the SMS pipeline while adding schema fields | Additive migrations only (`ALTER TABLE … ADD COLUMN` with defaults); applied with `scripts/neon-migrate.ts`; `npm test` SMS suites and `gateway-e2e`/`location-e2e` re-run at the gate |
-| Phone/server config drift | `configVersion` on sites and shifts; the phone echoes the version it applied in heartbeats; the portal shows "config applied v N" per device |
-| Google Maps key leakage | Browser key only (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`), restricted by HTTP referrer in Google Cloud; never committed; Leaflet/manual entry when absent |
-| Outbox migration on devices already installed | SQLite `onUpgrade` 1 → 2 adds columns with defaults; existing rows become `QUEUED`/`NORMAL` |
-| Over-eager sync on metered data | Triggers coalesce into one run; backoff on failure; batch of 100 |
-| GPS battery cost of longer acquisition | Capped at ~60 s per check, early stop at ≤ 25 m, same check intervals as before |
-| Weakening the accuracy safeguard | Not changed: `accuracyMaxM` still gates every fix; more fixes are *collected* but only a good one is *accepted* |
-| Claims without a device | Device-only acceptance tests are reported as **UNVERIFIED** until run on hardware |
+| Phone/server config drift                            | `configVersion` on sites and shifts; the phone echoes the version it applied in heartbeats; the portal shows "config applied v N" per device                                           |
+| Google Maps key leakage                              | Browser key only (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`), restricted by HTTP referrer in Google Cloud; never committed; Leaflet/manual entry when absent                                   |
+| Outbox migration on devices already installed        | SQLite `onUpgrade` 1 → 2 adds columns with defaults; existing rows become `QUEUED`/`NORMAL`                                                                                            |
+| Over-eager sync on metered data                      | Triggers coalesce into one run; backoff on failure; batch of 100                                                                                                                       |
+| GPS battery cost of longer acquisition               | Capped at ~60 s per check, early stop at ≤ 25 m, same check intervals as before                                                                                                        |
+| Weakening the accuracy safeguard                     | Not changed: `accuracyMaxM` still gates every fix; more fixes are _collected_ but only a good one is _accepted_                                                                        |
+| Claims without a device                              | Device-only acceptance tests are reported as **UNVERIFIED** until run on hardware                                                                                                      |
 
 ---
 
@@ -184,12 +184,12 @@ Fix (Stage 1): one coordinator instance per service, started in `onCreate`, canc
 
 ## 7. Stage plan derived from this audit
 
-| Stage | Scope | Deliverables |
-|---|---|---|
-| 1 | Android defects D1–D9 | `MonitoringCoordinator`, `AppState`, status mapping, acquisition rewrite, separate buttons, Kotlin tests, `docs/ANDROID_ARCHITECTURE.md` |
-| 2 | Duty-site picker in the **web portal** | Google Maps picker (search, pin, drag, radius, preview) with Leaflet fallback, `Location.configVersion/coordinatesSource/coordinatesVerifiedAt`, shift-level override, validation, EOP-02 flagged `TEST`, audit log, `docs/GOOGLE_MAPS_CONFIGURATION.md` |
-| 3 | Automatic sync engine (D10) | `SyncCoordinator`, outbox v2 (status, priority, attempts, nextAttemptAt, sentAt, ackedAt), triggers, diagnostics screen, heartbeat sync fields, portal device sync panel, `docs/AUTO_SYNC.md` |
-| Gate | Evidence | all suites green, APKs rebuilt, acceptance table, final report |
+| Stage | Scope                                  | Deliverables                                                                                                                                                                                                                                             |
+| ----- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Android defects D1–D9                  | `MonitoringCoordinator`, `AppState`, status mapping, acquisition rewrite, separate buttons, Kotlin tests, `docs/ANDROID_ARCHITECTURE.md`                                                                                                                 |
+| 2     | Duty-site picker in the **web portal** | Google Maps picker (search, pin, drag, radius, preview) with Leaflet fallback, `Location.configVersion/coordinatesSource/coordinatesVerifiedAt`, shift-level override, validation, EOP-02 flagged `TEST`, audit log, `docs/GOOGLE_MAPS_CONFIGURATION.md` |
+| 3     | Automatic sync engine (D10)            | `SyncCoordinator`, outbox v2 (status, priority, attempts, nextAttemptAt, sentAt, ackedAt), triggers, diagnostics screen, heartbeat sync fields, portal device sync panel, `docs/AUTO_SYNC.md`                                                            |
+| Gate  | Evidence                               | all suites green, APKs rebuilt, acceptance table, final report                                                                                                                                                                                           |
 
 ---
 
@@ -199,30 +199,30 @@ Branch `claude/brave-hopper-92o6rw`, four commits on top of `cf900d4`: Stage 0 (
 
 ## Checks after Phase 1
 
-| Check | Before | After |
-|---|---|---|
-| `npx tsc --noEmit` | clean | clean |
-| `npm run lint` | clean | clean |
-| `npm test` | 20/20 | 25/25 (`tests/site-config.test.ts` added) |
-| Android JVM tests | 9/9 | 40/40 (AppState 6, StatusModel 7, AcquisitionPolicy 5, MonitoringCoordinator 5, SyncPlanner 5, SyncCoordinator 3 added) |
-| `assembleDebug` / `assembleRelease` | ok | ok, v1.2.0 (versionCode 3) |
-| `scripts/dev/gateway-e2e.ts` | 29/29 | 30/30 (sync-diagnostics heartbeat check added) |
-| `scripts/dev/location-e2e.ts` | 38/38 | 38/38 |
-| `npm run build` | ok | ok |
-| Migrations | — | `20261018120000_site_config_versioning`, `20261018150000_device_sync_diagnostics` applied locally and on Neon |
+| Check                               | Before | After                                                                                                                   |
+| ----------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `npx tsc --noEmit`                  | clean  | clean                                                                                                                   |
+| `npm run lint`                      | clean  | clean                                                                                                                   |
+| `npm test`                          | 20/20  | 25/25 (`tests/site-config.test.ts` added)                                                                               |
+| Android JVM tests                   | 9/9    | 40/40 (AppState 6, StatusModel 7, AcquisitionPolicy 5, MonitoringCoordinator 5, SyncPlanner 5, SyncCoordinator 3 added) |
+| `assembleDebug` / `assembleRelease` | ok     | ok, v1.2.0 (versionCode 3)                                                                                              |
+| `scripts/dev/gateway-e2e.ts`        | 29/29  | 30/30 (sync-diagnostics heartbeat check added)                                                                          |
+| `scripts/dev/location-e2e.ts`       | 38/38  | 38/38                                                                                                                   |
+| `npm run build`                     | ok     | ok                                                                                                                      |
+| Migrations                          | —      | `20261018120000_site_config_versioning`, `20261018150000_device_sync_diagnostics` applied locally and on Neon           |
 
 ## Acceptance tests A–H
 
-| Test | Result | Evidence / limits |
-|---|---|---|
-| **A** GPS acquisition during sync: start a check, press Sync now; acquisition continues, sync completes independently | **PASS (logic)** · **UNVERIFIED on device** | `MonitoringCoordinatorTest` proves a request during a running check never cancels it; `Sync now` now only reaches `SyncCoordinator` (`MainActivity.syncNow`, `GatewayService.ACTION_SYNC`); the two coordinators share no job. The old `monitorJob?.cancel()` path is gone. Hardware run still owed |
-| **B** Concurrent requests: repeated check/sync taps produce no duplicate acquisitions, loops or deliveries | **PASS (logic)** · **UNVERIFIED on device** | Coordinators coalesce requests (`requestCheck()` / `request()` return false and queue one follow-up); `start()` is idempotent; outbox rows are `SENDING`-locked and acked by unique `eventId` (`duplicate` ack test in location e2e) |
-| **C** Offline location: no internet during a shift; monitoring continues, events saved locally | **PASS (logic)** · **UNVERIFIED on device** | Classification and state machine are local (`GeofenceEngineTest`, section-50 scenario); outbox is SQLite; `SyncPlanner.syncState` reports `QUEUED_OFFLINE`; dashboard shows *GPS: INSIDE* + *NO INTERNET · n saved* (`StatusModelTest`) |
-| **D** Automatic recovery: restore internet; queued events sync without a button | **PASS (logic + server)** · **UNVERIFIED on device** | `NETWORK_RESTORED` trigger from the default-network callback; `SyncCoordinatorTest` (retry wake-up); server side late replay verified in location e2e (`SYNCED_LATE`, original times, duplicate replay ignored) |
-| **E** Site configuration through the admin picker: coordinates and radius validated, saved, delivered, applied | **PASS** (OpenStreetMap fallback exercised in the browser; Google engine code-reviewed only, no key in the sandbox) | Browser run `scripts/dev/shot-picker.mjs`: click placed pin, radius 250, source TEST, inputs filled; validation unit tests; `GET /api/gateways/config` returns the effective fence + `configVersion`; heartbeat stores `configVersionApplied` (gateway e2e); phone wakes the monitoring loop on config change (`MonitoringCoordinatorTest`) |
-| **F** GPS uncertainty: poor or boundary readings stay UNKNOWN | **PASS** | Unchanged rules on both sides; location e2e "server re-classifies a ±250 m fix as UNKNOWN"; `AcquisitionPolicyTest` shows longer listening never accepts a fix worse than the limit; dashboard explains the reason (`StatusModelTest`: poor accuracy ≠ location off) |
-| **G** Service lifecycle: restart, screen lock, background, network interruption, recoverable GPS failure | **PARTIAL** · **UNVERIFIED on device** | Code: idempotent coordinator start, scope cancelled on destroy, `SENDING` rows reset at start, WorkManager fallback, `PERMISSION_REVOKED` state with clear text. Screen-lock and OEM battery-manager behaviour can only be proven on hardware |
-| **H** Regression: SMS, call monitoring, attendance, onboarding, shifts | **PASS** | `npm test` (SMS pipeline, call state, auth), gateway e2e steps 32–33 (SMS still works), location e2e Test 12 (feature-phone guard unaffected); no SMS file changed in Phase 1 |
+| Test                                                                                                                  | Result                                                                                                              | Evidence / limits                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A** GPS acquisition during sync: start a check, press Sync now; acquisition continues, sync completes independently | **PASS (logic)** · **UNVERIFIED on device**                                                                         | `MonitoringCoordinatorTest` proves a request during a running check never cancels it; `Sync now` now only reaches `SyncCoordinator` (`MainActivity.syncNow`, `GatewayService.ACTION_SYNC`); the two coordinators share no job. The old `monitorJob?.cancel()` path is gone. Hardware run still owed                                         |
+| **B** Concurrent requests: repeated check/sync taps produce no duplicate acquisitions, loops or deliveries            | **PASS (logic)** · **UNVERIFIED on device**                                                                         | Coordinators coalesce requests (`requestCheck()` / `request()` return false and queue one follow-up); `start()` is idempotent; outbox rows are `SENDING`-locked and acked by unique `eventId` (`duplicate` ack test in location e2e)                                                                                                        |
+| **C** Offline location: no internet during a shift; monitoring continues, events saved locally                        | **PASS (logic)** · **UNVERIFIED on device**                                                                         | Classification and state machine are local (`GeofenceEngineTest`, section-50 scenario); outbox is SQLite; `SyncPlanner.syncState` reports `QUEUED_OFFLINE`; dashboard shows _GPS: INSIDE_ + _NO INTERNET · n saved_ (`StatusModelTest`)                                                                                                     |
+| **D** Automatic recovery: restore internet; queued events sync without a button                                       | **PASS (logic + server)** · **UNVERIFIED on device**                                                                | `NETWORK_RESTORED` trigger from the default-network callback; `SyncCoordinatorTest` (retry wake-up); server side late replay verified in location e2e (`SYNCED_LATE`, original times, duplicate replay ignored)                                                                                                                             |
+| **E** Site configuration through the admin picker: coordinates and radius validated, saved, delivered, applied        | **PASS** (OpenStreetMap fallback exercised in the browser; Google engine code-reviewed only, no key in the sandbox) | Browser run `scripts/dev/shot-picker.mjs`: click placed pin, radius 250, source TEST, inputs filled; validation unit tests; `GET /api/gateways/config` returns the effective fence + `configVersion`; heartbeat stores `configVersionApplied` (gateway e2e); phone wakes the monitoring loop on config change (`MonitoringCoordinatorTest`) |
+| **F** GPS uncertainty: poor or boundary readings stay UNKNOWN                                                         | **PASS**                                                                                                            | Unchanged rules on both sides; location e2e "server re-classifies a ±250 m fix as UNKNOWN"; `AcquisitionPolicyTest` shows longer listening never accepts a fix worse than the limit; dashboard explains the reason (`StatusModelTest`: poor accuracy ≠ location off)                                                                        |
+| **G** Service lifecycle: restart, screen lock, background, network interruption, recoverable GPS failure              | **PARTIAL** · **UNVERIFIED on device**                                                                              | Code: idempotent coordinator start, scope cancelled on destroy, `SENDING` rows reset at start, WorkManager fallback, `PERMISSION_REVOKED` state with clear text. Screen-lock and OEM battery-manager behaviour can only be proven on hardware                                                                                               |
+| **H** Regression: SMS, call monitoring, attendance, onboarding, shifts                                                | **PASS**                                                                                                            | `npm test` (SMS pipeline, call state, auth), gateway e2e steps 32–33 (SMS still works), location e2e Test 12 (feature-phone guard unaffected); no SMS file changed in Phase 1                                                                                                                                                               |
 
 ## Device-only items still owed (not claimed)
 
@@ -251,21 +251,21 @@ Branch `claude/brave-hopper-92o6rw` on top of the merged Phase 1 (`56c97cc`). Sa
 
 ## Checks after Phase 2
 
-| Check | Result |
-|---|---|
-| `npx tsc --noEmit`, `npm run lint` | clean |
-| `npm test` | 28/28 (`tests/alerts.test.ts` added) |
-| Android JVM tests | 43/43 (geofence: single-reading no-exit, unknown never flips a verdict, battery rule) |
-| `assembleDebug` / `assembleRelease` | ok, v1.3.0 (versionCode 4) |
-| `scripts/dev/gateway-e2e.ts` | 30/30 |
-| `scripts/dev/location-e2e.ts` | 38/38 |
-| `scripts/dev/alerts-e2e.ts` (new) | 20/20, including the SMS `EMERGENCY` keyword regression for a feature-phone guard |
-| `npm run build` | ok |
-| Migration `20261019090000_guard_alerts` | applied locally and on Neon; additive (two enums, enum values, one table) |
+| Check                                   | Result                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------- |
+| `npx tsc --noEmit`, `npm run lint`      | clean                                                                                 |
+| `npm test`                              | 28/28 (`tests/alerts.test.ts` added)                                                  |
+| Android JVM tests                       | 43/43 (geofence: single-reading no-exit, unknown never flips a verdict, battery rule) |
+| `assembleDebug` / `assembleRelease`     | ok, v1.3.0 (versionCode 4)                                                            |
+| `scripts/dev/gateway-e2e.ts`            | 30/30                                                                                 |
+| `scripts/dev/location-e2e.ts`           | 38/38                                                                                 |
+| `scripts/dev/alerts-e2e.ts` (new)       | 20/20, including the SMS `EMERGENCY` keyword regression for a feature-phone guard     |
+| `npm run build`                         | ok                                                                                    |
+| Migration `20261019090000_guard_alerts` | applied locally and on Neon; additive (two enums, enum values, one table)             |
 
 ## Stage 4 — offline intelligent shift geofencing
 
-Every item of the checklist was already in place from Phase 1 except battery-efficient monitoring, which now stretches routine inside checks (never exit verification or outside updates) while the battery is ≤ 20 %. The mapping is recorded in GPS_AND_GEOFENCING.md → *Stage 4 checklist*. No second sync engine was built: alerts (Stage 5) use the same outbox and `SyncCoordinator`.
+Every item of the checklist was already in place from Phase 1 except battery-efficient monitoring, which now stretches routine inside checks (never exit verification or outside updates) while the battery is ≤ 20 %. The mapping is recorded in GPS_AND_GEOFENCING.md → _Stage 4 checklist_. No second sync engine was built: alerts (Stage 5) use the same outbox and `SyncCoordinator`.
 
 ## Stage 5 — guard communication and emergencies
 
@@ -290,16 +290,16 @@ Branch `claude/brave-hopper-92o6rw` on top of the merged Phase 2 (`a07ae44`). Sa
 
 ## Checks after Phase 3
 
-| Check | Result |
-|---|---|
-| `npx tsc --noEmit`, `npm run lint` | clean |
-| `npm test` | 28/28 |
-| Android JVM tests | 43/43 |
-| `assembleDebug` / `assembleRelease` | ok, v1.4.0 (versionCode 5) |
-| `gateway-e2e` / `location-e2e` / `alerts-e2e` | 30/30 · 38/38 · 20/20 |
-| `integration-e2e` (new, Stage 8) | 18/18 |
-| `npm run build` | ok |
-| `db:migration-status` (local and Neon) | all migrations applied |
+| Check                                         | Result                     |
+| --------------------------------------------- | -------------------------- |
+| `npx tsc --noEmit`, `npm run lint`            | clean                      |
+| `npm test`                                    | 28/28                      |
+| Android JVM tests                             | 43/43                      |
+| `assembleDebug` / `assembleRelease`           | ok, v1.4.0 (versionCode 5) |
+| `gateway-e2e` / `location-e2e` / `alerts-e2e` | 30/30 · 38/38 · 20/20      |
+| `integration-e2e` (new, Stage 8)              | 18/18                      |
+| `npm run build`                               | ok                         |
+| `db:migration-status` (local and Neon)        | all migrations applied     |
 
 ## Stage 7 — unified dashboard
 

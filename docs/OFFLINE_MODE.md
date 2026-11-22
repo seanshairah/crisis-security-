@@ -2,13 +2,13 @@
 
 The phone must keep working with no internet, no airtime, or both.
 
-| Situation | GPS | Local geofence | Calls detected | Upload |
-| --- | --- | --- | --- | --- |
-| Internet available | yes | yes | yes | immediate |
-| No internet (no data, no Wi‑Fi) | yes | yes | yes (if the carrier still connects the call) | queued |
-| No airtime, data available | yes | yes | depends on the carrier | immediate |
-| No airtime, no internet | yes | yes | depends on the carrier | queued |
-| Phone off / app killed | no | no | no | nothing; backend shows DEVICE OFFLINE |
+| Situation                       | GPS | Local geofence | Calls detected                               | Upload                                |
+| ------------------------------- | --- | -------------- | -------------------------------------------- | ------------------------------------- |
+| Internet available              | yes | yes            | yes                                          | immediate                             |
+| No internet (no data, no Wi‑Fi) | yes | yes            | yes (if the carrier still connects the call) | queued                                |
+| No airtime, data available      | yes | yes            | depends on the carrier                       | immediate                             |
+| No airtime, no internet         | yes | yes            | depends on the carrier                       | queued                                |
+| Phone off / app killed          | no  | no             | no                                           | nothing; backend shows DEVICE OFFLINE |
 
 GPS and the geofence calculation never need the network. Placing or receiving a voice call needs cellular service and, for outgoing calls, whatever the carrier requires (airtime or bundle); the app cannot change that.
 
@@ -22,10 +22,10 @@ Sync (`SyncEngine.syncOnce`) sends up to 100 events per request in creation orde
 
 Events keep the phone's own `timestamp`. The server clamps it to [now − 7 days, now + 5 min] and derives `syncStatus` from the delay between that timestamp and arrival:
 
-| Delay | Status | Shown as |
-| --- | --- | --- |
-| ≤ 2 min | `LIVE` | live |
-| ≤ 10 min | `SYNCED` | synced |
+| Delay    | Status        | Shown as    |
+| -------- | ------------- | ----------- |
+| ≤ 2 min  | `LIVE`        | live        |
+| ≤ 10 min | `SYNCED`      | synced      |
 | > 10 min | `SYNCED_LATE` | synced late |
 
 Lists, timelines and maps show the badge; a `SYNCED_LATE` exit is never presented as a live detection. The state machine replays a late batch in timestamp order, so an out-of-order upload still ends in the right state.

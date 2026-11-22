@@ -27,14 +27,14 @@ The pure rules live in `src/lib/attendance/call-attendance-rules.ts` and are uni
 
 ## Windows (Settings → Call attendance)
 
-| Setting | Default | Meaning |
-|---|---|---|
-| `callAttendance.checkInBeforeMinutes` / `AfterMinutes` | 60 / 120 | Calls in this window around the start clock the guard in |
-| `callAttendance.checkOutBeforeMinutes` / `AfterMinutes` | 60 / 120 | Calls in this window around the end clock them out |
-| `callAttendance.answeredMinSeconds` | 5 | Shorter answered calls are held (SHORT_CALL) |
-| `callAttendance.answeredMode` | CONFIRMED | PENDING makes every call wait for a supervisor |
-| `callAttendance.missedCallMode` | PENDING | PENDING, PROVISIONAL, SMS_CONFIRM or DISABLED |
-| `callAttendance.wrongGatewayMode` | FLAG | FLAG, PENDING or REJECT for calls to a gateway other than the guard's |
+| Setting                                                 | Default   | Meaning                                                               |
+| ------------------------------------------------------- | --------- | --------------------------------------------------------------------- |
+| `callAttendance.checkInBeforeMinutes` / `AfterMinutes`  | 60 / 120  | Calls in this window around the start clock the guard in              |
+| `callAttendance.checkOutBeforeMinutes` / `AfterMinutes` | 60 / 120  | Calls in this window around the end clock them out                    |
+| `callAttendance.answeredMinSeconds`                     | 5         | Shorter answered calls are held (SHORT_CALL)                          |
+| `callAttendance.answeredMode`                           | CONFIRMED | PENDING makes every call wait for a supervisor                        |
+| `callAttendance.missedCallMode`                         | PENDING   | PENDING, PROVISIONAL, SMS_CONFIRM or DISABLED                         |
+| `callAttendance.wrongGatewayMode`                       | FLAG      | FLAG, PENDING or REJECT for calls to a gateway other than the guard's |
 
 A call between the two windows, while clocked in, is a welfare call. A provisional missed call can
 only clock a guard in; it never clocks them out or settles a welfare check.
@@ -45,15 +45,15 @@ only clock a guard in; it never clocks them out or settles a welfare check.
 GPS, NETWORK, IVR, MANUAL; status CONFIRMED, PROVISIONAL, PENDING, REJECTED) is the unified record.
 Writers:
 
-| Source | Written by | Dedupe key |
-|---|---|---|
-| CALL / MISSED_CALL | `processAttendanceCall` | `call:<callLogId>` |
-| SMS | `smsEvidence` in the SMS pipeline after a YES / WELL | `sms:<smsMessageId>` |
-| GPS | `applyFix` (check-in service) and `verifyArrival` (SMS + GPS) | `gps:checkin:<id>`, `gps:sms-arrival:<shiftId>` |
-| IVR | `applyVoiceReport` | `ivr:<welfareCheckId>` |
-| NETWORK | network location service, inside results only | `network:<checkId>` |
-| MANUAL | manual arrival / completion actions | `manual:checkin:<shiftId>:<ms>` |
-| CALL (welfare) | gateway welfare call answered, pending the operator's word | `welfare:<checkId>:gateway` |
+| Source             | Written by                                                    | Dedupe key                                      |
+| ------------------ | ------------------------------------------------------------- | ----------------------------------------------- |
+| CALL / MISSED_CALL | `processAttendanceCall`                                       | `call:<callLogId>`                              |
+| SMS                | `smsEvidence` in the SMS pipeline after a YES / WELL          | `sms:<smsMessageId>`                            |
+| GPS                | `applyFix` (check-in service) and `verifyArrival` (SMS + GPS) | `gps:checkin:<id>`, `gps:sms-arrival:<shiftId>` |
+| IVR                | `applyVoiceReport`                                            | `ivr:<welfareCheckId>`                          |
+| NETWORK            | network location service, inside results only                 | `network:<checkId>`                             |
+| MANUAL             | manual arrival / completion actions                           | `manual:checkin:<shiftId>:<ms>`                 |
+| CALL (welfare)     | gateway welfare call answered, pending the operator's word    | `welfare:<checkId>:gateway`                     |
 
 Labels come only from `evidenceLabel` (`src/lib/attendance/evidence.ts`): GPS verified, Network
 verified, Call confirmed, SMS confirmed, IVR response confirmed, Manually verified, Attendance pending.

@@ -4,7 +4,7 @@ The red **EMERGENCY** button on the guard's phone, end to end. The SMS keyword f
 
 ## 1. On the phone
 
-1. The guard taps **EMERGENCY** (dashboard or Alerts screen) and confirms *SEND EMERGENCY* in a dialog. No long-press tricks, no accidental sends.
+1. The guard taps **EMERGENCY** (dashboard or Alerts screen) and confirms _SEND EMERGENCY_ in a dialog. No long-press tricks, no accidental sends.
 2. `AlertSender` writes an `EMERGENCY` event to the durable outbox **first** (SQLite, priority `EMERGENCY`), with:
    - the shift id the phone is monitoring, if any;
    - the **last known fix** (latitude, longitude, accuracy, INSIDE/OUTSIDE/UNKNOWN, and its age in seconds). It does **not** wait for a fresh GPS fix: the alert goes with what the phone has, and a location check is requested in parallel so a fresh `LOCATION_CHECK` follows within the minute.
@@ -12,20 +12,20 @@ The red **EMERGENCY** button on the guard's phone, end to end. The SMS keyword f
 4. What the guard sees:
    - **Online:** "EMERGENCY SENT with your last position. Operations has been alerted." plus an offer to call the control room (`ACTION_DIAL`, no call permission needed).
    - **Offline:** "EMERGENCY NOT DELIVERED YET" with the plain statement that it is saved and will be sent automatically, and two buttons that work without data: **Call operations** and **Send SMS instead** (pre-filled `EMERGENCY <name> at <site>` to the control-room number, which goes through the existing SMS pipeline).
-5. The Alerts screen and the dashboard's *Sent to operations* card show the state of each alert: *Saved on the phone · waiting for internet* → *Received by the server HH:MM · waiting for operations* → *Acknowledged by <name> HH:MM · "<note>"* → *Handled*.
+5. The Alerts screen and the dashboard's _Sent to operations_ card show the state of each alert: _Saved on the phone · waiting for internet_ → _Received by the server HH:MM · waiting for operations_ → _Acknowledged by <name> HH:MM · "<note>"_ → _Handled_.
 
 ## 2. On the server (`src/lib/gateway/alerts.ts`)
 
 For an `EMERGENCY` event from a guard-mode device:
 
-| Step | Result |
-|---|---|
-| Store | `GuardAlert` row: `OPEN`, `requiresAck`, message, position + accuracy + state + age, `occurredAt` = when pressed, `receivedAt` = now, `syncStatus` LIVE / SYNCED / SYNCED_LATE |
-| Incident | `Incident` category `EMERGENCY`, severity `CRITICAL`, source `APP`, linked to the alert |
-| Shift | status raised to `CRITICAL` with `emergencyAt` (never downgraded later) |
-| Timeline | `EMERGENCY` check-in line with the message and the position wording |
-| Notification | `CRITICAL`: "EMERGENCY ALERT RECEIVED FROM <GUARD> — <SITE> — HH:MM", with the guard's phone and the supervisor; push to all subscribed browsers |
-| Ack | `ok` (or `duplicate` on replay; the row is created once) |
+| Step         | Result                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Store        | `GuardAlert` row: `OPEN`, `requiresAck`, message, position + accuracy + state + age, `occurredAt` = when pressed, `receivedAt` = now, `syncStatus` LIVE / SYNCED / SYNCED_LATE |
+| Incident     | `Incident` category `EMERGENCY`, severity `CRITICAL`, source `APP`, linked to the alert                                                                                        |
+| Shift        | status raised to `CRITICAL` with `emergencyAt` (never downgraded later)                                                                                                        |
+| Timeline     | `EMERGENCY` check-in line with the message and the position wording                                                                                                            |
+| Notification | `CRITICAL`: "EMERGENCY ALERT RECEIVED FROM <GUARD> — <SITE> — HH:MM", with the guard's phone and the supervisor; push to all subscribed browsers                               |
+| Ack          | `ok` (or `duplicate` on replay; the row is created once)                                                                                                                       |
 
 Position wording is deliberately careful: "inside <site> ±9 m", "outside <site> ±40 m, 12 min old", "position unverified" or "No position available at the time of the alert". A stale or vague fix is never turned into a confident "outside".
 
@@ -42,14 +42,14 @@ Every heartbeat (default 2 min) returns the guard's alerts of the last 48 h with
 
 ## 5. Offline and failure behaviour
 
-| Situation | Behaviour |
-|---|---|
-| No internet | Saved; sent automatically on reconnect with the original time (`SYNCED_LATE`); guard told plainly it has **not** reached operations and offered call / SMS |
-| Phone dies or app killed after pressing | Row is already in SQLite; sent on next start |
-| Server rejects (malformed) | Row marked `FAILED`; guard told "Rejected by the server · tell your supervisor" |
-| Device revoked | 401; nothing sent; dashboard says DEVICE REVOKED |
-| No GPS fix ever | Alert sent without a position; the notification says so; a check is requested |
-| Sent twice (retry after lost ack) | Second is `duplicate`; one alert, one incident |
+| Situation                               | Behaviour                                                                                                                                                  |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No internet                             | Saved; sent automatically on reconnect with the original time (`SYNCED_LATE`); guard told plainly it has **not** reached operations and offered call / SMS |
+| Phone dies or app killed after pressing | Row is already in SQLite; sent on next start                                                                                                               |
+| Server rejects (malformed)              | Row marked `FAILED`; guard told "Rejected by the server · tell your supervisor"                                                                            |
+| Device revoked                          | 401; nothing sent; dashboard says DEVICE REVOKED                                                                                                           |
+| No GPS fix ever                         | Alert sent without a position; the notification says so; a check is requested                                                                              |
+| Sent twice (retry after lost ack)       | Second is `duplicate`; one alert, one incident                                                                                                             |
 
 ## 6. Tests
 

@@ -93,7 +93,7 @@ it is signed with the same key.
 ### The test build must be uninstalled first
 
 The debug build has `applicationIdSuffix = ".debug"`, so `zw.co.omega.gateway.debug` is a
-*different app* from `zw.co.omega.gateway`. Installing the release will not replace it; both will
+_different app_ from `zw.co.omega.gateway`. Installing the release will not replace it; both will
 run and both will report. Uninstall the debug build before installing the release.
 
 It also carries `android:debuggable="true"` and allows cleartext HTTP, so its stored credentials can
@@ -104,7 +104,14 @@ be read over USB. It does not belong on a guard's phone.
 Every heartbeat response carries the current release:
 
 ```json
-{ "app": { "versionName": "1.7.0", "versionCode": 8, "sha256": "…", "downloadUrl": "/api/app/download" } }
+{
+  "app": {
+    "versionName": "1.7.0",
+    "versionCode": 8,
+    "sha256": "…",
+    "downloadUrl": "/api/app/download"
+  }
+}
 ```
 
 It is omitted entirely when the build is not distributable, so a phone is never pointed at a
@@ -116,9 +123,9 @@ without anyone asking.
 
 ## Endpoints
 
-| | |
-|---|---|
-| `GET /api/app/version` | What is published, and whether it can be handed out. Admin session or device token. |
+|                         |                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/app/version`  | What is published, and whether it can be handed out. Admin session or device token.                                 |
 | `GET /api/app/download` | The APK. Same auth. `409` when the build is not distributable. `no-store`, since the URL is stable across versions. |
 
 Both refuse unauthenticated callers: the APK carries the activation flow and should not be a public
@@ -154,4 +161,5 @@ container, not on your Mac).
   The build prints "Debug builds signed with the shared development keystore …" when it is in use.
   Switching an already-installed phone to the shared key needs one uninstall, so do it before a test
   phone holds real data.
+
 - Release builds are unaffected: they use `ANDROID_KEYSTORE_*` only.

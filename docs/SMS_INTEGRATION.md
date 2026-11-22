@@ -8,4 +8,4 @@ What the Android work added around it, without touching it:
 - Calls and location events write to the same shift timeline table as SMS, so one shift page tells the whole story.
 - The guard profile's **Communication** tab merges SMS and calls.
 
-Feature-phone guards use SMS and calls exactly as before. If every device is switched off, nothing in the SMS flow changes. See TROUBLESHOOTING → *Existing SMS stopped working* for the regression checklist.
+Feature-phone guards use SMS and calls exactly as before. If every device is switched off, nothing in the SMS flow changes. See TROUBLESHOOTING → _Existing SMS stopped working_ for the regression checklist.

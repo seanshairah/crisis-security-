@@ -13,16 +13,14 @@ export default async function LoginPage({
   if (await getSessionUser()) redirect("/dashboard");
   const { error } = await searchParams;
   return (
-    <div className="grid min-h-screen lg:grid-cols-[1fr_1fr]">
-      <div className="flex items-center justify-center px-4 py-10 sm:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex w-full items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="mb-6 flex items-center gap-2.5">
             <BrandMark size={40} className="rounded-[11px]" />
             <div>
               <p className="text-[17px] font-semibold leading-tight text-ink">{COMPANY.name}</p>
-              <p className="text-[12px] text-ink-2">
-                {COMPANY.portal} · {COMPANY.city}
-              </p>
+              <p className="text-[12px] text-ink-2">{COMPANY.portal}</p>
             </div>
           </div>
           <form
@@ -31,9 +29,7 @@ export default async function LoginPage({
           >
             <div>
               <h1 className="font-display text-[34px] leading-none text-ink">Sign in</h1>
-              <p className="mt-1 text-[13px] text-ink-2">
-                For administrators and supervisors. Guards report by SMS and do not sign in.
-              </p>
+              <p className="mt-1 text-[13px] text-ink-2">Sign in to your operations workspace.</p>
             </div>
             <FormError
               message={
@@ -56,25 +52,6 @@ export default async function LoginPage({
               Sign in
             </Button>
           </form>
-          <p className="mt-6 text-center text-[12px] text-ink-3">{COMPANY.domain}</p>
-        </div>
-      </div>
-      <div className="relative hidden overflow-hidden lg:block">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/login.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#101010]/85 via-[#101010]/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
-          <p className="font-display text-[40px] leading-[1.05]">
-            Who is on post, where, and are they safe.
-          </p>
-          <p className="mt-3 max-w-md text-[14px] leading-relaxed text-white/80">
-            {COMPANY.tagline}. Every arrival, welfare check, handover and incident is confirmed by
-            the guard&rsquo;s own phone and recorded here.
-          </p>
         </div>
       </div>
     </div>

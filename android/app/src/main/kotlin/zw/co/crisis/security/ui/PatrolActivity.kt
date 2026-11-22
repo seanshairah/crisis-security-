@@ -47,6 +47,7 @@ class PatrolActivity : AppCompatActivity() {
     private lateinit var chrome: GuardChrome
     private lateinit var holder: FrameLayout
     private var bound: HomeView.Bound? = null
+    private var renderedModel: HomeModel? = null
     private var openWindow: HomeWindow? = null
     private var selected: JSONObject? = null
     private var selectedSession: JSONObject? = null
@@ -84,7 +85,7 @@ class PatrolActivity : AppCompatActivity() {
         scope.launch { runCatching { withContext(Dispatchers.IO) { PatrolRuntime(this@PatrolActivity).sync(api()) } }; if (!busy) render() }
     }
     override fun onResume() { super.onResume(); GatewayService.start(this); render(); handler.post(ticker); handler.postDelayed(slow, 10_000) }
-    override fun onPause() { handler.removeCallbacks(ticker); handler.removeCallbacks(slow); super.onPause() }
+    override fun onPause() { handler.removeCallbacks(ticker); handler.removeCallbacks(slow); renderedModel = null; super.onPause() }
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
 
     private fun api() = ApiClient(prefs.serverUrl, prefs.deviceToken)
@@ -132,6 +133,14 @@ class PatrolActivity : AppCompatActivity() {
 
     private fun render() {
         val m = model()
+        // Background refresh must not replace the sign-in fields while a guard is typing.
+        val previous = renderedModel
+        if (m.state == HomeState.SignIn && previous?.state == HomeState.SignIn &&
+            m.message == previous.message && m.messageIsError == previous.messageIsError) {
+            chrome.refreshSync()
+            return
+        }
+        renderedModel = m
         openWindow = (m.state as? HomeState.Open)?.window
         val b = HomeView.build(this, m, actions)
         bound = b

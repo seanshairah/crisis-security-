@@ -71,10 +71,14 @@
   --shadow-overlay: 0 2px 8px -2px rgb(22 22 22 / 0.18);
 }
 
-:root { color-scheme: dark; }
+:root {
+  color-scheme: dark;
+}
 
 /* Light theme: explicit choice, or the system preference when the viewer has not chosen. */
-:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 :root[data-theme="light"],
 :root[data-theme="light"] body {
   --color-ground: #f6f2ec;
@@ -104,7 +108,9 @@
   --shadow-overlay: 0 2px 8px -2px rgb(60 40 10 / 0.2);
 }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) { color-scheme: light; }
+  :root:not([data-theme]) {
+    color-scheme: light;
+  }
   :root:not([data-theme]),
   :root:not([data-theme]) body {
     --color-ground: #f6f2ec;
@@ -130,7 +136,8 @@
   }
 }
 
-html, body {
+html,
+body {
   background: var(--color-ground);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -145,26 +152,61 @@ html, body {
   background-attachment: fixed;
 }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) body { background: var(--color-ground); }
+  :root:not([data-theme]) body {
+    background: var(--color-ground);
+  }
 }
 
 /* Serif display type: screen titles and the dashboard greeting. */
-.font-display { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+.font-display {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
 
 /* Primary accent fill: the one gradient in the interface. */
-.bg-accent-gradient { background-image: linear-gradient(145deg, #f0a35a, #c97221); color: var(--color-on-accent); }
+.bg-accent-gradient {
+  background-image: linear-gradient(145deg, #f0a35a, #c97221);
+  color: var(--color-on-accent);
+}
 
-.tnum { font-variant-numeric: tabular-nums; }
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
 
-::selection { background: color-mix(in srgb, var(--color-accent) 35%, transparent); }
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
 
-input, select, textarea { font: inherit; }
+input,
+select,
+textarea {
+  font: inherit;
+}
 
-@keyframes fade-in { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
-.fade-in { animation: fade-in 160ms ease-out; }
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fade-in {
+  animation: fade-in 160ms ease-out;
+}
 
-.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-.scroll-thin::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: 8px; }
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 8px;
+}
 
 /* Interactive states, one definition for every control. A focus ring is never removed, only moved
    to :focus-visible, because an operator on a keyboard has to see where they are. */
@@ -173,7 +215,10 @@ input, select, textarea { font: inherit; }
   outline-offset: 2px;
   border-radius: var(--radius-control);
 }
-:where(button, [role="button"]):disabled { opacity: 0.5; cursor: not-allowed; }
+:where(button, [role="button"]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Mapbox GL: the map's own furniture, restyled to the portal's surfaces instead of Mapbox's. */
 .mapboxgl-ctrl-group {
@@ -182,36 +227,98 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-overlay);
 }
-.mapboxgl-ctrl-group button + button { border-top: 1px solid var(--color-line); }
-.mapboxgl-ctrl-attrib, .mapboxgl-ctrl-scale {
+.mapboxgl-ctrl-group button + button {
+  border-top: 1px solid var(--color-line);
+}
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-scale {
   font-size: var(--text-micro);
   color: var(--color-ink-3);
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
 }
-.mapboxgl-ctrl-scale { border-color: var(--color-line-strong); }
-.mapboxgl-popup-content, .leaflet-popup-content-wrapper {
+.mapboxgl-ctrl-scale {
+  border-color: var(--color-line-strong);
+}
+.mapboxgl-popup-content,
+.leaflet-popup-content-wrapper {
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-float);
   font-size: var(--text-row);
   padding: 10px 12px;
   color: var(--color-ink);
 }
-.crisis-popup strong { display: block; margin-bottom: 2px; font-weight: 600; }
-.crisis-popup div { color: var(--color-ink-2); }
-.crisis-popup a, .leaflet-popup-content a { color: var(--color-accent-strong); font-weight: 500; text-decoration: underline; }
+.crisis-popup strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+.crisis-popup div {
+  color: var(--color-ink-2);
+}
+.crisis-popup a,
+.leaflet-popup-content a {
+  color: var(--color-accent-strong);
+  font-weight: 500;
+  text-decoration: underline;
+}
 
 /* Respect a viewer who has asked for less movement: the map still pans, nothing else animates. */
 @media (prefers-reduced-motion: reduce) {
-  .fade-in { animation: none; }
-  *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .fade-in {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Crisis field identity: a faint topographic line texture on the command banner, nothing louder. */
-.crisis-camouflage { background-color: var(--color-surface-2); color: var(--color-ink); }
-.crisis-command { position: relative; overflow: hidden; background: var(--color-surface); }
-.crisis-command::before { content: ''; position: absolute; inset: 0; opacity: .5;
-  background: repeating-linear-gradient(125deg, transparent 0 70px, var(--color-line) 71px 72px, transparent 73px 140px);
-  mask-image: linear-gradient(90deg, transparent, #000); pointer-events: none; }
-.crisis-chip { display: inline-flex; gap: .6rem; align-items: center; border: 1px solid var(--color-line); border-radius: 999px; padding: .5rem 1rem; font-size: 12px; color: var(--color-ink-2); background: var(--color-surface); }
-.crisis-chip.selected { border-color: var(--color-accent-bright); color: var(--color-accent-bright); background: var(--color-accent-soft); }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+.crisis-camouflage {
+  background-color: var(--color-surface-2);
+  color: var(--color-ink);
+}
+.crisis-command {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.crisis-command::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background: repeating-linear-gradient(
+    125deg,
+    transparent 0 70px,
+    var(--color-line) 71px 72px,
+    transparent 73px 140px
+  );
+  mask-image: linear-gradient(90deg, transparent, #000);
+  pointer-events: none;
+}
+.crisis-chip {
+  display: inline-flex;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 12px;
+  color: var(--color-ink-2);
+  background: var(--color-surface);
+}
+.crisis-chip.selected {
+  border-color: var(--color-accent-bright);
+  color: var(--color-accent-bright);
+  background: var(--color-accent-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

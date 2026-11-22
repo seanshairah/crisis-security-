@@ -46,7 +46,6 @@ Release tasks fail if release signing configuration is absent. The release APK m
 
 Run `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run docs:api:check`, the isolated patrol/setup/security integration scripts, and the HTTP session revocation regression. CI supplies disposable PostgreSQL on loopback port 55439 and also runs Android JVM tests and a debug build. Physical device tests and deployment credentials are separate from CI; reports identify simulated/emulator evidence explicitly.
 
-
 ## Content Security Policy
 
 Pages get a fresh nonce on every request (`src/middleware.ts`, policy in `src/lib/security/csp.ts`). Scripts run only with that nonce

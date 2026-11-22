@@ -10,7 +10,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** Separate durable patrol ledger. Immutable JSON keeps the original guard session after handover. */
-class PatrolStore private constructor(context: Context) : SQLiteOpenHelper(context.applicationContext, "crisis_patrol.db", null, 2) {
+class PatrolStore private constructor(context: Context) : SQLiteOpenHelper(context.applicationContext, "crisis_patrol.db", null, 3) {
     init { setWriteAheadLoggingEnabled(true) }
     companion object {
         @Volatile private var instance: PatrolStore? = null
@@ -22,8 +22,22 @@ class PatrolStore private constructor(context: Context) : SQLiteOpenHelper(conte
         db.execSQL("CREATE TABLE events (eventId TEXT PRIMARY KEY, assignmentId TEXT NOT NULL, json TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'QUEUED', decision TEXT, createdAt INTEGER NOT NULL)")
         db.execSQL("CREATE TABLE prompted (assignmentId TEXT PRIMARY KEY)")
         upgradeTo2(db, false)
+        upgradeTo3(db)
     }
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { if(oldVersion < 2) upgradeTo2(db, true) }
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { if(oldVersion < 2) upgradeTo2(db, true); if(oldVersion < 3) upgradeTo3(db) }
+    private fun upgradeTo3(db: SQLiteDatabase) {
+        db.execSQL("CREATE TABLE gate_commands (id TEXT PRIMARY KEY, json TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'QUEUED', result TEXT, createdAt INTEGER NOT NULL)")
+    }
+    @Synchronized fun gateEnqueue(command: JSONObject) {
+        writableDatabase.insertOrThrow("gate_commands", null, ContentValues().apply { put("id", command.getString("commandId")); put("json", command.toString()); put("createdAt", System.currentTimeMillis()) })
+    }
+    @Synchronized fun gatePending(): List<JSONObject> = readableDatabase.rawQuery("SELECT json FROM gate_commands WHERE state='QUEUED' ORDER BY createdAt LIMIT 20", null).use { c -> buildList { while(c.moveToNext()) add(JSONObject(c.getString(0))) } }
+    @Synchronized fun gateAck(id: String, state: String, result: String) { writableDatabase.execSQL("UPDATE gate_commands SET state=?,result=? WHERE id=?", arrayOf(state,result,id)) }
+    data class GateSaved(val commandId: String, val direction: String, val state: String, val result: String?, val createdAt: Long, val command: JSONObject)
+    /** Every gate check this phone has kept for the session, newest first, with where each one stands. */
+    @Synchronized fun gateSaved(sessionId: String): List<GateSaved> = readableDatabase.rawQuery("SELECT id,json,state,result,createdAt FROM gate_commands ORDER BY createdAt DESC LIMIT 100", null).use { c -> buildList { while(c.moveToNext()) { val j=JSONObject(c.getString(1)); if(j.optString("sessionId")==sessionId) add(GateSaved(c.getString(0), j.optString("direction", "Physical check"), c.getString(2), c.getString(3), c.getLong(4), j)) } } }
+    @Synchronized fun gateState(id: String): Pair<String, String?>? = readableDatabase.rawQuery("SELECT state,result FROM gate_commands WHERE id=?", arrayOf(id)).use { if(it.moveToFirst()) it.getString(0) to it.getString(1) else null }
+    @Synchronized fun gatePendingCount(): Int = readableDatabase.rawQuery("SELECT COUNT(*) FROM gate_commands WHERE state='QUEUED'", null).use { it.moveToFirst();it.getInt(0) }
     private fun upgradeTo2(db: SQLiteDatabase, existing: Boolean) {
         db.execSQL("ALTER TABLE events ADD COLUMN checkpointName TEXT NOT NULL DEFAULT 'Checkpoint'")
         db.execSQL("ALTER TABLE events ADD COLUMN localDecision TEXT")

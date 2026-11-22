@@ -1,0 +1,230 @@
+openapi: 3.0.3
+info:
+  title: Crisis Security gate integration
+  version: "1"
+  description: >
+    Two-way link between the Crisis Security portal (guard gate checks) and an inventory system.
+    The portal PUSHES signed `gate.decision.v1` events to the inventory system (section "Webhook the
+    inventory system implements"). The inventory system CALLS the portal to announce expected
+    movements, poll their state and withdraw them.
+servers:
+  - url: https://YOUR-PORTAL-DOMAIN
+tags:
+  - name: Portal API
+  - name: Webhook the inventory system implements
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      description: GATE_INBOUND_TOKEN (32+ characters). Requests may also be signed, see GATE_INBOUND_SIGNING_SECRET.
+  schemas:
+    Item:
+      type: object
+      required: [name, quantity, unit]
+      properties:
+        name: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 500 }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, maxLength: 40, example: bags }
+    Details:
+      type: object
+      required: [category, items, party, place, occurredAt, vehicleType]
+      properties:
+        category: { type: string, enum: [MAIZE, MACHINERY, OTHER] }
+        items:
+          { type: array, minItems: 1, maxItems: 40, items: { $ref: "#/components/schemas/Item" } }
+        party: { type: string, description: Supplier, customer or driver company, maxLength: 200 }
+        place: { type: string, maxLength: 300 }
+        occurredAt: { type: string, format: date-time }
+        vehicleType: { type: string, enum: [NONE, TRUCK, CAR, BIKE, OTHER] }
+        deliveryNote:
+          {
+            type: string,
+            maxLength: 60,
+            description: Optional delivery note reference such as DN-20418,
+          }
+        registration:
+          { type: string, maxLength: 40, description: Required when vehicleType is not NONE }
+        note: { type: string, maxLength: 2000 }
+    ExpectedMovement:
+      type: object
+      required: [reference, locationId, direction, details]
+      properties:
+        reference:
+          {
+            type: string,
+            maxLength: 100,
+            description: Your own stable id. Re-sending the same reference with the same details is safe.,
+          }
+        locationId: { type: string, description: Portal site id (agreed in GATE_INBOUND_SITE_IDS) }
+        direction: { type: string, enum: [ARRIVAL, DEPARTURE] }
+        details: { $ref: "#/components/schemas/Details" }
+    Receipt:
+      type: object
+      properties:
+        movementId: { type: string }
+        reference: { type: string }
+        direction: { type: string }
+        status: { type: string, enum: [PENDING, REVIEW, APPROVED, REJECTED, CANCELLED] }
+        version: { type: integer }
+        reason: { type: string, nullable: true }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        decidedByRole: { type: string, enum: [GUARD, SUPERVISOR], nullable: true }
+        correctionOf: { type: string, nullable: true }
+        delivery:
+          nullable: true
+          type: object
+          properties:
+            status: { type: string, enum: [PENDING, SENDING, SENT, FAILED, NEEDS_ATTENTION] }
+            attempts: { type: integer }
+            sentAt: { type: string, format: date-time, nullable: true }
+    Error:
+      type: object
+      properties: { error: { type: string } }
+    DecisionEvent:
+      type: object
+      description: >
+        Frozen at decision time. `expected` is what you announced (null for movements a guard
+        recorded without notice); `observed` is what the guard physically checked. Only APPROVED
+        should change stock. A correction has `correctionOf` set and always arrives after the
+        decision it amends.
+      required: [deliveryId, event, schemaVersion, movementId, status, direction, version]
+      properties:
+        deliveryId:
+          { type: string, description: Stable across retries. Persist it before acknowledging. }
+        event: { type: string, enum: [gate.decision.v1] }
+        schemaVersion: { type: integer, example: 1 }
+        movementId: { type: string }
+        reference: { type: string }
+        externalReference:
+          { type: string, nullable: true, description: Your reference, without prefix }
+        source: { type: string, enum: [EXTERNAL, GUARD, CORRECTION] }
+        locationId: { type: string }
+        siteName: { type: string }
+        direction: { type: string, enum: [ARRIVAL, DEPARTURE] }
+        expected: { allOf: [{ $ref: "#/components/schemas/Details" }], nullable: true }
+        observed: { allOf: [{ $ref: "#/components/schemas/Details" }], nullable: true }
+        discrepancies:
+          {
+            type: array,
+            items: { type: string },
+            description: "Fields that differ, e.g. items, party",
+          }
+        status: { type: string, enum: [APPROVED, REJECTED] }
+        reason: { type: string, nullable: true }
+        guard:
+          {
+            type: object,
+            nullable: true,
+            properties: { id: { type: string }, guardNo: { type: string }, name: { type: string } },
+          }
+        checkpoint:
+          {
+            type: object,
+            nullable: true,
+            properties: { id: { type: string }, name: { type: string } },
+          }
+        decidedByRole: { type: string, enum: [GUARD, SUPERVISOR] }
+        decisionBy: { type: string }
+        decisionAt: { type: string, format: date-time }
+        capturedAt: { type: string, format: date-time, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+        version: { type: integer }
+        correctionOf: { type: string, nullable: true }
+    Ack:
+      type: object
+      required: [accepted, deliveryId]
+      properties:
+        accepted: { type: boolean }
+        deliveryId: { type: string, description: Must equal the deliveryId you received }
+        retryable:
+          {
+            type: boolean,
+            description: With accepted=false,
+            false parks the record instead of retrying,
+          }
+  parameters:
+    reference:
+      name: reference
+      in: path
+      required: true
+      schema: { type: string }
+paths:
+  /api/gate/inbound:
+    post:
+      tags: [Portal API]
+      summary: Announce an expected arrival or departure
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ExpectedMovement" } } }
+      responses:
+        "200":
+          {
+            description: Recorded (or already recorded with identical details),
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
+        "400": { description: Invalid details }
+        "401": { description: Bad token or signature }
+        "403": { description: Site not enabled for this connection }
+        "404": { description: Site does not exist or is inactive }
+        "409": { description: Reference already exists with different details }
+        "413": { description: Body over 100 KB }
+        "429": { description: Too many requests; honour retry }
+  /api/gate/inbound/{reference}:
+    get:
+      tags: [Portal API]
+      summary: Poll the gate decision and delivery progress of a record you sent
+      security: [{ bearer: [] }]
+      parameters: [{ $ref: "#/components/parameters/reference" }]
+      responses:
+        "200":
+          {
+            description: Current state,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
+        "404": { description: Unknown reference or site not enabled }
+  /api/gate/inbound/{reference}/cancel:
+    post:
+      tags: [Portal API]
+      summary: Withdraw a record no guard has checked yet
+      security: [{ bearer: [] }]
+      parameters: [{ $ref: "#/components/parameters/reference" }]
+      requestBody:
+        content:
+          {
+            application/json:
+              {
+                schema: { type: object, properties: { reason: { type: string, maxLength: 500 } } },
+              },
+          }
+      responses:
+        "200":
+          {
+            description: Cancelled (idempotent),
+            content: { application/json: { schema: { $ref: "#/components/schemas/Receipt" } } },
+          }
+        "409": { description: A guard already checked it }
+  /your-webhook-url:
+    post:
+      tags: [Webhook the inventory system implements]
+      summary: Receive a gate decision (portal -> you)
+      description: |
+        Headers sent: `authorization: Bearer GATE_OUTBOUND_TOKEN`, `idempotency-key` and
+        `x-crisis-delivery` (= deliveryId), `x-crisis-event`, `x-crisis-timestamp` (unix seconds),
+        `x-crisis-signature` (`v1=` + hex HMAC-SHA256 of `${timestamp}.${rawBody}` with GATE_OUTBOUND_SIGNING_SECRET).
+        Reject timestamps more than 5 minutes old. Store the deliveryId, apply the change, THEN answer
+        200 `{accepted:true, deliveryId}`. 5xx, timeouts and 401/403/404/408/409/423/425/429 are retried
+        with backoff (up to GATE_MAX_ATTEMPTS, then an operator is alerted). Any other 4xx, or
+        `{accepted:false, retryable:false}`, parks the record immediately. `gate.ping.v1` is a
+        connectivity test: acknowledge it and change nothing.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/DecisionEvent" } } }
+      responses:
+        "200":
+          {
+            description: Acknowledged,
+            content: { application/json: { schema: { $ref: "#/components/schemas/Ack" } } },
+          }

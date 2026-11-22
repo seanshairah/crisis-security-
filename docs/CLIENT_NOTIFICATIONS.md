@@ -21,33 +21,33 @@ message from a template, and after sending, its delivery status.
 
 ## Who may send what
 
-| Type | Operations admin | Super admin | Supervisor | Rule |
-|---|---|---|---|---|
-| Arrived, verified on site, running late, missed check-in, shift completed, replacement dispatched, site status, all well, custom | sends | sends | drafts | sends (if the site asks) |
-| Absent, outside the site, emergency, assistance | drafts | sends / approves | drafts | drafts only |
+| Type                                                                                                                             | Operations admin | Super admin      | Supervisor | Rule                     |
+| -------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------- | ---------- | ------------------------ |
+| Arrived, verified on site, running late, missed check-in, shift completed, replacement dispatched, site status, all well, custom | sends            | sends            | drafts     | sends (if the site asks) |
+| Absent, outside the site, emergency, assistance                                                                                  | drafts           | sends / approves | drafts     | drafts only              |
 
-A draft is *Awaiting approval* and nothing is sent. Drafts appear first on the client page and on the
+A draft is _Awaiting approval_ and nothing is sent. Drafts appear first on the client page and on the
 site page, and the approver can edit the text before approving. An internal notification says a
 draft is waiting.
 
 ## Statuses
 
-*Sent* means the provider accepted it. *Delivered* appears only when the provider's delivery report
-says so (carried from the SMS webhook). *Failed* keeps the provider's reason (for example
+_Sent_ means the provider accepted it. _Delivered_ appears only when the provider's delivery report
+says so (carried from the SMS webhook). _Failed_ keeps the provider's reason (for example
 `402 insufficient funds`). Nothing is shown as delivered because it was queued.
 
 ## Automatic rules, per site
 
 Set on the site form, under client updates (the site must have client updates switched on):
 
-| Switch | When | Message |
-|---|---|---|
-| Arrival | GPS check-in verified, or SMS YES, whichever first | "guard verified on site" / "guard on site", once per shift |
-| Late | check-in escalated with the phone online, or no reply to the SMS arrival check and reminder | "running late", once per shift |
-| Missed check-in (absent) | as above, when this is on instead of late | "check-in not confirmed" |
-| Outside | guard's phone outside the site beyond the escalation time | **draft** for the super admin |
-| Emergency | an emergency or critical incident | **draft** for the super admin |
-| All well, shift ended | as before | as before |
+| Switch                   | When                                                                                        | Message                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Arrival                  | GPS check-in verified, or SMS YES, whichever first                                          | "guard verified on site" / "guard on site", once per shift |
+| Late                     | check-in escalated with the phone online, or no reply to the SMS arrival check and reminder | "running late", once per shift                             |
+| Missed check-in (absent) | as above, when this is on instead of late                                                   | "check-in not confirmed"                                   |
+| Outside                  | guard's phone outside the site beyond the escalation time                                   | **draft** for the super admin                              |
+| Emergency                | an emergency or critical incident                                                           | **draft** for the super admin                              |
+| All well, shift ended    | as before                                                                                   | as before                                                  |
 
 The supervisor is always told first; the client rules run after the internal alert. A phone that is
 merely offline never produces a client message.

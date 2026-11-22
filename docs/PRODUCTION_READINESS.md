@@ -8,28 +8,28 @@ Date: 2026-10-19 · Portal on `main` · App v1.6.0 (versionCode 7)
 
 ## Evidence
 
-| Area | Evidence | Status |
-|---|---|---|
-| Typecheck, lint, production build | clean | verified |
-| Prisma consistency (`npm run db:check`) | schema valid, generated client matches, migrations complete | verified |
-| Security headers, login throttle, production env validation, simulator gating | code + unit tests | verified |
-| Guard workspace layout (desktop 1440×900, laptop 1280×720, phone 390×844) | `npm run test:layout` 30/30 | verified in headless Chromium |
-| Web unit tests | 40/40 | verified |
-| Android JVM unit tests | 51/51 | verified |
-| Redesigned guard dashboard (U1–U12 in DEVICE_TEST_PLAN) | compiles, every control mapped to its handler (`ANDROID_UI_AUDIT.md`) | **unverified on device** |
-| Gateway end-to-end (calls, activation, revocation, SMS regression) | 30/30 | verified |
-| Location end-to-end (section-50 scenario, 15 critical cases, feature phone, mock) | 38/38 | verified |
-| Alerts end-to-end (emergency with/without fix, all types, replay, acknowledgement, SMS EMERGENCY) | 20/20 | verified |
-| Integration end-to-end (Stage 8 matrix) | 18/18 | verified |
-| Location-request end-to-end (command delivery, binding, replay, expiry, accuracy, mock, site handoff) | 37/37 | verified |
-| Browser geolocation (Playwright, mocked Geolocation API: good fix, poor accuracy, denied, insecure context) | 14/14 | verified with mocked positions, **not real GPS** |
-| Migrations on Neon | all applied, `db:migration-status` clean | verified |
-| SMS system | no SMS file changed in Phases 1–3; regression steps in three suites | verified |
-| Debug and release APKs | build, R8, log stripping, HTTPS-only release | compiled, **unverified on device** |
-| Guard onboarding, GPS acquisition, Sync/Check independence, offline replay, emergency dialogs, acknowledgement on the phone, screen layouts | code + unit tests | **unverified on device** |
-| Release signing | debug key | **blocker for distribution** |
-| Google Maps picker (Google engine) | code, type-checked; Leaflet engine (OpenStreetMap/MapTiler tiles) exercised in the browser | **unverified with a key** |
-| Remote location request on a phone (L1–L9 in DEVICE_TEST_PLAN) | code + unit tests + simulated device | **unverified on device** |
+| Area                                                                                                                                        | Evidence                                                                                   | Status                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| Typecheck, lint, production build                                                                                                           | clean                                                                                      | verified                                         |
+| Prisma consistency (`npm run db:check`)                                                                                                     | schema valid, generated client matches, migrations complete                                | verified                                         |
+| Security headers, login throttle, production env validation, simulator gating                                                               | code + unit tests                                                                          | verified                                         |
+| Guard workspace layout (desktop 1440×900, laptop 1280×720, phone 390×844)                                                                   | `npm run test:layout` 30/30                                                                | verified in headless Chromium                    |
+| Web unit tests                                                                                                                              | 40/40                                                                                      | verified                                         |
+| Android JVM unit tests                                                                                                                      | 51/51                                                                                      | verified                                         |
+| Redesigned guard dashboard (U1–U12 in DEVICE_TEST_PLAN)                                                                                     | compiles, every control mapped to its handler (`ANDROID_UI_AUDIT.md`)                      | **unverified on device**                         |
+| Gateway end-to-end (calls, activation, revocation, SMS regression)                                                                          | 30/30                                                                                      | verified                                         |
+| Location end-to-end (section-50 scenario, 15 critical cases, feature phone, mock)                                                           | 38/38                                                                                      | verified                                         |
+| Alerts end-to-end (emergency with/without fix, all types, replay, acknowledgement, SMS EMERGENCY)                                           | 20/20                                                                                      | verified                                         |
+| Integration end-to-end (Stage 8 matrix)                                                                                                     | 18/18                                                                                      | verified                                         |
+| Location-request end-to-end (command delivery, binding, replay, expiry, accuracy, mock, site handoff)                                       | 37/37                                                                                      | verified                                         |
+| Browser geolocation (Playwright, mocked Geolocation API: good fix, poor accuracy, denied, insecure context)                                 | 14/14                                                                                      | verified with mocked positions, **not real GPS** |
+| Migrations on Neon                                                                                                                          | all applied, `db:migration-status` clean                                                   | verified                                         |
+| SMS system                                                                                                                                  | no SMS file changed in Phases 1–3; regression steps in three suites                        | verified                                         |
+| Debug and release APKs                                                                                                                      | build, R8, log stripping, HTTPS-only release                                               | compiled, **unverified on device**               |
+| Guard onboarding, GPS acquisition, Sync/Check independence, offline replay, emergency dialogs, acknowledgement on the phone, screen layouts | code + unit tests                                                                          | **unverified on device**                         |
+| Release signing                                                                                                                             | debug key                                                                                  | **blocker for distribution**                     |
+| Google Maps picker (Google engine)                                                                                                          | code, type-checked; Leaflet engine (OpenStreetMap/MapTiler tiles) exercised in the browser | **unverified with a key**                        |
+| Remote location request on a phone (L1–L9 in DEVICE_TEST_PLAN)                                                                              | code + unit tests + simulated device                                                       | **unverified on device**                         |
 
 ## Blockers before fleet production
 
@@ -40,9 +40,9 @@ Date: 2026-10-19 · Portal on `main` · App v1.6.0 (versionCode 7)
 
 ## Risks accepted for a pilot
 
-- OEM battery managers can still kill the service; WorkManager restarts it within 15 minutes and nothing is lost, but checks can be late. The *verification overdue* alert and the Location exceptions page make this visible.
+- OEM battery managers can still kill the service; WorkManager restarts it within 15 minutes and nothing is lost, but checks can be late. The _verification overdue_ alert and the Location exceptions page make this visible.
 - GPS indoors is often worse than the 100 m limit; the app says so explicitly and never reports "outside" from such a fix.
-- A guard whose phone is offline shows as *device offline*, never as absent or outside.
+- A guard whose phone is offline shows as _device offline_, never as absent or outside.
 
 ## What does not change for current operations
 

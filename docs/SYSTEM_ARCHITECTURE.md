@@ -26,17 +26,17 @@ flowchart TB
 
 ## Components
 
-| Component | Where | Role |
-| --- | --- | --- |
-| Web dashboard | `src/app/(app)/**`, `src/components/**` | Server-rendered pages for guards, sites, shifts, attendance, incidents, calls, devices, reports, settings; small client islands (simulators, maps, forms). |
-| Backend API | `src/app/api/**` | Session-cookie routes for the portal, Bearer-token routes for devices, signature-verified SMS webhook. |
-| Database | `prisma/schema.prisma`, `prisma/migrations/*` | PostgreSQL (Neon in production). See [DATABASE.md](DATABASE.md). |
-| SMS | `src/lib/sms/**` | Provider abstraction (Sendai in production), templates, inbound interpreter, automation. Unchanged. See [SMS_INTEGRATION.md](SMS_INTEGRATION.md). |
-| Call gateway | `src/lib/gateway/{auth,service,call-state,events,calls,simulate}.ts` | Device registration and tokens, call event intake, dedupe, guard matching, correlation. See [CALL_GATEWAY.md](CALL_GATEWAY.md). |
-| GPS and geofencing | `src/lib/geofence.ts`, `src/lib/gateway/location-events.ts` | Accuracy-aware classification, monitoring state machine (mirrored in Kotlin), location event intake, SMS+GPS verification, overdue and escalation. See [GPS_AND_GEOFENCING.md](GPS_AND_GEOFENCING.md). |
-| Guard APK / Operations gateway | `android/` | One Kotlin app; the server tells it its mode at activation. See [GUARD_ANDROID_APP.md](GUARD_ANDROID_APP.md) and [OPERATIONS_GATEWAY.md](OPERATIONS_GATEWAY.md). |
-| Offline queue | `android/.../data/EventQueue.kt`, `service/SyncEngine.kt` | SQLite outbox, acknowledged per event, replayed in order. See [OFFLINE_MODE.md](OFFLINE_MODE.md). |
-| Automation engine | `src/lib/automation/engine.ts` | Twelve steps per minute; the SMS steps come first, the gateway and location steps run in their own try/catch after them. |
+| Component                      | Where                                                                | Role                                                                                                                                                                                                   |
+| ------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web dashboard                  | `src/app/(app)/**`, `src/components/**`                              | Server-rendered pages for guards, sites, shifts, attendance, incidents, calls, devices, reports, settings; small client islands (simulators, maps, forms).                                             |
+| Backend API                    | `src/app/api/**`                                                     | Session-cookie routes for the portal, Bearer-token routes for devices, signature-verified SMS webhook.                                                                                                 |
+| Database                       | `prisma/schema.prisma`, `prisma/migrations/*`                        | PostgreSQL (Neon in production). See [DATABASE.md](DATABASE.md).                                                                                                                                       |
+| SMS                            | `src/lib/sms/**`                                                     | Provider abstraction (Sendai in production), templates, inbound interpreter, automation. Unchanged. See [SMS_INTEGRATION.md](SMS_INTEGRATION.md).                                                      |
+| Call gateway                   | `src/lib/gateway/{auth,service,call-state,events,calls,simulate}.ts` | Device registration and tokens, call event intake, dedupe, guard matching, correlation. See [CALL_GATEWAY.md](CALL_GATEWAY.md).                                                                        |
+| GPS and geofencing             | `src/lib/geofence.ts`, `src/lib/gateway/location-events.ts`          | Accuracy-aware classification, monitoring state machine (mirrored in Kotlin), location event intake, SMS+GPS verification, overdue and escalation. See [GPS_AND_GEOFENCING.md](GPS_AND_GEOFENCING.md). |
+| Guard APK / Operations gateway | `android/`                                                           | One Kotlin app; the server tells it its mode at activation. See [GUARD_ANDROID_APP.md](GUARD_ANDROID_APP.md) and [OPERATIONS_GATEWAY.md](OPERATIONS_GATEWAY.md).                                       |
+| Offline queue                  | `android/.../data/EventQueue.kt`, `service/SyncEngine.kt`            | SQLite outbox, acknowledged per event, replayed in order. See [OFFLINE_MODE.md](OFFLINE_MODE.md).                                                                                                      |
+| Automation engine              | `src/lib/automation/engine.ts`                                       | Twelve steps per minute; the SMS steps come first, the gateway and location steps run in their own try/catch after them.                                                                               |
 
 ## Data flow for one shift (Android guard)
 

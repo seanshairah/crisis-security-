@@ -5,16 +5,16 @@ WELFARE_CHECKS.md and NETWORK_LOCATION.md.
 
 ## What the labels mean
 
-| Label | Means | Says where the guard is? |
-|---|---|---|
-| GPS verified | The guard app's GPS put the phone inside the site geofence | Yes |
-| Network verified | The mobile network placed the phone inside the site's network area (approximate) | Yes, roughly |
-| Call confirmed / By call | The guard called the operations phone from their number | **No** |
-| SMS confirmed / By SMS | The guard replied by SMS | **No** |
-| IVR response confirmed | The guard pressed a key on an automated welfare call | **No** |
-| Manually verified / Confirmed by a supervisor | A person confirmed it | No |
-| Attendance pending | A call or missed call waits for you to confirm or reject it | No |
-| Simulated … · not real evidence | Produced by a test or demo provider. Never act on it as real. | No |
+| Label                                         | Means                                                                            | Says where the guard is? |
+| --------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------ |
+| GPS verified                                  | The guard app's GPS put the phone inside the site geofence                       | Yes                      |
+| Network verified                              | The mobile network placed the phone inside the site's network area (approximate) | Yes, roughly             |
+| Call confirmed / By call                      | The guard called the operations phone from their number                          | **No**                   |
+| SMS confirmed / By SMS                        | The guard replied by SMS                                                         | **No**                   |
+| IVR response confirmed                        | The guard pressed a key on an automated welfare call                             | **No**                   |
+| Manually verified / Confirmed by a supervisor | A person confirmed it                                                            | No                       |
+| Attendance pending                            | A call or missed call waits for you to confirm or reject it                      | No                       |
+| Simulated … · not real evidence               | Produced by a test or demo provider. Never act on it as real.                    | No                       |
 
 A call-confirmed shift is never shown as GPS-verified. If you need to know where a basic-phone guard
 is, call them, or send a supervisor.
@@ -22,9 +22,9 @@ is, call them, or send a supervisor.
 ## Setting up a guard with a basic phone
 
 1. **Guards → Edit → Phone and attendance.**
-   - Phone type: *Basic / feature phone*.
+   - Phone type: _Basic / feature phone_.
    - Mobile network: as the guard tells you.
-   - Attends by: *Calling the gateway phone*.
+   - Attends by: _Calling the gateway phone_.
 2. **Gateway phone to call.** Pick the operations phone this guard should ring, or leave it on the
    site default. Calls to another gateway are flagged; Settings decides whether they are also held
    or refused.
@@ -32,8 +32,8 @@ is, call them, or send a supervisor.
    is refused, because it would identify neither.
 4. Make a test call from the guard's phone to the gateway, check that it appears under the gateway's
    calls, then tick **Number verified**.
-5. Tell the guard: *call the operations number when you arrive, call during the shift if asked, and
-   call when you leave. The call can be short; you may hang up once it is answered.*
+5. Tell the guard: _call the operations number when you arrive, call during the shift if asked, and
+   call when you leave. The call can be short; you may hang up once it is answered._
 
 ## During a shift
 
@@ -48,7 +48,7 @@ is, call them, or send a supervisor.
   - Open the shift, then **Attendance evidence**, then **Confirm** or **Reject**.
   - Confirming applies it at the call's time. Rejecting a provisional clock-in undoes it.
   - Call the guard first if in doubt.
-- **A call synced late** (the gateway was offline) shows *reached the server late*. It is attached to
+- **A call synced late** (the gateway was offline) shows _reached the server late_. It is attached to
   the right shift at the time it happened. A call for a shift that has already closed never reopens it.
 
 ## Welfare checks
@@ -66,8 +66,8 @@ To leave a guard out, tick **No scheduled welfare checks** on the guard.
   confirm the pending welfare row on the shift. An answered call alone settles nothing.
 - **Automated call.** Not available yet: no voice provider is contracted. Sites set to it get the SMS
   instead, and nothing pretends a call was made.
-- **No answer.** The check is retried, then texted, then escalated. You get a *did not answer the
-  welfare check* notification, which turns critical from the second missed check on the same shift.
+- **No answer.** The check is retried, then texted, then escalated. You get a _did not answer the
+  welfare check_ notification, which turns critical from the second missed check on the same shift.
   An unanswered call is not proof the guard is absent: call them and, if needed, send the supervisor.
 - **Key 2 or 3 on an automated call.**
   - Key 2 creates an assistance request.
@@ -77,7 +77,7 @@ To leave a guard out, tick **No scheduled welfare checks** on the guard.
 
 ## Network location (not active)
 
-The site and guard forms have network-location fields, and Settings has a *Network location* group.
+The site and guard forms have network-location fields, and Settings has a _Network location_ group.
 They stay off: no Zimbabwean network offers Omega a location service today. If one is contracted
 later:
 

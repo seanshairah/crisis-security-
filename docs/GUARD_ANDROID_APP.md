@@ -1,22 +1,22 @@
 # Guard Android app (GUARD mode)
 
-The same APK as the operations gateway (`android/`, app name **Security Gateway**). A device registered in the portal with mode *Guard device* and linked to a guard tells the app, at activation, that it is a guard phone. The guard becomes an *Android guard* (`Guard.deviceKind = ANDROID_GUARD`); the SMS workflow continues unchanged for them.
+The same APK as the operations gateway (`android/`, app name **Security Gateway**). A device registered in the portal with mode _Guard device_ and linked to a guard tells the app, at activation, that it is a guard phone. The guard becomes an _Android guard_ (`Guard.deviceKind = ANDROID_GUARD`); the SMS workflow continues unchanged for them.
 
 ## What it does
 
-| Function | Implementation |
-| --- | --- |
-| Identity | Activation code → device token (hashed on the server) stored in `EncryptedSharedPreferences`; the server returns `mode: GUARD` and the guard's name. |
-| Permission onboarding | `PermissionsActivity`: plain-language cards for Location, Location all the time, Phone and call log, Notifications, Run in background; shows what is and is not collected. Monitoring does not start until location is granted. |
-| Shift configuration | `GET /api/gateways/config` with every heartbeat → `ShiftConfig` cached on the phone: shift window, site coordinates, radius, intervals. |
-| Location monitoring | `LocationMonitor` in the foreground service: one fix per check from `LocationManager` (GPS, then network, then last-known under 2 min), local `classify`, `stepMonitor` state machine, events to the outbox. Starts 10 min before the shift, stops 30 min after. |
-| Exit / return | First outside reading → verify after 60 s → `LOCATION_EXIT`; `LOCATION_OUTSIDE` every 3 min while outside; `LOCATION_RETURNED` with duration outside. |
-| Unavailable | `LOCATION_UNAVAILABLE` with `permission_revoked`, `location_disabled`, `no_fix`, `poor_accuracy`, `site_has_no_coordinates`. |
-| Calls | Same `CallTracker` as the gateway. In guard mode every call event carries the latest fix (`location {latitude, longitude, locationState}`) and a `LOCATION_CALL` event refreshes the fix around the call. |
-| Heartbeat | Battery, network, app and Android version, location and phone permission state, monitoring state, mock flag, last fix. |
-| Offline | Everything above works with no internet; see [OFFLINE_MODE.md](OFFLINE_MODE.md). |
-| Restart | Boot receiver and app-update receiver restart the service; WorkManager every 15 minutes as a fallback. |
-| Screen | Status (🟢/🔴), mode and guard name, shift and site radius, monitoring state (INSIDE SITE, OUTSIDE READING · verifying, OUTSIDE SITE, LOCATION UNAVAILABLE, MONITORING OFFLINE, WAITING FOR SHIFT, NOT ON SHIFT), last check with distance and accuracy, location permission state, plus the common device rows. |
+| Function              | Implementation                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity              | Activation code → device token (hashed on the server) stored in `EncryptedSharedPreferences`; the server returns `mode: GUARD` and the guard's name.                                                                                                                                                             |
+| Permission onboarding | `PermissionsActivity`: plain-language cards for Location, Location all the time, Phone and call log, Notifications, Run in background; shows what is and is not collected. Monitoring does not start until location is granted.                                                                                  |
+| Shift configuration   | `GET /api/gateways/config` with every heartbeat → `ShiftConfig` cached on the phone: shift window, site coordinates, radius, intervals.                                                                                                                                                                          |
+| Location monitoring   | `LocationMonitor` in the foreground service: one fix per check from `LocationManager` (GPS, then network, then last-known under 2 min), local `classify`, `stepMonitor` state machine, events to the outbox. Starts 10 min before the shift, stops 30 min after.                                                 |
+| Exit / return         | First outside reading → verify after 60 s → `LOCATION_EXIT`; `LOCATION_OUTSIDE` every 3 min while outside; `LOCATION_RETURNED` with duration outside.                                                                                                                                                            |
+| Unavailable           | `LOCATION_UNAVAILABLE` with `permission_revoked`, `location_disabled`, `no_fix`, `poor_accuracy`, `site_has_no_coordinates`.                                                                                                                                                                                     |
+| Calls                 | Same `CallTracker` as the gateway. In guard mode every call event carries the latest fix (`location {latitude, longitude, locationState}`) and a `LOCATION_CALL` event refreshes the fix around the call.                                                                                                        |
+| Heartbeat             | Battery, network, app and Android version, location and phone permission state, monitoring state, mock flag, last fix.                                                                                                                                                                                           |
+| Offline               | Everything above works with no internet; see [OFFLINE_MODE.md](OFFLINE_MODE.md).                                                                                                                                                                                                                                 |
+| Restart               | Boot receiver and app-update receiver restart the service; WorkManager every 15 minutes as a fallback.                                                                                                                                                                                                           |
+| Screen                | Status (🟢/🔴), mode and guard name, shift and site radius, monitoring state (INSIDE SITE, OUTSIDE READING · verifying, OUTSIDE SITE, LOCATION UNAVAILABLE, MONITORING OFFLINE, WAITING FOR SHIFT, NOT ON SHIFT), last check with distance and accuracy, location permission state, plus the common device rows. |
 
 ## Files
 
