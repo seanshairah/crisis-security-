@@ -1,5 +1,7 @@
 # Gate Inventory
 
+> **Integration contract:** the authoritative, current contract (signed deliveries, status poll, cancel, retry and parking rules) is [`GATE_INTEGRATION.md`](GATE_INTEGRATION.md) with the machine-readable [`openapi/gate-integration.yaml`](openapi/gate-integration.yaml). The v1 section below is kept for history; where they differ, the integration guide wins.
+
 Implemented in the existing Crisis portal and Android guard application. The external stock system has its own database. This feature does not connect to or migrate Omega.
 
 ## Using it

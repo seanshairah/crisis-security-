@@ -51,3 +51,11 @@ test("connection settings explain what is missing and never accept plain http", 
     ["a", "b"],
   );
 });
+
+test("the startup check names a half-configured inventory connection", async () => {
+  const { checkEnv } = await import("../src/lib/env-check");
+  const base = { NODE_ENV: "test", AUTH_SECRET: "a".repeat(40), DATABASE_URL: "postgres://x" };
+  assert.equal(checkEnv(base).filter((i) => i.key.startsWith("GATE")).length, 0);
+  const partial = checkEnv({ ...base, GATE_OUTBOUND_URL: "https://inventory.example.com/hook" });
+  assert.ok(partial.some((i) => i.key === "GATE_OUTBOUND" && /TOKEN/.test(i.message)));
+});

@@ -108,6 +108,7 @@
     "typescript": "^5"
   },
   "overrides": {
+    "effect": "^3.22.5",
     "next": {
       "postcss": "^8.5.31"
     },
