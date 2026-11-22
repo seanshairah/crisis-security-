@@ -28,7 +28,7 @@ export const POST = guarded("SUPERVISOR", async (req, ctx, user) => {
     await portalSite(user, m.locationId);
     const r = await db.gateDelivery.updateMany({
       where: { movementId: id, status: "FAILED" },
-      data: { status: "PENDING", nextAttemptAt: new Date() },
+      data: { status: "PENDING", nextAttemptAt: new Date(), deadAt: null, attempts: 0 },
     });
     if (!r.count) return error("No failed delivery to retry", 409);
     await db.gateHistory.create({

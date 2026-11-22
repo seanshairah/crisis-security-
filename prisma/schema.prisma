@@ -1666,6 +1666,7 @@ enum GateStatus {
   REVIEW
   APPROVED
   REJECTED
+  CANCELLED
 }
 enum GateSyncStatus {
   NOT_QUEUED
@@ -1698,11 +1699,15 @@ model GateMovement {
   decisionAt DateTime?
   reason String?
   correctionOf String?
+  /// Device-claimed time and server arrival time; the device clock is never trusted alone.
+  capturedAt DateTime?
+  receivedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   history GateHistory[]
   deliveries GateDelivery[]
   @@index([locationId, status, createdAt])
+  @@index([correctionOf])
 }
 model GateHistory {
   id String @id @default(cuid())
@@ -1713,6 +1718,7 @@ model GateHistory {
   details Json
   createdAt DateTime @default(now())
   @@index([movementId, createdAt])
+  @@index([actor, action])
 }
 model GateDelivery {
   id String @id @default(cuid())
@@ -1726,10 +1732,13 @@ model GateDelivery {
   leaseUntil DateTime?
   lastError String?
   sentAt DateTime?
+  /// Set when automatic retries are exhausted: an operator must act.
+  deadAt DateTime?
   createdAt DateTime @default(now())
   attemptsLog GateDeliveryAttempt[]
   @@unique([movementId, version])
   @@index([status, nextAttemptAt])
+  @@index([deadAt])
 }
 model GateDeliveryAttempt {
   id String @id @default(cuid())
@@ -1737,5 +1746,8 @@ model GateDeliveryAttempt {
   delivery GateDelivery @relation(fields: [deliveryId], references: [id])
   success Boolean
   detail String
+  httpStatus Int?
+  durationMs Int?
   createdAt DateTime @default(now())
+  @@index([deliveryId, createdAt])
 }

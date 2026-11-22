@@ -13,7 +13,12 @@ import {
 } from "../../src/lib/gate/service";
 import { detailsSchema } from "../../src/lib/gate/contract";
 import { deliverGateDecisions } from "../../src/lib/gate/delivery";
+import { pingInventory } from "../../src/lib/gate/delivery";
+import { integrationStatus } from "../../src/lib/gate/status";
+import { verifyGateSignature } from "../../src/lib/gate/signing";
 import { POST as inbound } from "../../src/app/api/gate/inbound/route";
+import { GET as inboundStatus } from "../../src/app/api/gate/inbound/[reference]/route";
+import { POST as inboundCancel } from "../../src/app/api/gate/inbound/[reference]/cancel/route";
 import { GET as deviceGet } from "../../src/app/api/gate/device/route";
 import { createCoordinateQr } from "../../src/lib/patrol/checkpoint-qr";
 const url = new URL(process.env.DATABASE_URL ?? "http://missing");
@@ -178,6 +183,11 @@ async function main() {
     original.version,
   );
   checks++;
+  await assert.rejects(
+    () => correctMovement(user, a.id, details, "A second amendment"),
+    /already has an amendment/,
+  );
+  checks++;
   await assert.rejects(() => portalSite(user, other.id), /not assigned/);
   checks++;
   const header = { authorization: `Bearer ${token}` };
@@ -222,8 +232,71 @@ async function main() {
   ]);
   assert.equal(ir1.status, 200);
   assert.equal(ir2.status, 200);
-  const m = await ir1.json();
-  assert.equal((await ir2.json()).id, m.id);
+  const receipt = await ir1.json();
+  const m = { id: receipt.movementId as string };
+  assert.equal(receipt.reference, suffix);
+  for (const k of ["guardId", "sessionId", "checkpointId", "expected", "observed"])
+    assert.ok(!(k in receipt), `inbound receipt must not expose ${k}`);
+  checks++;
+  const get = (reference: string, auth = true) =>
+    inboundStatus(
+      new Request(`http://localhost/api/gate/inbound/${encodeURIComponent(reference)}`, {
+        headers: auth ? { authorization: `Bearer ${process.env.GATE_INBOUND_TOKEN}` } : {},
+      }),
+      { params: Promise.resolve({ reference }) },
+    );
+  assert.equal((await get(suffix)).status, 200);
+  assert.equal((await get(suffix, false)).status, 401);
+  assert.equal((await get("no-such-reference")).status, 404);
+  checks++;
+  assert.equal(
+    (
+      await inbound(
+        request({ ...inboundData, reference: suffix + "-x", locationId: "no-such-site" }),
+      )
+    ).status,
+    403,
+  );
+  process.env.GATE_INBOUND_SITE_IDS = `${site.id},no-such-site`;
+  assert.equal(
+    (
+      await inbound(
+        request({ ...inboundData, reference: suffix + "-x", locationId: "no-such-site" }),
+      )
+    ).status,
+    404,
+  );
+  process.env.GATE_INBOUND_SITE_IDS = site.id;
+  checks++;
+  const cancelRef = suffix + "-cancel";
+  await inbound(request({ ...inboundData, reference: cancelRef }));
+  const cancel = (reference: string) =>
+    inboundCancel(
+      new Request("http://localhost/x", {
+        method: "POST",
+        headers: { authorization: `Bearer ${process.env.GATE_INBOUND_TOKEN}` },
+        body: JSON.stringify({ reason: "Truck did not leave" }),
+      }),
+      { params: Promise.resolve({ reference }) },
+    );
+  assert.equal((await cancel(cancelRef)).status, 200);
+  assert.equal((await cancel(cancelRef)).status, 200);
+  assert.equal(
+    (
+      await db.gateMovement.findUniqueOrThrow({
+        where: { sourceReference: `external:${cancelRef}` },
+      })
+    ).status,
+    "CANCELLED",
+  );
+  assert.equal(
+    await db.gateDelivery.count({
+      where: { movement: { sourceReference: `external:${cancelRef}` } },
+    }),
+    0,
+  );
+  checks++;
+  assert.equal((await ir2.json()).movementId, m.id);
   checks++;
   assert.equal(
     (await inbound(request({ ...inboundData, details: { ...details, party: "Different" } })))
@@ -244,6 +317,8 @@ async function main() {
     details,
   });
   assert.equal(match.status, "APPROVED");
+  checks++;
+  assert.equal((await cancel(matchExpected.sourceReference.replace(/^external:/, ""))).status, 409);
   checks++;
   const manual = await listForGuard(device.id, session.id, match.sourceReference);
   assert.ok(manual.items.some((item) => item.id === match.id));
@@ -352,13 +427,29 @@ async function main() {
   checks++;
   // Local external system simulates outage, lost acknowledgement, then safe replay.
   let mode = "outage",
-    updates = 0;
+    updates = 0,
+    signedSeen = 0;
   const seen = new Set<string>();
   const server = createServer(async (req, res) => {
     let raw = "";
     for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw);
     assert.equal(req.headers["idempotency-key"], body.deliveryId);
+    assert.ok(
+      verifyGateSignature(
+        process.env.GATE_OUTBOUND_SIGNING_SECRET!,
+        String(req.headers["x-crisis-signature"]),
+        String(req.headers["x-crisis-timestamp"]),
+        raw,
+      ),
+      "every delivery carries a valid signature",
+    );
+    signedSeen++;
+    if (mode === "reject") {
+      res.writeHead(400);
+      res.end();
+      return;
+    }
     if (mode === "outage") {
       res.writeHead(503);
       res.end();
@@ -386,6 +477,7 @@ async function main() {
   const address = server.address() as { port: number };
   process.env.GATE_OUTBOUND_URL = `http://127.0.0.1:${address.port}`;
   process.env.GATE_OUTBOUND_TOKEN = "local-test-outbound-token-more-than-32-chars";
+  process.env.GATE_OUTBOUND_SIGNING_SECRET = "local-test-signing-secret-more-than-32-chars";
   process.env.GATE_ALLOW_LOCAL_TEST = "true";
   try {
     await deliverGateDecisions();
@@ -420,6 +512,63 @@ async function main() {
     checks++;
     assert.equal(await db.gateDelivery.count({ where: { status: "SENT" } }), applied);
     assert.equal((await db.gateDeliveryAttempt.count({ where: { success: false } })) > 0, true);
+    checks++;
+    assert.ok(signedSeen > 0, "receiver saw signed requests");
+    // A correction never overtakes the decision it amends.
+    await supervisorDecision(
+      user,
+      correction.id,
+      correction.version,
+      "APPROVED",
+      "Count confirmed",
+    );
+    const orig = await db.gateDelivery.findFirstOrThrow({ where: { movementId: a.id } });
+    await db.gateDelivery.update({
+      where: { id: orig.id },
+      data: { status: "FAILED", sentAt: null, nextAttemptAt: new Date(0), attempts: 0 },
+    });
+    mode = "outage";
+    await deliverGateDecisions(5);
+    const corr = await db.gateDelivery.findFirstOrThrow({ where: { movementId: correction.id } });
+    assert.equal(corr.attempts, 0, "correction waits for the original");
+    assert.equal(corr.status, "PENDING");
+    checks++;
+    mode = "ok";
+    await db.gateDelivery.updateMany({
+      where: { status: "FAILED" },
+      data: { nextAttemptAt: new Date(0) },
+    });
+    await deliverGateDecisions(5);
+    assert.equal(
+      (await db.gateDelivery.findFirstOrThrow({ where: { movementId: correction.id } })).status,
+      "SENT",
+    );
+    checks++;
+    // A receiver that refuses the record outright parks it and alerts an operator, instead of retrying forever.
+    await db.gateDelivery.update({
+      where: { id: orig.id },
+      data: { status: "PENDING", sentAt: null, nextAttemptAt: new Date(0), attempts: 0 },
+    });
+    mode = "reject";
+    await deliverGateDecisions(5);
+    const parked = await db.gateDelivery.findUniqueOrThrow({ where: { id: orig.id } });
+    assert.ok(parked.deadAt, "refused delivery is parked");
+    assert.equal(parked.status, "FAILED");
+    assert.ok(
+      await db.notification.findFirst({ where: { title: "Inventory update needs attention" } }),
+    );
+    const before = await db.gateDeliveryAttempt.count({ where: { deliveryId: orig.id } });
+    await deliverGateDecisions(5);
+    assert.equal(await db.gateDeliveryAttempt.count({ where: { deliveryId: orig.id } }), before);
+    checks++;
+    const status = await integrationStatus();
+    assert.equal(status.counts.needsAttention, 1);
+    assert.ok(status.outbound.configured);
+    checks++;
+    const ping = await pingInventory();
+    assert.equal(ping.ok, false);
+    mode = "ok";
+    assert.equal((await pingInventory()).ok, true);
     checks++;
   } finally {
     await new Promise<void>((resolve, reject) => server.close((e) => (e ? reject(e) : resolve())));

@@ -1,26 +1,19 @@
-import { gateBody } from "@/lib/gate/contract";
-import { secretMatches } from "@/lib/security/secrets";
 import { json, error } from "@/lib/api";
 import { publicFailure } from "@/lib/security/api-errors";
-import { receiveMovement } from "@/lib/gate/service";
 import { inboundSchema } from "@/lib/gate/contract";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { authenticateInbound } from "@/lib/gate/inbound-auth";
+import { movementReceipt, receiveMovement } from "@/lib/gate/service";
+
+/** The inventory system announces an expected arrival or departure. Safe to repeat with the same reference. */
 export async function POST(req: Request) {
-  const key = process.env.GATE_INBOUND_TOKEN;
-  if (
-    !key ||
-    key.length < 32 ||
-    !secretMatches(key, req.headers.get("authorization")?.replace(/^Bearer /, ""))
-  )
-    return error("Unauthorised", 401);
-  if (!(await rateLimit("gate:inbound", 120, 60000)).ok) return error("Please retry shortly", 429);
   try {
-    const d = inboundSchema.parse(await gateBody(req));
-    const sites = (process.env.GATE_INBOUND_SITE_IDS ?? "").split(",").map((s) => s.trim());
+    const { body, sites } = await authenticateInbound(req);
+    const d = inboundSchema.parse(JSON.parse(body));
     if (!sites.includes(d.locationId)) return error("Site is not enabled for this connection", 403);
-    return json(await receiveMovement(d));
+    return json(movementReceipt(await receiveMovement(d)));
   } catch (e) {
     const f = publicFailure(e);
     return error(f.message, f.status);
   }
 }
+export const maxDuration = 60;
