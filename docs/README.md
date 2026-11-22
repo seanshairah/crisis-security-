@@ -14,3 +14,5 @@ Historical implementation plans and audits are under [archive](archive/). They d
 Gate arrivals, departures, approvals, offline records and the external stock-system contract: [Gate Inventory](GATE_INVENTORY.md).
 
 Local results and remaining release blockers: [Gate Inventory verification](GATE_INVENTORY_VERIFICATION.md).
+
+Plain language operating guide for stock departures: [Stock checkout working principle](STOCK_CHECKOUT_WORKING_PRINCIPLE.docx).
