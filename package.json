@@ -16,6 +16,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "user:create": "tsx scripts/create-user.ts",
     "db:purge": "tsx scripts/purge-data.ts --yes",
     "db:reset": "prisma migrate reset --force",
     "automation:tick": "tsx scripts/tick.ts",
