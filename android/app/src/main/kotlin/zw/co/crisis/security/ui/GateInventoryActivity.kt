@@ -133,10 +133,8 @@ class GateInventoryActivity : AppCompatActivity() {
         return GateScreens.Home(site(), sid.isNotBlank(), message, saved, rows)
     }
 
-    private fun tracksFor(state: String, result: String?): List<GateTracks.Track> {
-        if (state == "SENT" && result != null) runCatching { return GateTracks.forMovement(JSONObject(result)) }
-        return GateTracks.forLocal(state)
-    }
+    private fun tracksFor(state: String, result: String?): List<GateTracks.Track> =
+        GateTracks.forReceipt(state, result, items())
 
     private fun lookup(q: String) {
         if (busy || session() == null) return

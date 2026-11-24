@@ -36,6 +36,9 @@ is never right in production.
 
 ## Creating the keystore
 
+If `android/keystore.properties` already exists, keep the configured key and alias. The defaults
+below apply only to a new installation; do not regenerate or rename an existing signing identity.
+
 Once, **on a machine you control**: not a build server, not a shared or disposable container. The key
 is the app's permanent identity, and the script that makes it also writes its password to disk.
 
@@ -46,7 +49,7 @@ npm run android:keystore
 `scripts/android-keystore.mjs` needs a JDK (`keytool`, which Android Studio ships). It:
 
 - generates a random password and never prints it or puts it on a command line;
-- creates an RSA 4096 key valid for about 27 years, at `~/omega-release-keystore/omega-release.jks`
+- creates an RSA 4096 key valid for about 27 years, at `~/crisis-release-keystore/crisis-release.jks`
   (outside the repository);
 - writes `android/keystore.properties` (git-ignored, owner-only) with `ANDROID_KEYSTORE_PATH`,
   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`, which is what
@@ -80,23 +83,16 @@ $ANDROID_SDK_ROOT/build-tools/*/apksigner verify --print-certs \
 
 The first release-signed build is a fresh install on every phone, not an update:
 
-- the release app id is `zw.co.omega.gateway` and the debug one is `zw.co.omega.gateway.debug`, so
+- the release app id is `zw.co.crisis.security` and the debug one is `zw.co.crisis.security.debug`, so
   they are different apps; and
 - an app signed with a different key cannot update one signed with another.
 
-For each phone: uninstall the debug app, install the release, and register it again with a new
-activation code from **Devices → Register device** (the old registration, its queued events and its
-stored credentials go with the uninstall). Do the control-room phone ("Oprosec") first, since portal
-calling and call attendance depend on it. After that, every later release updates in place, as long as
-it is signed with the same key.
+Before changing installations, sync the debug app and confirm its queue is empty. Install the
+release app alongside it, activate it with a new device registration, and verify the release works.
+Only then retire the debug registration and remove the debug app. Never uninstall an app with
+pending offline events. Later release builds update in place with the same signing key.
 
-### The test build must be uninstalled first
-
-The debug build has `applicationIdSuffix = ".debug"`, so `zw.co.omega.gateway.debug` is a
-_different app_ from `zw.co.omega.gateway`. Installing the release will not replace it; both will
-run and both will report. Uninstall the debug build before installing the release.
-
-It also carries `android:debuggable="true"` and allows cleartext HTTP, so its stored credentials can
+The debug build carries `android:debuggable="true"` and allows cleartext HTTP, so its stored credentials can
 be read over USB. It does not belong on a guard's phone.
 
 ## Updates
@@ -153,10 +149,10 @@ container, not on your Mac).
 - Either build every debug APK on the same machine, or give every machine one shared development
   keystore (never committed; `*.jks` and `*.keystore` are git-ignored):
 
-      keytool -genkeypair -keystore ~/omega-dev.jks -alias androiddebugkey -storepass android \
-              -keypass android -keyalg RSA -validity 10000 -dname "CN=Omega Dev"
+      keytool -genkeypair -keystore ~/crisis-dev.jks -alias androiddebugkey -storepass android \
+              -keypass android -keyalg RSA -validity 10000 -dname "CN=Crisis Dev"
       # android/local.properties on every machine
-      omega.debugKeystore=/Users/<you>/omega-dev.jks
+      crisis.debugKeystore=/Users/<you>/crisis-dev.jks
 
   The build prints "Debug builds signed with the shared development keystore …" when it is in use.
   Switching an already-installed phone to the shared key needs one uninstall, so do it before a test

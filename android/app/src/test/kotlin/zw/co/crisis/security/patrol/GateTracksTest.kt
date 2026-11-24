@@ -52,4 +52,21 @@ class GateTracksTest {
         assertEquals(Tone.OK, t[1].tone); assertEquals(Tone.OK, t[2].tone)
         assertTrue(GateTracks.advice(t).startsWith("Cleared"))
     }
+    @Test fun aRefreshedSupervisorDecisionReplacesTheReceiptSnapshot() {
+        val receipt = JSONObject("""{"id":"arrival-1","status":"REVIEW","deliveries":[]}""").toString()
+        val current = JSONObject("""{"id":"arrival-1","status":"APPROVED","deliveries":[{"status":"SENT"}]}""")
+        val tracks = GateTracks.forReceipt("SENT", receipt, listOf(current))
+        assertEquals("Approved", tracks[1].chip)
+        assertEquals("Received by inventory", tracks[2].value)
+        assertTrue(GateTracks.advice(tracks).startsWith("Cleared"))
+    }
+
+    @Test fun anUnrelatedMovementCannotChangeAReceiptAndOfflineKeepsItsSnapshot() {
+        val receipt = """{"id":"arrival-1","status":"REVIEW","deliveries":[]}"""
+        val other = JSONObject("""{"id":"arrival-2","status":"APPROVED"}""")
+        assertEquals("Review", GateTracks.forReceipt("SENT", receipt, listOf(other))[1].chip)
+        assertEquals("Review", GateTracks.forReceipt("SENT", receipt, emptyList())[1].chip)
+        assertEquals("Saved on phone", GateTracks.forReceipt("QUEUED", receipt, listOf(other))[0].value)
+    }
+
 }

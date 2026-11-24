@@ -10,13 +10,13 @@
  *
  * What it does
  *   - generates a random password (never typed, never printed, never on a command line);
- *   - makes an RSA 4096 key valid for about 27 years, with a keystore under ~/omega-release-keystore;
+ *   - makes an RSA 4096 key valid for about 27 years, with a keystore under ~/crisis-release-keystore;
  *   - writes android/keystore.properties (git-ignored) so `npm run android:release` signs with it;
  *   - prints the certificate fingerprint, so you can check later what a build was signed with.
  *
  * It refuses to run if a keystore or properties file already exists. It never overwrites a key.
  *
- *   --dir <folder>    where the keystore goes (default ~/omega-release-keystore)
+ *   --dir <folder>    where the keystore goes (default ~/crisis-release-keystore)
  *   --props <file>    where the build settings go (default android/keystore.properties)
  */
 import { execFileSync } from "node:child_process";
@@ -29,10 +29,10 @@ const arg = (name) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : undefined;
 };
-const dir = path.resolve(arg("dir") ?? path.join(os.homedir(), "omega-release-keystore"));
+const dir = path.resolve(arg("dir") ?? path.join(os.homedir(), "crisis-release-keystore"));
 const props = path.resolve(arg("props") ?? "android/keystore.properties");
-const jks = path.join(dir, "omega-release.jks");
-const ALIAS = "omega";
+const jks = path.join(dir, "crisis-release.jks");
+const ALIAS = "crisis";
 
 const fail = (msg) => {
   console.error(`\n${msg}\n`);
@@ -54,7 +54,7 @@ try {
 
 // One password for the store and the key: modern keystores (PKCS12) require them to match.
 const password = randomBytes(24).toString("base64url");
-const env = { ...process.env, OMEGA_KS_PASSWORD: password };
+const env = { ...process.env, CRISIS_KS_PASSWORD: password };
 
 mkdirSync(dir, { recursive: true, mode: 0o700 });
 execFileSync(
@@ -72,11 +72,11 @@ execFileSync(
     "-validity",
     "10000",
     "-dname",
-    "CN=Omega Protection Services, O=Omega Protection Services, L=Harare, C=ZW",
+    "CN=Crisis Security, O=Crisis Security, L=Harare, C=ZW",
     "-storepass:env",
-    "OMEGA_KS_PASSWORD",
+    "CRISIS_KS_PASSWORD",
     "-keypass:env",
-    "OMEGA_KS_PASSWORD",
+    "CRISIS_KS_PASSWORD",
   ],
   { env, stdio: ["ignore", "ignore", "inherit"] },
 );
@@ -100,7 +100,7 @@ chmodSync(props, 0o600);
 
 const listing = execFileSync(
   "keytool",
-  ["-list", "-v", "-keystore", jks, "-alias", ALIAS, "-storepass:env", "OMEGA_KS_PASSWORD"],
+  ["-list", "-v", "-keystore", jks, "-alias", ALIAS, "-storepass:env", "CRISIS_KS_PASSWORD"],
   { env, encoding: "utf8" },
 );
 const sha256 =

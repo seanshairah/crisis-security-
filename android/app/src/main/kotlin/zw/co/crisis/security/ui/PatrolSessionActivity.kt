@@ -43,7 +43,7 @@ class PatrolSessionActivity : AppCompatActivity() {
         chrome = GuardChrome.install(this, holder, GuardChrome.Tab.PATROL)
         render()
     }
-    override fun onResume() { super.onResume(); render() }
+    override fun onResume() { super.onResume(); message = null; render() }
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
 
     private fun api() = ApiClient(prefs.serverUrl, prefs.deviceToken)

@@ -17,6 +17,15 @@ object GateTracks {
         else -> listOf(device("Saved on phone", "Waiting", Tone.WAIT), gate("Not decided yet", "Review", Tone.WARN), sync("Not queued", "Idle", Tone.IDLE))
     }
 
+    /** A receipt is a snapshot; a later server refresh may contain a supervisor decision or delivery result. */
+    fun forReceipt(localState: String, result: String?, latest: List<JSONObject>): List<Track> {
+        if (localState != "SENT" || result == null) return forLocal(localState)
+        val receipt = runCatching { JSONObject(result) }.getOrNull() ?: return forLocal(localState)
+        val id = receipt.optString("id")
+        val current = latest.firstOrNull { id.isNotBlank() && it.optString("id") == id }
+        return forMovement(current ?: receipt)
+    }
+
     /** From a movement the server returned. */
     fun forMovement(m: JSONObject): List<Track> {
         val delivery = m.optJSONArray("deliveries")?.optJSONObject(0)

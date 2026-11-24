@@ -31,8 +31,8 @@ State of `main` after the Gate Inventory merge. "Verified" means run in this rep
    is the only protection against a bad migration after the fact.
 6. **Phone** — install the release build on one guard phone and walk an arrival and a departure, online and in airplane
    mode (`DEVICE_TEST_PLAN.md`). Snapshots are not a substitute for a real device.
-7. **Release signing** — no release APK can be built until you create the production keystore, once, on your own
-   machine: `npm run android:keystore` (see `APK_DISTRIBUTION.md`). Back up `~/omega-release-keystore` and the
+7. **Release signing** — a release APK requires the existing production keystore. Preserve it if already configured;
+   otherwise create it once on your own machine: `npm run android:keystore` (see `APK_DISTRIBUTION.md`). Back up the configured keystore and the
    passwords in `android/keystore.properties` somewhere safe; losing the key means reinstalling the app on every phone.
    To build signed APKs on GitHub instead of your laptop, add the four secrets below and run the **Release APK** workflow.
 
@@ -70,9 +70,9 @@ After running `npm run android:keystore` on your machine, add these repository s
 
 | Secret                      | Value                                                          |
 | --------------------------- | -------------------------------------------------------------- |
-| `ANDROID_KEYSTORE_BASE64`   | `base64 -w0 ~/omega-release-keystore/omega-release.jks`        |
+| `ANDROID_KEYSTORE_BASE64`   | Base64 contents of the configured `ANDROID_KEYSTORE_PATH` (macOS: `base64 -i /path/to/key`)        |
 | `ANDROID_KEYSTORE_PASSWORD` | `ANDROID_KEYSTORE_PASSWORD` from `android/keystore.properties` |
-| `ANDROID_KEY_ALIAS`         | `omega` (the alias in the same file)                           |
+| `ANDROID_KEY_ALIAS`         | `ANDROID_KEY_ALIAS` from the same file (new keys default to `crisis`)                           |
 | `ANDROID_KEY_PASSWORD`      | `ANDROID_KEY_PASSWORD` from the same file                      |
 
 Then run **Actions → Release APK → Run workflow**. It builds `app-release.apk`, prints the signing certificate

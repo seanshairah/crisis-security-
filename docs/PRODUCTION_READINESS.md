@@ -1,49 +1,40 @@
-# Production Readiness Assessment (after production hardening, 2026-10-19)
+# Production readiness
 
-Date: 2026-10-19 · Portal on `main` · App v1.6.0 (versionCode 7)
+The current release candidate is **1.13.0 (version code 19)**.
 
-## Verdict
+Use [GO_LIVE.md](GO_LIVE.md) for the current deployment checklist and
+[GATE_INTEGRATION.md](GATE_INTEGRATION.md) for the inventory contract.
+The previous October assessment described version 1.6 and is historical:
+[October assessment](archive/PRODUCTION_READINESS_2026_10_19.md).
 
-**Ready for a supervised pilot, not yet signed off for fleet-wide production.** Every server-side and workflow requirement of the three phases is implemented and verified by automated suites against a real database and real HTTP. The Android app compiles, passes its unit tests and implements every required behaviour, but **no run on a physical phone has been performed in this environment**; the items in `DEVICE_TEST_PLAN.md` must pass before the app is relied on by guards in the field. The release APK is still signed with the debug key because no production keystore exists here.
+## Local checks for this candidate (2026-11-22)
 
-## Evidence
+- Portal: 204 unit tests passed; TypeScript, lint and production build passed after regenerating the Prisma client.
+- Updated local dashboard restarted on port 3139; login returned HTTP 200 with the sign-in form.
+- Android: 108 JVM tests passed, debug assembly passed, APK signature verified; metadata is 1.13.0-debug / code 19.
+- Existing signing configuration was preserved; the keystore helper refused to overwrite it.
+- The separate local `crisis_security` database was backed up before its pending Gate integration migration; migration deployment passed.
+- These checks do not verify a physical phone or the unrelated inventory system.
 
-| Area                                                                                                                                        | Evidence                                                                                   | Status                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| Typecheck, lint, production build                                                                                                           | clean                                                                                      | verified                                         |
-| Prisma consistency (`npm run db:check`)                                                                                                     | schema valid, generated client matches, migrations complete                                | verified                                         |
-| Security headers, login throttle, production env validation, simulator gating                                                               | code + unit tests                                                                          | verified                                         |
-| Guard workspace layout (desktop 1440×900, laptop 1280×720, phone 390×844)                                                                   | `npm run test:layout` 30/30                                                                | verified in headless Chromium                    |
-| Web unit tests                                                                                                                              | 40/40                                                                                      | verified                                         |
-| Android JVM unit tests                                                                                                                      | 51/51                                                                                      | verified                                         |
-| Redesigned guard dashboard (U1–U12 in DEVICE_TEST_PLAN)                                                                                     | compiles, every control mapped to its handler (`ANDROID_UI_AUDIT.md`)                      | **unverified on device**                         |
-| Gateway end-to-end (calls, activation, revocation, SMS regression)                                                                          | 30/30                                                                                      | verified                                         |
-| Location end-to-end (section-50 scenario, 15 critical cases, feature phone, mock)                                                           | 38/38                                                                                      | verified                                         |
-| Alerts end-to-end (emergency with/without fix, all types, replay, acknowledgement, SMS EMERGENCY)                                           | 20/20                                                                                      | verified                                         |
-| Integration end-to-end (Stage 8 matrix)                                                                                                     | 18/18                                                                                      | verified                                         |
-| Location-request end-to-end (command delivery, binding, replay, expiry, accuracy, mock, site handoff)                                       | 37/37                                                                                      | verified                                         |
-| Browser geolocation (Playwright, mocked Geolocation API: good fix, poor accuracy, denied, insecure context)                                 | 14/14                                                                                      | verified with mocked positions, **not real GPS** |
-| Migrations on Neon                                                                                                                          | all applied, `db:migration-status` clean                                                   | verified                                         |
-| SMS system                                                                                                                                  | no SMS file changed in Phases 1–3; regression steps in three suites                        | verified                                         |
-| Debug and release APKs                                                                                                                      | build, R8, log stripping, HTTPS-only release                                               | compiled, **unverified on device**               |
-| Guard onboarding, GPS acquisition, Sync/Check independence, offline replay, emergency dialogs, acknowledgement on the phone, screen layouts | code + unit tests                                                                          | **unverified on device**                         |
-| Release signing                                                                                                                             | debug key                                                                                  | **blocker for distribution**                     |
-| Google Maps picker (Google engine)                                                                                                          | code, type-checked; Leaflet engine (OpenStreetMap/MapTiler tiles) exercised in the browser | **unverified with a key**                        |
-| Remote location request on a phone (L1–L9 in DEVICE_TEST_PLAN)                                                                              | code + unit tests + simulated device                                                       | **unverified on device**                         |
+## Physical release test follow-up (2026-11-24)
 
-## Blockers before fleet production
+See [release phone verification](verification/RELEASE_PHONE_E2E_2026_11_24.md).
+Online capture, supervisor approval, offline restart/replay and two-guard handover passed on
+the installed 1.12 release. A stale receipt-status display was fixed in the 1.13 candidate;
+110 release JVM tests pass. Its physical update remains blocked by the signing-key mismatch.
 
-1. Run `DEVICE_TEST_PLAN.md` on at least one guard phone and one operations phone; record results in `IMPLEMENTATION_AUDIT.md`.
-2. Create the release keystore, set `ANDROID_KEYSTORE_*`, rebuild, confirm `buildType: release` and no secure-storage warning on the device page.
-3. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (referrer-restricted) if Google Maps is wanted; otherwise OpenStreetMap stays in use.
-4. Place the four live sites on the map (they have no coordinates today) before enabling GPS verification for any guard. Use the site picker's confirmed-position flow or a guard phone standing at the site (`docs/DEVICE_LOCATION_AND_SITE_SETUP.md`); never type an estimate as `MAP`.
+## Verification boundaries
 
-## Risks accepted for a pilot
+Gate Inventory now includes signed outbound deliveries, optional inbound signatures,
+site-scoped inbound requests, retries and operator recovery, cancellation, and a staged
+Android form. These implemented features do not establish production readiness by themselves.
 
-- OEM battery managers can still kill the service; WorkManager restarts it within 15 minutes and nothing is lost, but checks can be late. The _verification overdue_ alert and the Location exceptions page make this visible.
-- GPS indoors is often worse than the 100 m limit; the app says so explicitly and never reports "outside" from such a fix.
-- A guard whose phone is offline shows as _device offline_, never as absent or outside.
+The earlier local 1.12 device results in [Gate verification](GATE_INVENTORY_VERIFICATION.md)
+do not verify the redesigned 1.13 build. Before distribution, verify the new signed APK on
+a phone, including online/offline arrival and departure, restart recovery, QR scanning,
+shared-device handover and in-place updates with the existing signing certificate.
 
-## What does not change for current operations
-
-All 22 live guards are feature-phone guards. The SMS workflow is unchanged and remains the system of record for attendance; GPS and app alerts only add to it once devices are activated.
+The external inventory system still needs a real contract mapping and an end-to-end
+acceptance test. Confirm the Crisis database target, migration status, scheduler,
+backup restore, production environment and signed connectivity test before deployment.
+Do not use the Omega database or modify its records.

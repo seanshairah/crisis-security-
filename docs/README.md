@@ -2,6 +2,8 @@
 
 Start with these maintained documents:
 
+- [Production readiness](PRODUCTION_READINESS.md) and [go-live checklist](GO_LIVE.md).
+
 - [Admin quick start](ADMIN_QUICK_START.md): guided site, guard, handset and shift setup.
 - [Coordinate patrols](COORDINATE_PATROLS.md): guard workflow, QR signs and offline evidence.
 - [Security and deployment](SECURITY_OPERATIONS.md): current trust model, limits, clocks, signing and scheduler configuration.
